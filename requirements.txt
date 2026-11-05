@@ -1,0 +1,28 @@
+#email validator 
+email-validator==2.2.0
+
+#framework 
+Flask==3.0.3
+
+#flask instegration 
+Flask-SQLAlchemy==3.1.1
+
+#form and csrf protection 
+Flask-WTF==1.2.1
+
+#env var 
+python_dotenv==1.0.1
+
+#db abstraction and orm
+SQLAlchemy==2.0.36
+
+#wsgi,routing and pass hashing
+Werkzeug==3.0.4
+
+#server- side validator
+WTForms==3.2.1
+
+
+#======TESTING  CONFLIECTS REQUIREMENTS =====
+#pip install -r requirements.txt
+#python -m pip check

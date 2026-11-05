@@ -1,0 +1,32 @@
+services:
+  app:
+    build:
+      context: .
+      target: runtime
+    container_name: lms-app
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    volumes:
+      - ./instance:/app/instance
+      - ./logs:/app/logs
+
+  test:
+    profiles:
+      - test
+    build:
+      context: .
+      target: test
+    container_name: lms-test-runner
+    network_mode: "none"
+    environment:
+      - FLASK_ENV=testing
+      - SECRET_KEY=test-offline-secret-key-12345
+      - DATABASE_URL=sqlite:////tmp/lms-test/test.db
+    volumes:
+      - .:/app
+    tmpfs:
+      - /tmp/lms-test:rw,size=64m
+    command: ["pytest", "tests/unit", "tests/integration", "-q"]

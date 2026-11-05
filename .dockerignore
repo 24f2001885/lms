@@ -1,0 +1,56 @@
+#version 
+.git
+.github
+.gitignore
+#env py
+.venv
+venv
+ENV
+env
+*.egg-info
+dist
+build
+#py bytecode 
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+#secrect keys
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+#db
+instance/*
+!instance/.gitkeep
+*.db
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+
+#logs
+logs/*
+!logs/.gitkeep
+*.log
+
+#test
+.pytest_cache
+.ruff_cache
+.coverage
+htmlcov
+playwright-report
+test-results
+.playwright
+
+#documetationa & ide metadata
+docs/report
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

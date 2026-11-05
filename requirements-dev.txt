@@ -1,0 +1,21 @@
+
+#INCLUDE t1 dependencies 
+-r requirements.txt
+
+#local smtp
+aiosmtpd==1.4.6
+
+#py formatter 
+black==24.10.0
+
+#E2E instegration download chromium 
+playwright==1.48.0
+
+#fast_testing framework
+pytest==8.3.3
+
+#mesurement plugin 
+pytest-cov==6.0.0
+
+#py code auditor and linter 
+ruff==0.7.2

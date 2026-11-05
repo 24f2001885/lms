@@ -1,0 +1,85 @@
+# Triggers on: Push and Pull Request on all branches
+
+name: LMS CI Pipeline
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  #  Gate & Integrity Verification
+  gate:
+    name: Verify Tier Gates & Hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository with full history and tags
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Execute gate audit script
+        run: bash scripts/check_gate.sh
+
+  # -------------------------------------------------------------------
+  #  Quality & Linting
+  # -------------------------------------------------------------------
+  quality:
+    name: Lint & Code Style Check
+    needs: gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Developer Dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Run Ruff Linter & Black Format Checker
+        run: make lint
+
+  # Core Automated Test Suite (Tier 1 & Tier 2)
+  core-tests:
+    name: Core Automated Tests
+    needs: gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Install Playwright Chromium Browser
+        run: playwright install --with-deps chromium
+
+      - name: Prepare Local Test Environment
+        run: |
+          cp .env.example .env
+          sed -i 's/SECRET_KEY=.*/SECRET_KEY=ci-runner-test-secret-key-12345/' .env
+          sed -i 's/ADMIN_INITIAL_PASSWORD=.*/ADMIN_INITIAL_PASSWORD=Admin#TestPass123/' .env
+
+      - name: Execute Core Test Suite
+        run: make test-core
+
+
+
+# DEBUGGING:
+# - name: Debug environment   run: python --version && pip list | head -30    (keep commented out)
+# OFFLINE DOCKER TEST CASES:
+# - Validate YAML locally: python -c "import yaml,sys; yaml.safe_load(open('.github/workflows/ci.yml'))" exits 0.
+# - Every run: line in the workflow also works when typed in the local shell.

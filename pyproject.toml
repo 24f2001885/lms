@@ -1,0 +1,91 @@
+#black code formatter
+[tool.black]
+line-length = 100
+target-version = ["py311", "py312"]
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | venv
+  | instance
+  | logs
+  | wheels
+  | migrations
+  | htmlcov
+  | dist
+  | build
+)/
+'''
+#ruff linter and code quality check 
+
+[tool.ruff]
+ine-length = 100
+target-version = "py311"
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "instance",
+    "logs",
+    "wheels",
+    "migrations",
+    "htmlcov",
+
+]
+
+[tool.ruff.lint]
+# Selected rule sets:
+# E/W: Pycodestyle errors & warnings
+# F  : Pyflakes (syntax bugs, undefined names, unused imports)
+# I  : isort (clean import sorting)
+# N  : pep8-naming (function, class, and variable naming conventions)
+# B  : flake8-bugbear (common bug patterns and anti-patterns)
+# UP : pyupgrade (enforces modern Python 3.11+ idioms)
+select = ["E", "F", "I", "N", "B", "UP"]
+ignore = [
+    "E501",  # Line length is handled and enforced by Black
+    "B008",  # Allow function calls in default argument definitions (e.g. Depends / WTForms)
+]
+
+#per-file rule customiszation
+[tool.ruff.lint.per-file-ignores]
+#test recent use assertion , slight long line , fixature
+"tests/*" = ["E501","b011"]
+
+#pytest runner 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra -q --strict-markers"
+markers = [
+    "e2e: End-to-end integration tests using Playwright browser automation",
+    "slow: Tests with higher execution time (e.g., concurrency checks)",
+    "tier3: Tertiary scope tests (online tests, proctoring, payments - Gate B only)",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+#coverage mesurement
+[tool.coverage.run]
+source = ["app"]
+omit = [
+    "tests/*",
+    "instance/*",
+    "migrations/*",
+]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+# from P0 to P5 threshold is 0; raised to 80% at P6(Gate A)
+fail_under = 0
+
+#debug
+# ruff check . --show-settings | head   and   pytest --collect-only -q
+# OFFLINE DOCKER:
+
+# - black --check . and ruff check . both pass on the P0 files.
+# - pytest --collect-only finds tests/unit/test_smoke_app.py without import errors.

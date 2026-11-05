@@ -1,0 +1,76 @@
+#p0 : p0/milestone-0 
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so 
+.python 
+
+#envirment
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+#packaging 
+*.egg-info/
+dist/
+build/
+eggs/
+*.egg
+develop-eggs/
+.installed-cfg
+
+#testing, cache and code coverage
+.pytest_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+playwright-report/
+test-result/
+.playwright/
+htmlcov/
+
+# Secrets and local state (never commit) and db
+.env
+instance/*
+!instance/.gitkeep
+*.db
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+logs/*
+!logs/.gitkeep
+.env.local
+.env.*.local
+*.key
+*.pem
+
+# Offline wheel cache for Docker builds (large; regenerate with scripts/vendor_wheels.sh)
+wheels/*
+!wheels/.gitkeep
+
+#Application logs 
+logs/*
+!logs/.gitkeep
+*.logs
+
+
+# Test artefacts
+playwright-report/
+test-results/
+.playwright/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
