@@ -1,14 +1,50 @@
 import os
-from typing import Optional
+
 from flask import Flask, Response
 
+from app.commands import register_cli
+from app.config import get_config
+from app.extensions import init_extensions
+from app.logging_config import register_request_logging, setup_logging
 
-# Create and return Flask app instance in optional config env (dev, test, production)
-def create_app(config_name: Optional[str] = None) -> Flask:
-    app = Flask(__name__, instance_relative_config=True)
-    app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-only-change-me")
-    os.makedirs(app.instance_path, exist_ok=True)
-    @app.route("/", methods=["GET"])
+
+def create_app(config_name: str | None = None) -> Flask:
+    """
+    Construct, configure, and return the LMS Flask application instance.
+
+    Args:
+        config_name: Optional environment name ('development', 'testing', 'production').
+                     Defaults to FLASK_ENV or 'development'.
+
+    Returns:
+        Configured Flask application instance.
+    """
+    flask_app = Flask(__name__, instance_relative_config=True)
+
+    # 1. Load environment configuration from config object
+    config_class = get_config(config_name)
+    flask_app.config.from_object(config_class)
+    os.makedirs(flask_app.instance_path, exist_ok=True)
+
+    # 2. Configure structured logging & unique X-Request-ID tracing
+    setup_logging(flask_app)
+    register_request_logging(flask_app)
+
+    # 3. Initialize database extensions and attach SQLite pragmas (WAL, FK, timeout)
+    init_extensions(flask_app)
+
+    # 4. Import models package to register all 12 table schemas on db.metadata
+    # (Imported inside the factory to prevent circular import loops)
+    import app.models  # noqa: F401
+
+    # 5. Register custom Flask CLI commands (flask init-db)
+    register_cli(flask_app)
+
+    # -----------------------------------------------------------------
+    # Baseline Placeholder Route for Milestone P0
+    # Replaced by authentication and role-based redirects in Phase P2.
+    # -----------------------------------------------------------------
+    @flask_app.route("/", methods=["GET"])
     def index() -> Response:
         html_content = (
             "<!doctype html>"
@@ -22,4 +58,4 @@ def create_app(config_name: Optional[str] = None) -> Flask:
         )
         return Response(html_content, status=200, mimetype="text/html")
 
-    return app
+    return flask_app
