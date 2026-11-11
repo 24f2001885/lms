@@ -1,0 +1,28 @@
+{#
+FILE PURPOSE: Custom "Page not found" page (PUB-07). Also used when ownership checks hide another user's record.
+PROMPT FOR LLM IMPLEMENTATION:
+1. Extend base.html; h1 "Page not found"; sentence "We could not find what you were looking for."; button to the dashboard or login page as in 403.html.
+DEBUGGING:
+<!-- DEBUG: path={{ request.path }} -->
+OFFLINE DOCKER TEST CASES:
+- Response status is 404 and body contains "Page not found".
+#}
+{% extends "base.html" %}
+{% block title %}Page Not Found{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+  <div class="col-md-6 text-center">
+    <h1 class="display-4 text-secondary fw-bold mb-3">404</h1>
+    <h2 class="h4 mb-3">Page Not Found</h2>
+    <p class="text-muted mb-4">
+      The requested resource could not be found or has been moved.
+    </p>
+    {% if current_user %}
+      <a href="{{ role_dashboard_url(current_user) }}" class="btn btn-primary px-4">Return to Dashboard</a>
+    {% else %}
+      <a href="{{ url_for('auth.login') }}" class="btn btn-primary px-4">Go to Login</a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

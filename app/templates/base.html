@@ -1,0 +1,118 @@
+{#
+FILE PURPOSE: Master layout extended by every page (Design Plan sections 1, 2, 7, 8). P3/P4/P5 add role-specific bases that extend this file.
+DEPENDS ON: app/static/css/app.css, vendored Bootstrap files in app/static/vendor/bootstrap/.
+PROMPT FOR LLM IMPLEMENTATION:
+1. HTML5 document, lang="en", viewport meta, a meta name="csrf-token" tag with the token (used later by fetch calls in Tier 2/3), title block "{% block title %}EMP{% endblock %} - Examination Management Portal".
+2. Load Bootstrap 5 CSS and JS bundle ONLY from url_for static paths vendor/bootstrap/css/bootstrap.min.css and vendor/bootstrap/js/bootstrap.bundle.min.js (no CDN, no web fonts), then css/app.css. System font stack only.
+3. Skip-to-content link as the first focusable element, a header with a navbar (brand "EMP"), a main element with id="main-content" containing flash messages then the content block, and a simple footer.
+4. Navbar is role-aware using current_user from the context processor: anonymous -> Login and Register links; signed in -> Dashboard (role_dashboard_url), Profile, and a Logout FORM (POST to auth.logout with the csrf hidden field, styled as a link button). Show the user's full name and a text role label. Hide the dashboard link for inactive or pending users (they only see Logout).
+5. Flash messages: loop get_flashed_messages(with_categories=true) inside a container with aria-live="polite"; map categories success/info/warning/danger to Bootstrap alert classes, each dismissible with role="alert".
+6. Blocks: title, content, scripts (empty). One h1 per page is provided by child templates. Use semantic landmarks header, nav, main, footer.
+7. Content max-width 1200px via a container; the page background and palette come from app.css.
+DEBUGGING:
+<!-- DEBUG: render with current_user.role and request.endpoint printed in an HTML comment when app.debug is true -->
+OFFLINE DOCKER TEST CASES:
+- The rendered page has no reference to any http(s):// asset URL (offline-safe check with a regex on the HTML).
+- Anonymous page shows Login and Register; a signed-in student page shows Logout and no Register.
+- The Logout control is a form with method post and a csrf_token input.
+- Flash message markup contains role="alert" and sits inside an aria-live="polite" region.
+#}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{% block title %}Home{% endblock %} - LMS Examination Portal</title>
+
+  <!-- Vendored Bootstrap 5 CSS for offline support -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-light d-flex flex-column min-vh-100">
+
+  <!-- Skip-to-content accessible link -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- Top Navigation Bar -->
+  <header>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+      <div class="container">
+        <a class="navbar-brand fw-bold tracking-wide" href="{{ url_for('auth.index') }}">
+          LMS Portal
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navContent"
+                aria-controls="navContent" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navContent">
+          <ul class="navbar-nav ms-auto align-items-lg-center">
+            {% if current_user %}
+              {% if current_user.is_active and (current_user.role != 'examiner' or current_user.approval_status == 'approved') %}
+                <li class="nav-item">
+                  <a class="nav-link" href="{{ role_dashboard_url(current_user) }}">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="{{ url_for('auth.profile') }}">Profile</a>
+                </li>
+              {% endif %}
+              <li class="nav-item ms-lg-2 py-1 py-lg-0 text-white-50 small">
+                <span class="text-white fw-semibold">{{ current_user.full_name }}</span>
+                <span class="badge bg-secondary ms-1">{{ current_user.role|capitalize }}</span>
+              </li>
+              <li class="nav-item ms-lg-3">
+                <form action="{{ url_for('auth.logout') }}" method="POST" class="d-inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn btn-outline-light btn-sm">Log out</button>
+                </form>
+              </li>
+            {% else %}
+              <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('auth.login') }}">Log in</a>
+              </li>
+              <li class="nav-item ms-lg-2">
+                <a class="btn btn-outline-light btn-sm" href="{{ url_for('auth.register') }}">Register</a>
+              </li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Flash Messages Region -->
+  <div class="container mt-3" aria-live="polite">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show shadow-sm" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  <!-- Main Content Landmark -->
+  <main id="main-content" class="flex-grow-1 py-4">
+    <div class="container">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-top py-3 text-center text-muted small mt-auto">
+    <div class="container">
+      &copy; 2026 Examination Management Portal (LMS). Built for MAD-I.
+    </div>
+  </footer>
+
+  <!-- Vendored Bootstrap JS bundle for offline support -->
+  <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

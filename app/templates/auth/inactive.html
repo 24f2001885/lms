@@ -1,0 +1,26 @@
+{#
+FILE PURPOSE: PUB-04 Notice shown to deactivated accounts.
+PROMPT FOR LLM IMPLEMENTATION:
+1. Extend base.html; h1 "Account inactive"; text "Your account has been deactivated. Please contact the administrator."; Logout form button only (no dashboard link, no profile link).
+DEBUGGING:
+<!-- DEBUG: is_active={{ current_user.is_active }} -->
+OFFLINE DOCKER TEST CASES:
+- A deactivated user is redirected here from any protected URL and sees the message and a logout button only.
+#}
+{% extends "base.html" %}
+{% block title %}Account Inactive{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+  <div class="col-md-6 text-center">
+    <h1 class="h3 fw-bold text-danger mb-3">Account Inactive</h1>
+    <p class="text-muted mb-4">
+      Your account has been deactivated. Please contact the examination administrator to reactivate access.
+    </p>
+    <form action="{{ url_for('auth.logout') }}" method="POST" class="d-inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-primary px-4">Log out</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
