@@ -1,9 +1,55 @@
-<!--
-FILE PURPOSE: Slot detail (ADM-13 detail) listing booked students.
-PROMPT FOR LLM IMPLEMENTATION:
-1. Extend base_admin.html; summary (examination, examiner, time, capacity, status); table of bookings in this slot (student link, booking status badge, booked_at); link Change examiner; audit history list.
-DEBUGGING:
-<!-- DEBUG: slot {{ slot.id }} bookings {{ slot.bookings|length }} -->
-OFFLINE DOCKER TEST CASES:
-- Detail shows all bookings including cancelled ones.
--->
+{% extends "admin/base_admin.html" %}
+{% import "macros/status_badge.html" as b %}
+
+{% block title %}Slot #{{ slot.id }}{% endblock %}
+{% block page_title %}Slot #{{ slot.id }} {{ b.badge('slot', slot.status) }}{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm p-4 mb-4">
+      <h2 class="h6 fw-bold text-primary mb-3">Slot Overview</h2>
+      <dl class="row mb-0 small">
+        <dt class="col-sm-4 text-muted">Examination</dt><dd class="col-sm-8">{{ slot.examination.name }}</dd>
+        <dt class="col-sm-4 text-muted">Examiner</dt><dd class="col-sm-8">{{ slot.examiner.full_name }} ({{ slot.examiner.email }})</dd>
+        <dt class="col-sm-4 text-muted">Time Window</dt><dd class="col-sm-8">{{ slot.start_at|localdt }} &rarr; {{ slot.end_at|localdt }}</dd>
+        <dt class="col-sm-4 text-muted">Capacity</dt><dd class="col-sm-8">{{ slot.booked_count }} / {{ slot.max_capacity }} seats reserved</dd>
+      </dl>
+      {% if slot.status in ('available', 'full') %}
+        <div class="mt-3 pt-3 border-top">
+          <a href="{{ url_for('admin.change_slot_examiner', slot_id=slot.id) }}" class="btn btn-outline-primary btn-sm">Change examiner</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <!-- Booked Students Table -->
+    <div class="card border-0 shadow-sm p-4 mb-4">
+      <h2 class="h6 fw-bold text-primary mb-3">Booked Students</h2>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Student</th>
+              <th>Status</th>
+              <th>Booked at</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for booking in slot.bookings %}
+              <tr>
+                <td><a href="{{ url_for('admin.student_detail', student_id=booking.student.id) }}" class="fw-semibold text-decoration-none">{{ booking.student.full_name }}</a></td>
+                <td>{{ b.badge('booking', booking.status) }}</td>
+                <td class="small">{{ booking.booked_at|localdt }}</td>
+              </tr>
+            {% else %}
+              <tr><td colspan="3" class="text-center text-muted small py-3">No bookings in this slot.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

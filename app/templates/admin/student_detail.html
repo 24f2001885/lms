@@ -1,10 +1,64 @@
-<!--
-FILE PURPOSE: ADM-12 student detail with bookings and history.
-PROMPT FOR LLM IMPLEMENTATION:
-1. Extend base_admin.html; profile card; table "Bookings and history" (examination, slot time, examiner, status badge, booked, cancelled); evaluation summary column only when published; audit history card; Temporary password card as in the examiner detail.
-2. Empty state "No bookings yet."
-DEBUGGING:
-<!-- DEBUG: student {{ user.id }} bookings {{ bookings|length }} -->
-OFFLINE DOCKER TEST CASES:
-- Cancelled and completed bookings are listed with their badges.
--->
+{% extends "admin/base_admin.html" %}
+{% import "macros/status_badge.html" as b %}
+
+{% block title %}{{ user.full_name }}{% endblock %}
+{% block page_title %}{{ user.full_name }}{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-6">
+    <!-- Profile Card -->
+    <div class="card border-0 shadow-sm p-4 mb-4">
+      <h2 class="h6 fw-bold text-primary mb-3">Student Profile</h2>
+      <dl class="row mb-0 small">
+        <dt class="col-sm-4 text-muted">Email</dt><dd class="col-sm-8">{{ user.email }}</dd>
+        <dt class="col-sm-4 text-muted">Roll Number</dt><dd class="col-sm-8"><code>{{ user.student_profile.roll_number or '-' }}</code></dd>
+        <dt class="col-sm-4 text-muted">Program</dt><dd class="col-sm-8">{{ user.student_profile.program or '-' }}</dd>
+        <dt class="col-sm-4 text-muted">Phone</dt><dd class="col-sm-8">{{ user.student_profile.contact_phone or '-' }}</dd>
+        <dt class="col-sm-4 text-muted">Registered</dt><dd class="col-sm-8">{{ user.created_at|localdt }}</dd>
+      </dl>
+    </div>
+
+    <!-- Temporary Password Card -->
+    <div class="card border-0 shadow-sm p-4">
+      <h2 class="h6 fw-bold text-primary mb-2">Temporary Password</h2>
+      <form method="POST" action="{{ url_for('admin.set_temporary_password', user_id=user.id) }}">
+        {{ temp_password_form.hidden_tag() }}
+        <div class="mb-3">
+          {{ temp_password_form.new_password(class="form-control form-control-sm", placeholder="Optional custom password") }}
+        </div>
+        <button type="submit" class="btn btn-warning btn-sm text-dark">Set Temporary Password</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Bookings & History Table -->
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm p-4 mb-4">
+      <h2 class="h6 fw-bold text-primary mb-3">Bookings & History</h2>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Exam</th>
+              <th>Slot Time</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for b_item in bookings %}
+              <tr>
+                <td class="fw-semibold">{{ b_item.examination.name }}</td>
+                <td class="small">{{ b_item.slot.start_at|localdt }}</td>
+                <td>{{ b.badge('booking', b_item.status) }}</td>
+              </tr>
+            {% else %}
+              <tr><td colspan="3" class="text-center text-muted small py-3">No bookings yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,71 +1,56 @@
-<!--
-FILE PURPOSE: Admin shell: left sidebar plus top bar (Design Plan section 2). Extends base.html by overriding the site_nav and layout blocks introduced in the P3 update.
-PROMPT FOR LLM IMPLEMENTATION:
-1. Extend base.html. Override block site_nav with a slim top bar showing the brand, the Admin's name and a Logout POST form with csrf.
-2. Override block layout with .admin-shell: an aside.admin-sidebar containing a nav aria-label="Admin" with groups and links: Overview (Dashboard), Courses, Examinations, Examiners, Students, Slots, Bookings, Search, History. Mark the current item with class active and aria-current="page" using request.endpoint. Then main#main-content.admin-content with the _flash.html include, a page header block (h1 from block page_title plus optional actions block) and block content.
-3. Do NOT add Tests, Proctoring or Payments entries (Tier 3). Do not add Evaluations (P6 adds it).
-4. On screens under 992px the sidebar is a normal collapsed block above content (off-canvas arrives in P10).
-5. Blocks provided to children: title, page_title, page_actions, content.
-DEBUGGING:
-<!-- DEBUG: admin shell endpoint={{ request.endpoint }} -->
-OFFLINE DOCKER TEST CASES:
-- The sidebar has exactly the 9 links above and the current page link has aria-current.
-- Page has one h1 (from page_title) and the skip link target exists.
--->
 {% extends "base.html" %}
 
-{% block extra_css %}
-<style>
-  .admin-sidebar {
-    background-color: #14283B;
-    min-height: calc(100vh - 120px);
-  }
-  .admin-sidebar .nav-link {
-    color: #CBD5E1;
-    padding: 0.65rem 1rem;
-    border-radius: 4px;
-    margin-bottom: 2px;
-    font-size: 0.9rem;
-  }
-  .admin-sidebar .nav-link:hover {
-    color: #FFFFFF;
-    background-color: rgba(255, 255, 255, 0.08);
-  }
-  .admin-sidebar .nav-link.active {
-    color: #FFFFFF;
-    background-color: #1F4E79;
-    font-weight: 600;
-  }
-</style>
+{% block site_nav %}
+<header>
+  <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #14283B;">
+    <div class="container-fluid px-3">
+      <a class="navbar-brand fw-bold text-white tracking-wide" href="{{ url_for('admin.dashboard') }}">
+        LMS Admin Console
+      </a>
+      <div class="d-flex align-items-center ms-auto">
+        <span class="text-white-50 small me-3 d-none d-sm-inline">
+          Signed in as <strong class="text-white">{{ current_user.full_name }}</strong>
+        </span>
+        <form action="{{ url_for('auth.logout') }}" method="POST" class="d-inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-outline-light btn-sm">Log out</button>
+        </form>
+      </div>
+    </div>
+  </nav>
+</header>
 {% endblock %}
 
-{% block content %}
-<div class="row g-4">
-  <!-- Left Administrative Navigation Sidebar -->
-  <aside class="col-lg-3 col-xl-2 d-none d-lg-block">
-    <div class="admin-sidebar p-3 rounded shadow-sm">
-      <div class="text-white-50 small fw-bold text-uppercase tracking-wider px-2 mb-2">Management</div>
-      <nav class="nav flex-column">
-        <a class="nav-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}" href="{{ url_for('admin.dashboard') }}">Dashboard</a>
-        <a class="nav-link {% if 'course' in request.endpoint %}active{% endif %}" href="{{ url_for('admin.courses') }}">Courses</a>
-        <a class="nav-link {% if 'exam' in request.endpoint and 'examiner' not in request.endpoint %}active{% endif %}" href="{{ url_for('admin.examinations') }}">Examinations</a>
-        <a class="nav-link {% if request.endpoint == 'admin.examiners' %}active{% endif %}" href="{{ url_for('admin.examiners') }}">Examiners</a>
-        <a class="nav-link {% if 'student' in request.endpoint %}active{% endif %}" href="{{ url_for('admin.students') }}">Students</a>
-      </nav>
+{% block layout %}
+<div class="admin-shell">
+  <!-- Sidebar -->
+  <aside class="admin-sidebar shadow-sm">
+    <div class="text-white-50 small fw-bold text-uppercase px-2 mb-2">Management</div>
+    <nav class="nav flex-column" aria-label="Admin Navigation">
+      <a class="nav-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}" {% if request.endpoint == 'admin.dashboard' %}aria-current="page"{% endif %} href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+      <a class="nav-link {% if 'course' in request.endpoint %}active{% endif %}" {% if 'course' in request.endpoint %}aria-current="page"{% endif %} href="{{ url_for('admin.courses') }}">Courses</a>
+      <a class="nav-link {% if 'examination' in request.endpoint or 'rubric' in request.endpoint %}active{% endif %}" {% if 'examination' in request.endpoint %}aria-current="page"{% endif %} href="{{ url_for('admin.examinations') }}">Examinations</a>
+      <a class="nav-link {% if 'examiner' in request.endpoint and 'slot' not in request.endpoint %}active{% endif %}" {% if 'examiner' in request.endpoint %}aria-current="page"{% endif %} href="{{ url_for('admin.examiners') }}">Examiners</a>
+      <a class="nav-link {% if 'student' in request.endpoint %}active{% endif %}" {% if 'student' in request.endpoint %}aria-current="page"{% endif %} href="{{ url_for('admin.students') }}">Students</a>
+    </nav>
 
-      <div class="text-white-50 small fw-bold text-uppercase tracking-wider px-2 mt-4 mb-2">Operations</div>
-      <nav class="nav flex-column">
-        <a class="nav-link {% if 'slot' in request.endpoint %}active{% endif %}" href="{{ url_for('admin.slots') }}">Slots</a>
-        <a class="nav-link {% if 'booking' in request.endpoint %}active{% endif %}" href="{{ url_for('admin.bookings') }}">Bookings</a>
-        <a class="nav-link {% if request.endpoint == 'admin.search' %}active{% endif %}" href="{{ url_for('admin.search') }}">Search</a>
-        <a class="nav-link {% if request.endpoint == 'admin.history' %}active{% endif %}" href="{{ url_for('admin.history') }}">Audit History</a>
-      </nav>
-    </div>
+    <div class="text-white-50 small fw-bold text-uppercase px-2 mt-4 mb-2">Operations</div>
+    <nav class="nav flex-column">
+      <a class="nav-link {% if 'slot' in request.endpoint %}active{% endif %}" {% if 'slot' in request.endpoint %}aria-current="page"{% endif %} href="{{ url_for('admin.slots') }}">Slots</a>
+      <a class="nav-link {% if 'booking' in request.endpoint %}active{% endif %}" {% if 'booking' in request.endpoint %}aria-current="page"{% endif %} href="{{ url_for('admin.bookings') }}">Bookings</a>
+      <a class="nav-link {% if request.endpoint == 'admin.search' %}active{% endif %}" {% if request.endpoint == 'admin.search' %}aria-current="page"{% endif %} href="{{ url_for('admin.search') }}">Search</a>
+      <a class="nav-link {% if request.endpoint == 'admin.history' %}active{% endif %}" {% if request.endpoint == 'admin.history' %}aria-current="page"{% endif %} href="{{ url_for('admin.history') }}">History</a>
+    </nav>
   </aside>
 
-  <!-- Main Content Area -->
-  <section class="col-lg-9 col-xl-10">
-    {% block admin_content %}{% endblock %}
-  </section>
+  <!-- Admin Main Content -->
+  <main id="main-content" class="admin-content">
+    {% include "_flash.html" %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1 class="h3 fw-bold text-primary mb-0">{% block page_title %}{% endblock %}</h1>
+      <div>{% block page_actions %}{% endblock %}</div>
+    </div>
+    {% block content %}{% endblock %}
+  </main>
 </div>
 {% endblock %}

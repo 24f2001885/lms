@@ -1,10 +1,54 @@
-<!--
-FILE PURPOSE: Booking detail for the Admin (read-only in P3; P6 adds reschedule and cancel actions).
-PROMPT FOR LLM IMPLEMENTATION:
-1. Extend base_admin.html; summary card (student link, examination, slot, examiner, status badge, booked, cancelled and by whom, rescheduled-from slot); evaluation summary when present (status badge, total, remarks only for Admin); audit history list for entity booking.
-2. Wrap the actions area in a Jinja block named booking_actions that is empty in P3, so the P6 update only fills the block.
-DEBUGGING:
-<!-- DEBUG: booking {{ booking.id }} status {{ booking.status }} -->
-OFFLINE DOCKER TEST CASES:
-- All booking fields render; the page has no action buttons in P3.
--->
+{% extends "admin/base_admin.html" %}
+{% import "macros/status_badge.html" as b %}
+
+{% block title %}Booking #{{ booking.id }}{% endblock %}
+{% block page_title %}Booking #{{ booking.id }} {{ b.badge('booking', booking.status) }}{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm p-4 mb-4">
+      <h2 class="h6 fw-bold text-primary mb-3">Booking Details</h2>
+      <dl class="row mb-0 small">
+        <dt class="col-sm-4 text-muted">Student</dt>
+        <dd class="col-sm-8"><a href="{{ url_for('admin.student_detail', student_id=booking.student.id) }}" class="fw-semibold">{{ booking.student.full_name }}</a> ({{ booking.student.email }})</dd>
+        
+        <dt class="col-sm-4 text-muted">Examination</dt><dd class="col-sm-8">{{ booking.examination.name }}</dd>
+        <dt class="col-sm-4 text-muted">Slot Time</dt><dd class="col-sm-8">{{ booking.slot.start_at|localdt }} &rarr; {{ booking.slot.end_at|localdt }}</dd>
+        <dt class="col-sm-4 text-muted">Examiner</dt><dd class="col-sm-8">{{ booking.slot.examiner.full_name }}</dd>
+        <dt class="col-sm-4 text-muted">Booked At</dt><dd class="col-sm-8">{{ booking.booked_at|localdt }}</dd>
+        {% if booking.cancelled_at %}
+          <dt class="col-sm-4 text-muted">Cancelled At</dt><dd class="col-sm-8">{{ booking.cancelled_at|localdt }}</dd>
+        {% endif %}
+      </dl>
+
+      {# Booking actions block: empty in P3; P6 fills actions #}
+      {% block booking_actions %}{% endblock %}
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    {% if booking.evaluation %}
+      <div class="card border-0 shadow-sm p-4 mb-4">
+        <h2 class="h6 fw-bold text-primary mb-2">Evaluation Summary</h2>
+        <div>Score: <strong>{{ booking.evaluation.total_marks|money_marks }}</strong> / {{ booking.examination.max_marks|money_marks }}</div>
+        <div>Status: {{ b.badge('evaluation', booking.evaluation.status) }}</div>
+      </div>
+    {% endif %}
+
+    <div class="card border-0 shadow-sm p-4">
+      <h2 class="h6 fw-bold text-primary mb-3">Audit Log for this Booking</h2>
+      <ul class="list-group list-group-flush small">
+        {% for a in history %}
+          <li class="list-group-item px-0 py-2">
+            <div class="d-flex justify-content-between"><code>{{ a.action }}</code><span>{{ a.created_at|localdt }}</span></div>
+            {% if a.details %}<div class="text-muted">{{ a.details }}</div>{% endif %}
+          </li>
+        {% else %}
+          <li class="list-group-item px-0 text-muted">No audit events recorded for this booking.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

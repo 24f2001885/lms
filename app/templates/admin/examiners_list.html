@@ -1,24 +1,32 @@
-<!--
-FILE PURPOSE: ADM-09 examiners list with filters.
-PROMPT FOR LLM IMPLEMENTATION:
-1. Extend base_admin.html; page_title "Examiners"; page_actions "Add examiner". Filter bar: q and status (All, Pending, Approved, Inactive, Rejected) shown as pill links with counts.
-2. Table: Name (link), Email, Department, Account badge (account domain), Registered date, Quick actions (Approve for pending). Empty state per filter.
-DEBUGGING:
-<!-- DEBUG: examiner filter {{ status }} total {{ page.total }} -->
-OFFLINE DOCKER TEST CASES:
-- The pending pill shows the pending count and the list shows only pending rows when selected.
-- Approve button posts to /admin/examiners/<id>/approve with csrf.
--->
 {% extends "admin/base_admin.html" %}
-{% block title %}Examiners Management{% endblock %}
+{% import "macros/status_badge.html" as b %}
+{% import "macros/pagination.html" as p %}
 
-{% block admin_content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1 class="h3 fw-bold text-primary mb-0">Faculty Examiners</h1>
-  <div class="btn-group btn-group-sm">
-    <a href="{{ url_for('admin.examiners', status='all') }}" class="btn {% if current_status == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">All</a>
-    <a href="{{ url_for('admin.examiners', status='pending') }}" class="btn {% if current_status == 'pending' %}btn-warning{% else %}btn-outline-warning text-dark{% endif %}">Pending Approval</a>
-    <a href="{{ url_for('admin.examiners', status='approved') }}" class="btn {% if current_status == 'approved' %}btn-success{% else %}btn-outline-success{% endif %}">Approved</a>
+{% block title %}Examiners{% endblock %}
+{% block page_title %}Examiners{% endblock %}
+{% block page_actions %}
+  <a href="{{ url_for('admin.new_examiner') }}" class="btn btn-primary btn-sm">+ Add examiner</a>
+{% endblock %}
+
+{% block content %}
+<!-- Filter Pills (ADM-09) -->
+<div class="card border-0 shadow-sm p-3 mb-3">
+  <div class="d-flex flex-wrap gap-2 align-items-center">
+    <a href="{{ url_for('admin.examiners', status='all') }}" class="btn btn-sm {% if status == 'all' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+      All <span class="badge bg-light text-dark ms-1">{{ counts.all }}</span>
+    </a>
+    <a href="{{ url_for('admin.examiners', status='pending') }}" class="btn btn-sm {% if status == 'pending' %}btn-warning text-dark{% else %}btn-outline-warning text-dark{% endif %}">
+      Pending Approval <span class="badge bg-dark ms-1">{{ counts.pending }}</span>
+    </a>
+    <a href="{{ url_for('admin.examiners', status='approved') }}" class="btn btn-sm {% if status == 'approved' %}btn-success{% else %}btn-outline-success{% endif %}">
+      Approved <span class="badge bg-light text-dark ms-1">{{ counts.approved }}</span>
+    </a>
+    <a href="{{ url_for('admin.examiners', status='inactive') }}" class="btn btn-sm {% if status == 'inactive' %}btn-danger{% else %}btn-outline-danger{% endif %}">
+      Inactive <span class="badge bg-light text-dark ms-1">{{ counts.inactive }}</span>
+    </a>
+    <a href="{{ url_for('admin.examiners', status='rejected') }}" class="btn btn-sm {% if status == 'rejected' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">
+      Rejected <span class="badge bg-light text-dark ms-1">{{ counts.rejected }}</span>
+    </a>
   </div>
 </div>
 
@@ -27,55 +35,39 @@ OFFLINE DOCKER TEST CASES:
     <table class="table table-hover align-middle mb-0">
       <thead class="table-light">
         <tr>
-          <th>ID</th>
           <th>Name</th>
           <th>Email</th>
           <th>Department</th>
           <th>Approval</th>
           <th>Status</th>
-          <th>Actions</th>
+          <th>Registered</th>
+          <th>Quick Actions</th>
         </tr>
       </thead>
       <tbody>
-        {% for ex in examiners %}
+        {% for ex in page.items %}
           <tr>
-            <td>{{ ex.id }}</td>
-            <td class="fw-semibold">{{ ex.full_name }}</td>
+            <td><a href="{{ url_for('admin.examiner_detail', examiner_id=ex.id) }}" class="fw-bold text-decoration-none">{{ ex.full_name }}</a></td>
             <td>{{ ex.email }}</td>
             <td>{{ ex.examiner_profile.department if ex.examiner_profile else '-' }}</td>
-            <td>
-              {% if ex.approval_status == 'approved' %}
-                <span class="badge bg-success">Approved</span>
-              {% else %}
-                <span class="badge bg-warning text-dark">Pending</span>
-              {% endif %}
-            </td>
-            <td>
-              {% if ex.is_active %}
-                <span class="badge bg-success">Active</span>
-              {% else %}
-                <span class="badge bg-danger">Deactivated</span>
-              {% endif %}
-            </td>
+            <td>{{ b.badge('account', ex.approval_status) }}</td>
+            <td>{{ b.badge('account', 'approved' if ex.is_active else 'inactive') }}</td>
+            <td class="small">{{ ex.created_at|localdt('%d %b %Y') }}</td>
             <td>
               {% if ex.approval_status == 'pending' %}
-                <form method="POST" action="{{ url_for('admin.approve_examiner', user_id=ex.id) }}" class="d-inline">
+                <form method="POST" action="{{ url_for('admin.approve_examiner', examiner_id=ex.id) }}" class="d-inline">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button type="submit" class="btn btn-success btn-sm py-0">Approve</button>
-                </form>
-              {% elif ex.is_active %}
-                <form method="POST" action="{{ url_for('admin.deactivate_examiner', user_id=ex.id) }}" class="d-inline">
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                  <button type="submit" class="btn btn-outline-danger btn-sm py-0">Deactivate</button>
                 </form>
               {% endif %}
             </td>
           </tr>
         {% else %}
-          <tr><td colspan="7" class="text-center text-muted py-3">No examiners found matching filter.</td></tr>
+          <tr><td colspan="7" class="text-center text-muted py-4">No examiners found matching filter.</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 </div>
+{{ p.pager(page, 'admin.examiners') }}
 {% endblock %}

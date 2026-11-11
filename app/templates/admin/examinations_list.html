@@ -1,22 +1,38 @@
-<!--
-FILE PURPOSE: ADM-04 examinations table with filters.
-PROMPT FOR LLM IMPLEMENTATION:
-1. Extend base_admin.html; page_title "Examinations"; page_actions "New examination". Filter bar: q, course select, type select, status select, "Show deleted" checkbox.
-2. Table: Name (link to detail), Course code, Type, Status badge (examination domain), Booking window (localdt start - end), Slot creation and Booking switch badges (switch domain, effective state from window_state), Actions (Edit, Delete via modal). Deleted rows show the Deleted badge and no actions except View.
-3. Cards instead of table rows under 576px are handled in P10; for now keep the table inside .table-responsive.
-DEBUGGING:
-<!-- DEBUG: exams total {{ page.total }} filters {{ filters }} -->
-OFFLINE DOCKER TEST CASES:
-- Default list hides deleted examinations; show_deleted=1 reveals them with the badge.
-- Status filter "booking_open" returns only matching rows.
--->
 {% extends "admin/base_admin.html" %}
-{% block title %}Examinations{% endblock %}
+{% import "macros/status_badge.html" as b %}
+{% import "macros/pagination.html" as p %}
+{% import "macros/modals.html" as m %}
 
-{% block admin_content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1 class="h3 fw-bold text-primary mb-0">Examinations</h1>
-  <a href="{{ url_for('admin.create_examination') }}" class="btn btn-primary btn-sm">+ New Examination</a>
+{% block title %}Examinations{% endblock %}
+{% block page_title %}Examinations{% endblock %}
+{% block page_actions %}
+  <a href="{{ url_for('admin.new_examination') }}" class="btn btn-primary btn-sm">+ New examination</a>
+{% endblock %}
+
+{% block content %}
+<div class="card border-0 shadow-sm p-3 mb-3">
+  <form method="GET" action="{{ url_for('admin.examinations') }}" class="table-filter-bar">
+    <input type="text" name="q" class="form-control form-control-sm" style="max-width: 180px;" placeholder="Search name..." value="{{ request.args.get('q', '') }}">
+    <select name="course_id" class="form-select form-select-sm" style="max-width: 160px;">
+      <option value="">All Courses</option>
+      {% for c in courses %}
+        <option value="{{ c.id }}" {% if request.args.get('course_id')|int == c.id %}selected{% endif %}>{{ c.code }}</option>
+      {% endfor %}
+    </select>
+    <select name="status" class="form-select form-select-sm" style="max-width: 150px;">
+      <option value="">All Statuses</option>
+      <option value="draft" {% if request.args.get('status') == 'draft' %}selected{% endif %}>Draft</option>
+      <option value="slot_creation" {% if request.args.get('status') == 'slot_creation' %}selected{% endif %}>Slot Creation</option>
+      <option value="booking_open" {% if request.args.get('status') == 'booking_open' %}selected{% endif %}>Booking Open</option>
+      <option value="closed" {% if request.args.get('status') == 'closed' %}selected{% endif %}>Closed</option>
+      <option value="completed" {% if request.args.get('status') == 'completed' %}selected{% endif %}>Completed</option>
+    </select>
+    <div class="form-check ms-2">
+      <input class="form-check-input" type="checkbox" name="show_deleted" value="1" id="showDeleted" {% if show_deleted %}checked{% endif %}>
+      <label class="form-check-label small" for="showDeleted">Show deleted</label>
+    </div>
+    <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+  </form>
 </div>
 
 <div class="card border-0 shadow-sm">
@@ -24,35 +40,45 @@ OFFLINE DOCKER TEST CASES:
     <table class="table table-hover align-middle mb-0">
       <thead class="table-light">
         <tr>
-          <th>ID</th>
-          <th>Name</th>
-          <th>Course</th>
-          <th>Type</th>
-          <th>Duration</th>
-          <th>Max Marks</th>
-          <th>Status</th>
-          <th>Actions</th>
+          <th scope="col">Name</th>
+          <th scope="col">Course</th>
+          <th scope="col">Type</th>
+          <th scope="col">Status</th>
+          <th scope="col">Booking Window</th>
+          <th scope="col">Slot Creation</th>
+          <th scope="col">Booking Switch</th>
+          <th scope="col">Actions</th>
         </tr>
       </thead>
       <tbody>
-        {% for exam in examinations %}
+        {% for exam in page.items %}
+          {% set ws = window_states.get(exam.id) %}
           <tr>
-            <td>{{ exam.id }}</td>
-            <td class="fw-semibold">{{ exam.name }}</td>
+            <td>
+              <a href="{{ url_for('admin.examination_detail', exam_id=exam.id) }}" class="fw-bold text-decoration-none">{{ exam.name }}</a>
+              {% if exam.is_deleted %}{{ b.deleted_badge() }}{% endif %}
+            </td>
             <td>{{ exam.course.code }}</td>
             <td><span class="badge bg-secondary">{{ exam.exam_type|capitalize }}</span></td>
-            <td>{{ exam.duration_minutes }} min</td>
-            <td>{{ exam.max_marks }}</td>
-            <td><span class="badge bg-info text-dark">{{ exam.status|capitalize }}</span></td>
+            <td>{{ b.badge('examination', exam.status) }}</td>
+            <td class="small">{{ exam.booking_start|localdt }} &rarr; {{ exam.booking_end|localdt }}</td>
+            <td>{{ b.badge('switch', ws.slot_creation.label) }}</td>
+            <td>{{ b.badge('switch', ws.booking.label) }}</td>
             <td>
-              <a href="{{ url_for('admin.examination_detail', exam_id=exam.id) }}" class="btn btn-outline-primary btn-sm">Manage</a>
+              {% if not exam.is_deleted %}
+                <a href="{{ url_for('admin.edit_examination', exam_id=exam.id) }}" class="btn btn-outline-secondary btn-sm py-0">Edit</a>
+                {{ m.confirm_action('del-exam-' ~ exam.id, 'Delete', 'Delete Examination', 'Soft-delete this examination? Past records will be preserved.', url_for('admin.delete_examination', exam_id=exam.id), confirm_form) }}
+              {% else %}
+                <a href="{{ url_for('admin.examination_detail', exam_id=exam.id) }}" class="btn btn-outline-secondary btn-sm py-0">View</a>
+              {% endif %}
             </td>
           </tr>
         {% else %}
-          <tr><td colspan="8" class="text-center text-muted py-4">No examinations configured yet.</td></tr>
+          <tr><td colspan="8" class="text-center text-muted py-4">No examinations found.</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 </div>
+{{ p.pager(page, 'admin.examinations') }}
 {% endblock %}

@@ -1,100 +1,99 @@
-<!--
-FILE PURPOSE: ADM-01 dashboard with six total cards.
-PROMPT FOR LLM IMPLEMENTATION:
-1. Extend admin/base_admin.html; page_title "Dashboard". A responsive grid (3 columns on lg, 2 on md, 1 on xs) of six .stat-card elements: Courses, Examinations, Examiners (sub-line "N pending approval" as a link when N > 0), Students, Slots, Bookings (sub-line "N cancelled"). Each card is a link to the matching list page.
-2. Below: "Recent activity" table of the last five audit rows (time via localdt, actor name or "System", action, entity).
-3. Reserve an empty div id="charts-widget" for P8 (comment only, no content).
-DEBUGGING:
-<!-- DEBUG: totals {{ totals }} -->
-OFFLINE DOCKER TEST CASES:
-- Six cards present with the right numbers; the pending-approval link points to /admin/examiners?status=pending.
--->
 {% extends "admin/base_admin.html" %}
-{% block title %}Admin Dashboard{% endblock %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
 
-{% block admin_content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1 class="h3 fw-bold text-primary mb-0">System Overview</h1>
-  <a href="{{ url_for('admin.create_examination') }}" class="btn btn-primary btn-sm">+ New Examination</a>
-</div>
-
-<!-- Six Key Metrics Cards (ADM-01) -->
+{% block content %}
+<!-- Six Total Cards (ADM-01) -->
 <div class="row g-3 mb-4">
-  <div class="col-sm-6 col-xl-4">
-    <div class="card border-0 shadow-sm p-3">
-      <div class="text-secondary small fw-semibold text-uppercase">Total Courses</div>
-      <div class="h2 fw-bold text-primary mb-0 mt-1">{{ stats.courses }}</div>
-    </div>
+  <div class="col-sm-6 col-lg-4">
+    <a href="{{ url_for('admin.courses') }}" class="text-decoration-none">
+      <div class="stat-card">
+        <div class="text-secondary small fw-semibold text-uppercase">Courses</div>
+        <div class="h2 fw-bold text-primary mb-0 mt-1">{{ totals.courses }}</div>
+      </div>
+    </a>
   </div>
-  <div class="col-sm-6 col-xl-4">
-    <div class="card border-0 shadow-sm p-3">
-      <div class="text-secondary small fw-semibold text-uppercase">Active Examinations</div>
-      <div class="h2 fw-bold text-primary mb-0 mt-1">{{ stats.examinations }}</div>
-    </div>
+  <div class="col-sm-6 col-lg-4">
+    <a href="{{ url_for('admin.examinations') }}" class="text-decoration-none">
+      <div class="stat-card">
+        <div class="text-secondary small fw-semibold text-uppercase">Examinations</div>
+        <div class="h2 fw-bold text-primary mb-0 mt-1">{{ totals.examinations }}</div>
+      </div>
+    </a>
   </div>
-  <div class="col-sm-6 col-xl-4">
-    <div class="card border-0 shadow-sm p-3">
-      <div class="text-secondary small fw-semibold text-uppercase">Approved Examiners</div>
-      <div class="h2 fw-bold text-success mb-0 mt-1">{{ stats.examiners_approved }}</div>
-      {% if stats.examiners_pending > 0 %}
-        <div class="small text-warning mt-1">{{ stats.examiners_pending }} pending approval</div>
-      {% endif %}
-    </div>
+  <div class="col-sm-6 col-lg-4">
+    <a href="{{ url_for('admin.examiners') }}" class="text-decoration-none">
+      <div class="stat-card">
+        <div class="text-secondary small fw-semibold text-uppercase">Examiners</div>
+        <div class="h2 fw-bold text-primary mb-0 mt-1">{{ totals.examiners }}</div>
+        {% if totals.examiners_pending > 0 %}
+          <div class="small text-warning fw-semibold mt-1">
+            <a href="{{ url_for('admin.examiners', status='pending') }}" class="text-warning text-decoration-none">
+              {{ totals.examiners_pending }} pending approval
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    </a>
   </div>
-  <div class="col-sm-6 col-xl-4">
-    <div class="card border-0 shadow-sm p-3">
-      <div class="text-secondary small fw-semibold text-uppercase">Enrolled Students</div>
-      <div class="h2 fw-bold text-primary mb-0 mt-1">{{ stats.students }}</div>
-    </div>
+  <div class="col-sm-6 col-lg-4">
+    <a href="{{ url_for('admin.students') }}" class="text-decoration-none">
+      <div class="stat-card">
+        <div class="text-secondary small fw-semibold text-uppercase">Students</div>
+        <div class="h2 fw-bold text-primary mb-0 mt-1">{{ totals.students }}</div>
+      </div>
+    </a>
   </div>
-  <div class="col-sm-6 col-xl-4">
-    <div class="card border-0 shadow-sm p-3">
-      <div class="text-secondary small fw-semibold text-uppercase">Scheduled Slots</div>
-      <div class="h2 fw-bold text-primary mb-0 mt-1">{{ stats.slots }}</div>
-    </div>
+  <div class="col-sm-6 col-lg-4">
+    <a href="{{ url_for('admin.slots') }}" class="text-decoration-none">
+      <div class="stat-card">
+        <div class="text-secondary small fw-semibold text-uppercase">Slots</div>
+        <div class="h2 fw-bold text-primary mb-0 mt-1">{{ totals.slots }}</div>
+      </div>
+    </a>
   </div>
-  <div class="col-sm-6 col-xl-4">
-    <div class="card border-0 shadow-sm p-3">
-      <div class="text-secondary small fw-semibold text-uppercase">Total Bookings</div>
-      <div class="h2 fw-bold text-primary mb-0 mt-1">{{ stats.bookings }}</div>
-    </div>
+  <div class="col-sm-6 col-lg-4">
+    <a href="{{ url_for('admin.bookings') }}" class="text-decoration-none">
+      <div class="stat-card">
+        <div class="text-secondary small fw-semibold text-uppercase">Bookings</div>
+        <div class="h2 fw-bold text-primary mb-0 mt-1">{{ totals.bookings }}</div>
+        {% if totals.cancelled_bookings > 0 %}
+          <div class="small text-muted mt-1">{{ totals.cancelled_bookings }} cancelled</div>
+        {% endif %}
+      </div>
+    </a>
   </div>
 </div>
 
-<!-- Recent Examinations Table -->
-<div class="card border-0 shadow-sm mb-4">
-  <div class="card-header bg-white py-3">
-    <h2 class="h6 fw-bold mb-0 text-primary">Recent Examinations</h2>
+<!-- Recent Activity Table -->
+<div class="card border-0 shadow-sm">
+  <div class="card-header bg-white py-3 border-bottom">
+    <h2 class="h6 fw-bold mb-0 text-primary">Recent Activity</h2>
   </div>
   <div class="table-responsive">
-    <table class="table table-hover align-middle mb-0">
+    <table class="table table-hover align-middle mb-0 small">
       <thead class="table-light">
         <tr>
-          <th>ID</th>
-          <th>Name</th>
-          <th>Course</th>
-          <th>Type</th>
-          <th>Status</th>
-          <th>Actions</th>
+          <th>Time (Local)</th>
+          <th>Actor</th>
+          <th>Action</th>
+          <th>Entity</th>
         </tr>
       </thead>
       <tbody>
-        {% for exam in recent_exams %}
+        {% for a in recent_audits %}
           <tr>
-            <td>{{ exam.id }}</td>
-            <td class="fw-semibold">{{ exam.name }}</td>
-            <td>{{ exam.course.code }}</td>
-            <td><span class="badge bg-secondary">{{ exam.exam_type|capitalize }}</span></td>
-            <td><span class="badge bg-info text-dark">{{ exam.status|capitalize }}</span></td>
-            <td>
-              <a href="{{ url_for('admin.examination_detail', exam_id=exam.id) }}" class="btn btn-outline-primary btn-sm">Manage</a>
-            </td>
+            <td>{{ a.created_at|localdt }}</td>
+            <td><strong>{{ a.actor.full_name if a.actor else 'System' }}</strong></td>
+            <td><code>{{ a.action }}</code></td>
+            <td>{{ a.entity_type }} #{{ a.entity_id }}</td>
           </tr>
         {% else %}
-          <tr><td colspan="6" class="text-center text-muted py-3">No examinations created yet.</td></tr>
+          <tr><td colspan="4" class="text-center text-muted py-3">No activity recorded yet.</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 </div>
+<!-- P8 Charts Widget Placeholder: <div id="charts-widget"></div> -->
 {% endblock %}

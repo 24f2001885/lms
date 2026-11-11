@@ -11,4 +11,25 @@ OFFLINE DOCKER TEST CASES:
 - Admin gets 200 with six stat cards labelled Courses, Examinations, Examiners, Students, Slots, Bookings and numbers equal to the fixtures.
 - Student and examiner get 403; anonymous 302 to /login.
 - Pending approval card shows the right number and links to the filtered examiner list.
+
+app/blueprints/admin/dashboard.py - ADM-01 Admin dashboard with six totals.
 """
+
+from flask import render_template
+
+from app.blueprints.admin import admin_bp
+from app.security.decorators import admin_required
+from app.services import admin_service, audit_service
+
+
+@admin_bp.route("/dashboard", methods=["GET"])
+@admin_required
+def dashboard():
+    """Display the 6 main metrics and recent activity."""
+    totals = admin_service.dashboard_totals()
+    recent_audits = audit_service.recent(limit=5)
+    return render_template(
+        "admin/dashboard.html",
+        totals=totals,
+        recent_audits=recent_audits,
+    )

@@ -1,6 +1,8 @@
 import os
 from decimal import Decimal
+
 from flask import Flask
+
 from app.commands import register_cli
 from app.config import get_config
 from app.errors import register_error_handlers
@@ -12,39 +14,39 @@ from app.services.windows import format_local
 
 def create_app(config_name: str | None = None) -> Flask:
     """Construct, configure, and return the LMS Flask application instance."""
-    app = Flask(__name__, instance_relative_config=True)
+    flask_app = Flask(__name__, instance_relative_config=True)
 
     # 1. Load configuration
     config_class = get_config(config_name)
-    app.config.from_object(config_class)
-    os.makedirs(app.instance_path, exist_ok=True)
+    flask_app.config.from_object(config_class)
+    os.makedirs(flask_app.instance_path, exist_ok=True)
 
     # 2. Structured logging & request tracing
-    setup_logging(app)
-    register_request_logging(app)
+    setup_logging(flask_app)
+    register_request_logging(flask_app)
 
     # 3. Database extensions and SQLite pragmas
-    init_extensions(app)
+    init_extensions(flask_app)
 
     # 4. Global CSRF protection
-    csrf.init_app(app)
+    csrf.init_app(flask_app)
 
     # 5. Model metadata registration
     import app.models  # noqa: F401
 
     # 6. CLI registration (flask init-db)
-    register_cli(app)
+    register_cli(flask_app)
 
     # 7. Register error handlers
-    register_error_handlers(app)
+    register_error_handlers(flask_app)
 
     # 8. Request authentication hook
-    @app.before_request
+    @flask_app.before_request
     def _authenticate_request():
         load_current_user()
 
     # 9. Context processor injecting current_user and helpers into templates
-    @app.context_processor
+    @flask_app.context_processor
     def inject_template_globals():
         return {
             "current_user": get_current_user(),
@@ -52,12 +54,12 @@ def create_app(config_name: str | None = None) -> Flask:
         }
 
     # 10. Custom Jinja Template Filters (P3 Update)
-    @app.template_filter("localdt")
+    @flask_app.template_filter("localdt")
     def localdt_filter(dt, fmt="%d %b %Y, %H:%M"):
         """Format naive UTC datetime as local timezone string."""
         return format_local(dt, fmt=fmt)
 
-    @app.template_filter("money_marks")
+    @flask_app.template_filter("money_marks")
     def money_marks_filter(val):
         """Format marks/numbers stripping trailing decimal zeroes."""
         if val is None:
@@ -74,9 +76,9 @@ def create_app(config_name: str | None = None) -> Flask:
     from app.blueprints.examiner import examiner_bp
     from app.blueprints.student import student_bp
 
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(admin_bp)
-    app.register_blueprint(examiner_bp)
-    app.register_blueprint(student_bp)
+    flask_app.register_blueprint(auth_bp)
+    flask_app.register_blueprint(admin_bp)
+    flask_app.register_blueprint(examiner_bp)
+    flask_app.register_blueprint(student_bp)
 
-    return app
+    return flask_app

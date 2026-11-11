@@ -1,81 +1,59 @@
-<!--
-FILE PURPOSE: ADM-02 courses table.
-PROMPT FOR LLM IMPLEMENTATION:
-1. Extend base_admin.html; page_title "Courses"; page_actions: primary button "New course". Filter bar (GET): search q, status select, Filter button.
-2. Table table-hover align-middle with th scope=col: Code, Name, Status badge, Examinations (count), Actions (Edit link, Delete via confirm_action modal). Use macros pager and badge. Empty state "No courses yet." with a New course button.
-3. Delete modal message explains that courses with examinations cannot be deleted.
-DEBUGGING:
-<!-- DEBUG: courses total {{ page.total }} -->
-OFFLINE DOCKER TEST CASES:
-- 25 courses show a pager; Delete opens a modal whose form posts to /admin/courses/<id>/delete.
--->
 {% extends "admin/base_admin.html" %}
-{% import "macros/forms.html" as f %}
+{% import "macros/status_badge.html" as b %}
+{% import "macros/pagination.html" as p %}
+{% import "macros/modals.html" as m %}
 
 {% block title %}Courses{% endblock %}
+{% block page_title %}Courses{% endblock %}
+{% block page_actions %}
+  <a href="{{ url_for('admin.new_course') }}" class="btn btn-primary btn-sm">+ New course</a>
+{% endblock %}
 
-{% block admin_content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1 class="h3 fw-bold text-primary mb-0">Academic Courses</h1>
+{% block content %}
+<!-- Filter Bar -->
+<div class="card border-0 shadow-sm p-3 mb-3">
+  <form method="GET" action="{{ url_for('admin.courses') }}" class="table-filter-bar">
+    <input type="text" name="q" class="form-control form-control-sm" style="max-width: 240px;" placeholder="Search code or name..." value="{{ q }}">
+    <select name="status" class="form-select form-select-sm" style="max-width: 140px;">
+      <option value="">All Statuses</option>
+      <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+      <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+    </select>
+    <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+  </form>
 </div>
 
-<div class="row g-4">
-  <!-- Course Creation Form -->
-  <div class="col-lg-4">
-    <div class="card border-0 shadow-sm p-3">
-      <h2 class="h6 fw-bold text-primary mb-3">Add New Course</h2>
-      <form method="POST" action="{{ url_for('admin.courses') }}">
-        {{ form.hidden_tag() }}
-        {{ f.render_field(form.code, placeholder="e.g. CS2003") }}
-        {{ f.render_field(form.name, placeholder="e.g. Modern App Dev I") }}
-        {{ f.render_field(form.description, placeholder="Brief syllabus or overview...") }}
-        {{ f.render_field(form.status) }}
-        <button type="submit" class="btn btn-primary w-100">Create Course</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- Course Directory Table -->
-  <div class="col-lg-8">
-    <div class="card border-0 shadow-sm">
-      <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="table-light">
-            <tr>
-              <th>Code</th>
-              <th>Name</th>
-              <th>Status</th>
-              <th>Exams</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for c in courses %}
-              <tr>
-                <td class="fw-bold">{{ c.code }}</td>
-                <td>{{ c.name }}</td>
-                <td>
-                  {% if c.status == 'active' %}
-                    <span class="badge bg-success">Active</span>
-                  {% else %}
-                    <span class="badge bg-secondary">Inactive</span>
-                  {% endif %}
-                </td>
-                <td>{{ c.examinations|length }}</td>
-                <td>
-                  <form method="POST" action="{{ url_for('admin.toggle_course', course_id=c.id) }}" class="d-inline">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn btn-outline-secondary btn-sm">Toggle</button>
-                  </form>
-                </td>
-              </tr>
-            {% else %}
-              <tr><td colspan="5" class="text-center text-muted py-3">No courses registered yet.</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
+<!-- Table -->
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th scope="col">Code</th>
+          <th scope="col">Name</th>
+          <th scope="col">Status</th>
+          <th scope="col">Examinations</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in page.items %}
+          <tr>
+            <td class="fw-bold">{{ c.code }}</td>
+            <td>{{ c.name }}</td>
+            <td>{{ b.badge('generic', c.status) }}</td>
+            <td>{{ c.examinations|length }}</td>
+            <td>
+              <a href="{{ url_for('admin.edit_course', course_id=c.id) }}" class="btn btn-outline-secondary btn-sm me-1">Edit</a>
+              {{ m.confirm_action('del-course-' ~ c.id, 'Delete', 'Delete Course', 'Are you sure you want to delete course ' ~ c.code ~ '? Courses with examinations cannot be deleted.', url_for('admin.delete_course', course_id=c.id), confirm_form) }}
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="5" class="text-center text-muted py-4">No courses yet. <a href="{{ url_for('admin.new_course') }}">Create a course</a>.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 </div>
+{{ p.pager(page, 'admin.courses') }}
 {% endblock %}

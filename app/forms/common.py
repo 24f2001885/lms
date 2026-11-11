@@ -1,13 +1,46 @@
 """
-FILE PURPOSE: Tiny shared forms used by every role (CSRF-only POST actions and list filters).
-DEPENDS ON: flask_wtf, wtforms.
-PROMPT FOR LLM IMPLEMENTATION:
-1. ConfirmForm(FlaskForm) with no fields: used for every state-changing POST that needs no input (approve, delete, toggle, book, cancel). It exists so each such button is a real form carrying the CSRF token; the view calls form.validate_on_submit().
-2. FilterForm base: a FlaskForm subclass with meta csrf = False for GET filter bars, plus helper parse_page(request.args) returning an int >= 1 (default 1) and per_page clamped to 1..100 (default 20). Invalid values fall back to the defaults, never raise.
-3. Nothing else; no business rules.
-DEBUGGING:
-# print(f"[DEBUG] ConfirmForm valid={form.validate_on_submit()} errors={form.errors}")
-OFFLINE DOCKER TEST CASES:
-- A POST without a CSRF token fails ConfirmForm validation when WTF_CSRF_ENABLED is True.
-- parse_page({"page": "abc"}) returns page 1; per_page "500" is clamped to 100; per_page "0" to 1.
+app/forms/common.py - Shared forms and filter pagination helpers for LMS.
 """
+
+from typing import Any
+
+from flask_wtf import FlaskForm
+
+
+class ConfirmForm(FlaskForm):
+    """
+    Empty form carrying a CSRF token. Used for state-changing POST actions
+    (approve, delete, toggle) that do not require text inputs.
+    """
+    pass
+
+
+class FilterForm(FlaskForm):
+    """Base form for GET filter bars with CSRF protection disabled."""
+
+    class Meta:
+        csrf = False
+
+
+def parse_page(args: dict[str, Any]) -> tuple[int, int]:
+    """
+    Safely parse page and per_page from request query arguments.
+    Defaults to page=1, per_page=20 (clamped between 1 and 100).
+    """
+    try:
+        page = int(args.get("page", 1))
+        if page < 1:
+            page = 1
+    except (ValueError, TypeError):
+        page = 1
+
+    try:
+        per_page = int(args.get("per_page", 20))
+        if per_page < 1:
+            per_page = 20
+        elif per_page > 100:
+            per_page = 100
+    except (ValueError, TypeError):
+        per_page = 20
+
+    return page, per_page

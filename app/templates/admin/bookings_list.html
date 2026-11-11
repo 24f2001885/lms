@@ -1,9 +1,66 @@
-<!--
-FILE PURPOSE: ADM-15 bookings list (read-only in P3).
-PROMPT FOR LLM IMPLEMENTATION:
-1. Extend base_admin.html; page_title "Bookings"; filter bar (status, examination, student q, slot id, date range). Table: ID, Student (link), Examination, Slot time, Examiner, Status badge, Booked, Cancelled, View link. Pager; empty state "No bookings match these filters."
-DEBUGGING:
-<!-- DEBUG: bookings total {{ page.total }} -->
-OFFLINE DOCKER TEST CASES:
-- Status filter and pager work together (page 2 keeps the filter).
--->
+{% extends "admin/base_admin.html" %}
+{% import "macros/status_badge.html" as b %}
+{% import "macros/pagination.html" as p %}
+
+{% block title %}Bookings{% endblock %}
+{% block page_title %}Bookings{% endblock %}
+
+{% block content %}
+<div class="card border-0 shadow-sm p-3 mb-3">
+  <form method="GET" action="{{ url_for('admin.bookings') }}" class="table-filter-bar">
+    <select name="status" class="form-select form-select-sm" style="max-width: 140px;">
+      <option value="">All Statuses</option>
+      <option value="booked" {% if selected_status == 'booked' %}selected{% endif %}>Booked</option>
+      <option value="completed" {% if selected_status == 'completed' %}selected{% endif %}>Completed</option>
+      <option value="cancelled" {% if selected_status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+    </select>
+    <select name="examination_id" class="form-select form-select-sm" style="max-width: 200px;">
+      <option value="">All Examinations</option>
+      {% for e in exams %}
+        <option value="{{ e.id }}" {% if selected_exam == e.id %}selected{% endif %}>{{ e.name }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+  </form>
+</div>
+
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>ID</th>
+          <th>Student</th>
+          <th>Examination</th>
+          <th>Slot Time</th>
+          <th>Examiner</th>
+          <th>Status</th>
+          <th>Booked</th>
+          <th>Cancelled</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b_item in page.items %}
+          <tr>
+            <td>{{ b_item.id }}</td>
+            <td><a href="{{ url_for('admin.student_detail', student_id=b_item.student.id) }}" class="fw-bold text-decoration-none">{{ b_item.student.full_name }}</a></td>
+            <td>{{ b_item.examination.name }}</td>
+            <td class="small">{{ b_item.slot.start_at|localdt }}</td>
+            <td>{{ b_item.slot.examiner.full_name }}</td>
+            <td>{{ b.badge('booking', b_item.status) }}</td>
+            <td class="small">{{ b_item.booked_at|localdt }}</td>
+            <td class="small">{{ b_item.cancelled_at|localdt if b_item.cancelled_at else '-' }}</td>
+            <td>
+              <a href="{{ url_for('admin.booking_detail', booking_id=b_item.id) }}" class="btn btn-outline-secondary btn-sm py-0">View</a>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="9" class="text-center text-muted py-4">No bookings match these filters.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{ p.pager(page, 'admin.bookings') }}
+{% endblock %}

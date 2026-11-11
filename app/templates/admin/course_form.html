@@ -1,9 +1,22 @@
-<!--
-FILE PURPOSE: ADM-03 create/edit course form.
-PROMPT FOR LLM IMPLEMENTATION:
-1. Extend base_admin.html; page_title "New course" or "Edit course" (variable). Form posts to /admin/courses (create) or /admin/courses/<id>/update (edit), csrf included, fields via render_field: Course code, Course name, Description, Status. Buttons: Save (primary) and Cancel (link to the list).
-DEBUGGING:
-<!-- DEBUG: course form errors {{ form.errors }} -->
-OFFLINE DOCKER TEST CASES:
-- Editing pre-fills all fields; a validation error keeps the user's input and shows the message beside the field.
--->
+{% extends "admin/base_admin.html" %}
+{% import "macros/forms.html" as f %}
+
+{% block title %}{{ 'Edit course' if course else 'New course' }}{% endblock %}
+{% block page_title %}{{ 'Edit course: ' ~ course.code if course else 'New course' }}{% endblock %}
+
+{% block content %}
+<div class="card border-0 shadow-sm p-4 col-lg-8">
+  <form method="POST" action="{{ url_for('admin.update_course', course_id=course.id) if course else url_for('admin.create_course') }}">
+    {{ form.hidden_tag() }}
+    {{ f.render_field(form.code, placeholder="e.g. CS2003") }}
+    {{ f.render_field(form.name, placeholder="e.g. Modern Application Development I") }}
+    {{ f.render_field(form.description, placeholder="Brief course summary...") }}
+    {{ f.render_field(form.status) }}
+
+    <div class="d-flex gap-2 mt-4 pt-2 border-top">
+      <button type="submit" class="btn btn-primary">Save</button>
+      <a href="{{ url_for('admin.courses') }}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

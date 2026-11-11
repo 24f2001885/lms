@@ -1,13 +1,54 @@
 """
-FILE PURPOSE: WTForms for creating and editing a course (ADM-03).
-DEPENDS ON: flask_wtf, wtforms, app/models/course.py.
-PROMPT FOR LLM IMPLEMENTATION:
-1. CourseForm fields: code (DataRequired, Length 2-20, filter strip+upper, Regexp letters digits and - _ only), name (DataRequired, Length 2-150), description (Optional, Length max 2000, TextAreaField), status (SelectField choices from COURSE_STATUSES, default "active").
-2. A constructor argument course_id lets validate_code skip the course being edited when checking duplicates (case-insensitive). Duplicate message: "A course with this code already exists."
-3. Labels match the PDR: "Course code", "Course name", "Description", "Status".
-DEBUGGING:
-# print(f"[DEBUG] CourseForm errors={form.errors}")
-OFFLINE DOCKER TEST CASES:
-- Code "cs 101" (space) is invalid; "cs101" is stored as "CS101".
-- Editing a course and keeping its own code is valid; using another course's code is not.
+app/forms/course.py - WTForms for creating and editing a course (ADM-03).
 """
+
+from flask_wtf import FlaskForm
+from wtforms import SelectField, StringField, SubmitField, TextAreaField
+from wtforms.validators import DataRequired, Length, Optional, Regexp, ValidationError
+
+from app.models.course import COURSE_STATUSES, Course
+
+
+class CourseForm(FlaskForm):
+    """Form for creating and editing academic courses."""
+
+    code = StringField(
+        "Course code",
+        validators=[
+            DataRequired(message="Course code is required."),
+            Length(min=2, max=20, message="Course code must be between 2 and 20 characters."),
+            Regexp(r"^[A-Za-z0-9\-_]+$", message="Course code may only contain letters, numbers, hyphens, and underscores."),
+        ],
+        filters=[lambda x: x.strip().upper() if x else ""],
+    )
+    name = StringField(
+        "Course name",
+        validators=[
+            DataRequired(message="Course name is required."),
+            Length(min=2, max=150, message="Course name must be between 2 and 150 characters."),
+        ],
+        filters=[lambda x: x.strip() if x else ""],
+    )
+    description = TextAreaField(
+        "Description",
+        validators=[Optional(), Length(max=2000)],
+        filters=[lambda x: x.strip() if x else ""],
+    )
+    status = SelectField(
+        "Status",
+        choices=[(s, s.capitalize()) for s in COURSE_STATUSES],
+        default="active",
+        validators=[DataRequired()],
+    )
+    submit = SubmitField("Save course")
+
+    def __init__(self, course_id: int | None = None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.course_id = course_id
+
+    def validate_code(self, field):
+        """Enforce case-insensitive course code uniqueness excluding current record."""
+        clean_code = field.data.strip().upper()
+        existing = Course.query.filter(Course.code.ilike(clean_code)).first()
+        if existing and existing.id != self.course_id:
+            raise ValidationError("A course with this code already exists.")

@@ -1,12 +1,86 @@
-<!--
-FILE PURPOSE: ADM-10 examiner detail (also reused for the same layout of user actions).
-PROMPT FOR LLM IMPLEMENTATION:
-1. Extend base_admin.html; page_title examiner name with the account badge. Profile card (email, phone, department, designation, registered, last login).
-2. Action buttons by state: Approve and Reject (pending), Deactivate (active, confirm modal), Activate (inactive). A separate card "Temporary password" with the TemporaryPasswordForm and text "Leave blank to generate one. The user must change it at next login."
-3. Cards: assigned examinations, counts of slots and booked students, and the audit history list for this user.
-DEBUGGING:
-<!-- DEBUG: examiner {{ user.id }} approval={{ user.approval_status }} active={{ user.is_active }} -->
-OFFLINE DOCKER TEST CASES:
-- Pending examiner shows Approve and Reject only; active shows Deactivate only.
-- The temp-password form posts to /admin/users/<id>/temporary-password.
--->
+{% extends "admin/base_admin.html" %}
+{% import "macros/status_badge.html" as b %}
+{% import "macros/modals.html" as m %}
+
+{% block title %}{{ user.full_name }}{% endblock %}
+{% block page_title %}{{ user.full_name }} {{ b.badge('account', user.approval_status) }}{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-6">
+    <!-- Profile Card -->
+    <div class="card border-0 shadow-sm p-4 mb-4">
+      <h2 class="h6 fw-bold text-primary mb-3">Examiner Information</h2>
+      <dl class="row mb-0 small">
+        <dt class="col-sm-4 text-muted">Email</dt><dd class="col-sm-8">{{ user.email }}</dd>
+        <dt class="col-sm-4 text-muted">Department</dt><dd class="col-sm-8">{{ user.examiner_profile.department or '-' }}</dd>
+        <dt class="col-sm-4 text-muted">Designation</dt><dd class="col-sm-8">{{ user.examiner_profile.designation or '-' }}</dd>
+        <dt class="col-sm-4 text-muted">Phone</dt><dd class="col-sm-8">{{ user.examiner_profile.contact_phone or '-' }}</dd>
+        <dt class="col-sm-4 text-muted">Registered</dt><dd class="col-sm-8">{{ user.created_at|localdt }}</dd>
+      </dl>
+
+      <!-- Action Buttons by State -->
+      <div class="d-flex gap-2 mt-4 pt-3 border-top">
+        {% if user.approval_status == 'pending' %}
+          <form method="POST" action="{{ url_for('admin.approve_examiner', examiner_id=user.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-success btn-sm">Approve</button>
+          </form>
+          <form method="POST" action="{{ url_for('admin.reject_examiner', examiner_id=user.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-outline-danger btn-sm">Reject</button>
+          </form>
+        {% elif user.is_active %}
+          {{ m.confirm_action('deact-ex-' ~ user.id, 'Deactivate', 'Deactivate Examiner', 'Deactivating will immediately lock this account out of the portal.', url_for('admin.deactivate_examiner', examiner_id=user.id), confirm_form) }}
+        {% else %}
+          <form method="POST" action="{{ url_for('admin.activate_examiner', examiner_id=user.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-outline-success btn-sm">Activate</button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Temporary Password Card -->
+    <div class="card border-0 shadow-sm p-4">
+      <h2 class="h6 fw-bold text-primary mb-2">Temporary Password</h2>
+      <p class="small text-muted mb-3">Leave blank to generate one. The user must change it at next login.</p>
+      <form method="POST" action="{{ url_for('admin.set_temporary_password', user_id=user.id) }}">
+        {{ temp_password_form.hidden_tag() }}
+        <div class="mb-3">
+          {{ temp_password_form.new_password(class="form-control form-control-sm", placeholder="Optional custom password") }}
+        </div>
+        <button type="submit" class="btn btn-warning btn-sm text-dark">Set Temporary Password</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Operational Stats & History -->
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm p-4 mb-4">
+      <h2 class="h6 fw-bold text-primary mb-3">Operational Counts</h2>
+      <div class="row g-2 text-center">
+        <div class="col-6"><div class="stat-card border"><div class="h3 fw-bold mb-0">{{ slots_count }}</div><div class="small text-muted">Slots Created</div></div></div>
+        <div class="col-6"><div class="stat-card border"><div class="h3 fw-bold mb-0">{{ booked_count }}</div><div class="small text-muted">Students Booked</div></div></div>
+      </div>
+    </div>
+
+    <div class="card border-0 shadow-sm p-4">
+      <h2 class="h6 fw-bold text-primary mb-3">Audit Log for this User</h2>
+      <ul class="list-group list-group-flush small">
+        {% for a in history %}
+          <li class="list-group-item px-0 py-2">
+            <div class="d-flex justify-content-between">
+              <code>{{ a.action }}</code>
+              <span class="text-muted">{{ a.created_at|localdt }}</span>
+            </div>
+            {% if a.details %}<div class="text-muted">{{ a.details }}</div>{% endif %}
+          </li>
+        {% else %}
+          <li class="list-group-item px-0 text-muted">No audit events recorded for this user.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

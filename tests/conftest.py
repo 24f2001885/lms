@@ -1,9 +1,13 @@
 """
-tests/conftest.py - Pytest fixtures, test data factories, and login helpers for LMS.
+tests/conftest.py - Pytest fixtures and factories updated for Phase P3.
+
+Adds make_assignment, make_evaluation, freeze_now (monkeypatching windows.now_utc),
+and admin_client (pre-authenticated administrator test client).
 """
 
 from collections.abc import Generator
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 
 import pytest
 from flask import Flask
@@ -15,7 +19,9 @@ from app.extensions import db
 from app.models import (
     Booking,
     Course,
+    Evaluation,
     Examination,
+    ExaminationExaminer,
     ExaminationRubric,
     ExaminationSlot,
     ExaminerProfile,
@@ -72,6 +78,33 @@ def login(client: FlaskClient):
         )
 
     return _login
+
+
+@pytest.fixture
+def admin_client(client: FlaskClient, make_admin, login) -> FlaskClient:
+    """Provide pre-authenticated Administrator test client."""
+    admin = make_admin(email="admin_client@test.local", password="Passw0rd123!", must_change_password=False)
+    login(admin.email, "Passw0rd123!")
+    return client
+
+
+@pytest.fixture
+def freeze_now(monkeypatch):
+    """
+    Monkeypatch app.services.windows.now_utc to return a frozen or moving datetime.
+    Works because all modules call windows.now_utc() through the module object.
+    """
+    current_frozen = {"dt": datetime(2030, 1, 1, 0, 0, 0)}
+
+    def _get_now():
+        return current_frozen["dt"]
+
+    monkeypatch.setattr("app.services.windows.now_utc", _get_now)
+
+    def _set_time(new_dt: datetime):
+        current_frozen["dt"] = new_dt
+
+    return _set_time
 
 
 _user_seq = 0
@@ -193,6 +226,16 @@ def make_examination(make_course):
             "is_deleted": False,
         }
         defaults.update(overrides)
+        if "booking_start" not in overrides and defaults["booking_start"] < defaults["slot_creation_end"]:
+            defaults["booking_start"] = defaults["slot_creation_end"]
+            if "booking_end" not in overrides and defaults["booking_end"] <= defaults["booking_start"]:
+                defaults["booking_end"] = defaults["booking_start"] + timedelta(days=10)
+            if "cancellation_deadline" not in overrides and defaults["cancellation_deadline"] < defaults["booking_start"]:
+                defaults["cancellation_deadline"] = defaults["booking_end"]
+        if "slot_creation_end" not in overrides and defaults["slot_creation_end"] > defaults["booking_start"]:
+            defaults["slot_creation_end"] = defaults["booking_start"]
+            if "slot_creation_start" not in overrides and defaults["slot_creation_start"] >= defaults["slot_creation_end"]:
+                defaults["slot_creation_start"] = defaults["slot_creation_end"] - timedelta(days=5)
 
         exam = Examination(course_id=course.id, **defaults)
         db.session.add(exam)
@@ -214,8 +257,8 @@ def make_rubric():
         rubric = ExaminationRubric(
             examination_id=examination.id,
             criterion_name=name,
-            weightage=weightage,
-            max_score=max_score,
+            weightage=Decimal(str(weightage)),
+            max_score=Decimal(str(max_score)),
             position=position,
         )
         db.session.add(rubric)
@@ -263,5 +306,40 @@ def make_booking():
         db.session.add(booking)
         db.session.commit()
         return booking
+
+    return _make
+
+
+@pytest.fixture
+def make_assignment():
+    """Factory fixture generating examiner assignments."""
+
+    def _make(examination: Examination, examiner: User, assigned_by: User | None = None) -> ExaminationExaminer:
+        assignment = ExaminationExaminer(
+            examination_id=examination.id,
+            examiner_id=examiner.id,
+            assigned_by=assigned_by.id if assigned_by else examination.course.creator.id,
+        )
+        db.session.add(assignment)
+        db.session.commit()
+        return assignment
+
+    return _make
+
+
+@pytest.fixture
+def make_evaluation():
+    """Factory fixture generating evaluation records."""
+
+    def _make(booking: Booking, examiner: User, status: str = "draft", total: float = 0.0) -> Evaluation:
+        ev = Evaluation(
+            booking_id=booking.id,
+            examiner_id=examiner.id,
+            status=status,
+            total_marks=Decimal(str(total)),
+        )
+        db.session.add(ev)
+        db.session.commit()
+        return ev
 
     return _make

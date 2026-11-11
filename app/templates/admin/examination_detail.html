@@ -1,147 +1,119 @@
-<!--
-FILE PURPOSE: ADM-06 examination detail with timeline controls and ADM-08 assigned-examiners panel.
-PROMPT FOR LLM IMPLEMENTATION:
-1. Extend base_admin.html; page_title is the examination name with the status badge; page_actions Edit and Delete (modal).
-2. Summary card: course, type, duration, maximum marks, the five dates (localdt).
-3. Timeline panel with TWO rows (.timeline-switch): "Slot creation" and "Student booking". Each shows the effective state badge (switch domain), the dates, the reason line from window_state (for example "Booking opens on 12 Dec, 10:00") and a single toggle button inside a POST form (hidden input open = 1 or 0; label "Open slot creation" / "Close slot creation", "Open booking" / "Close booking"). Buttons that are certain to fail (no examiner assigned, rubric total not 100) stay enabled but a muted hint line explains the requirement.
-4. Rubric summary card: total weightage with ready/needs-100 indicator and a link to /admin/examinations/<id>/rubrics.
-5. Assigned examiners panel: table of examiners (name, email, number of own slots, Remove via modal) and the assign form (select + Assign button); empty state text.
-6. Counters: slots, active bookings, evaluations submitted (counts only).
-DEBUGGING:
-<!-- DEBUG: window_state {{ window_state }} -->
-OFFLINE DOCKER TEST CASES:
-- The two toggle forms post to the slot-creation and booking toggle URLs with a csrf_token.
-- The reason line mentions the date when the window has not started.
-- With no assigned examiner the examiners panel shows its empty state.
--->
 {% extends "admin/base_admin.html" %}
-{% import "macros/forms.html" as f %}
+{% import "macros/status_badge.html" as b %}
+{% import "macros/modals.html" as m %}
 
 {% block title %}{{ exam.name }}{% endblock %}
+{% block page_title %}{{ exam.name }} {{ b.badge('examination', exam.status) }}{% endblock %}
+{% block page_actions %}
+  {% if not exam.is_deleted %}
+    <a href="{{ url_for('admin.edit_examination', exam_id=exam.id) }}" class="btn btn-outline-secondary btn-sm">Edit</a>
+    {{ m.confirm_action('del-exam-' ~ exam.id, 'Delete', 'Delete Examination', 'Soft-delete this examination?', url_for('admin.delete_examination', exam_id=exam.id), confirm_form) }}
+  {% endif %}
+{% endblock %}
 
-{% block admin_content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <div>
-    <h1 class="h3 fw-bold text-primary mb-1">{{ exam.name }}</h1>
-    <span class="badge bg-secondary me-2">{{ exam.course.code }}</span>
-    <span class="badge bg-info text-dark">{{ exam.status|capitalize }}</span>
-  </div>
-  <div class="d-flex gap-2">
-    <form method="POST" action="{{ url_for('admin.delete_examination', exam_id=exam.id) }}" onsubmit="return confirm('Soft-delete this examination?');">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
-    </form>
-  </div>
-</div>
-
-<!-- Timeline & Interactive Control Switches (ADM-06) -->
+{% block content %}
+<!-- Summary Card -->
 <div class="card border-0 shadow-sm p-3 mb-4">
-  <h2 class="h6 fw-bold text-primary mb-3">Timeline Windows & Master Switches</h2>
-  <div class="row g-3 align-items-center">
-    <div class="col-md-6 border-end">
-      <div class="small text-muted">Slot Creation: {{ exam.slot_creation_start.strftime('%d %b, %H:%M') }} &rarr; {{ exam.slot_creation_end.strftime('%d %b, %H:%M') }}</div>
-      <form method="POST" action="{{ url_for('admin.toggle_slot_creation', exam_id=exam.id) }}" class="mt-2">
+  <div class="row g-3">
+    <div class="col-md-3"><div class="small text-muted">Course</div><div class="fw-bold">{{ exam.course.code }} - {{ exam.course.name }}</div></div>
+    <div class="col-md-3"><div class="small text-muted">Type</div><div class="fw-bold">{{ exam.exam_type|capitalize }}</div></div>
+    <div class="col-md-3"><div class="small text-muted">Duration</div><div class="fw-bold">{{ exam.duration_minutes }} minutes</div></div>
+    <div class="col-md-3"><div class="small text-muted">Max Marks</div><div class="fw-bold">{{ exam.max_marks|money_marks }}</div></div>
+  </div>
+</div>
+
+<!-- Timeline Panel (.timeline-switch) -->
+<div class="card border-0 shadow-sm p-4 mb-4">
+  <h2 class="h6 fw-bold text-primary mb-3">Timeline Switches & Window States</h2>
+  
+  <!-- Row 1: Slot Creation Switch -->
+  <div class="timeline-switch border-bottom">
+    <div>
+      <div class="fw-bold">Slot creation {{ b.badge('switch', window_state.slot_creation.label) }}</div>
+      <div class="small text-muted">{{ exam.slot_creation_start|localdt }} &rarr; {{ exam.slot_creation_end|localdt }}</div>
+      <div class="small text-secondary fst-italic">{{ window_state.slot_creation.reason }}</div>
+    </div>
+    <div>
+      <form method="POST" action="{{ url_for('admin.toggle_slot_creation', exam_id=exam.id) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit" class="btn btn-sm {% if exam.slot_creation_open %}btn-success{% else %}btn-outline-secondary{% endif %}">
-          Slot Creation Switch: {{ "OPEN" if exam.slot_creation_open else "CLOSED" }}
+        <input type="hidden" name="open" value="{{ '0' if exam.slot_creation_open else '1' }}">
+        <button type="submit" class="btn btn-sm {% if exam.slot_creation_open %}btn-outline-danger{% else %}btn-success{% endif %}">
+          {{ 'Close slot creation' if exam.slot_creation_open else 'Open slot creation' }}
         </button>
       </form>
     </div>
-    <div class="col-md-6">
-      <div class="small text-muted">Student Booking: {{ exam.booking_start.strftime('%d %b, %H:%M') }} &rarr; {{ exam.booking_end.strftime('%d %b, %H:%M') }}</div>
-      <form method="POST" action="{{ url_for('admin.toggle_booking', exam_id=exam.id) }}" class="mt-2">
+  </div>
+
+  <!-- Row 2: Student Booking Switch -->
+  <div class="timeline-switch">
+    <div>
+      <div class="fw-bold">Student booking {{ b.badge('switch', window_state.booking.label) }}</div>
+      <div class="small text-muted">{{ exam.booking_start|localdt }} &rarr; {{ exam.booking_end|localdt }}</div>
+      <div class="small text-secondary fst-italic">{{ window_state.booking.reason }}</div>
+      <div class="small text-muted">Cancellation deadline: {{ window_state.cancel.deadline_str }}</div>
+    </div>
+    <div>
+      <form method="POST" action="{{ url_for('admin.toggle_booking', exam_id=exam.id) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit" class="btn btn-sm {% if exam.booking_open %}btn-success{% else %}btn-outline-secondary{% endif %}">
-          Student Booking Switch: {{ "OPEN" if exam.booking_open else "CLOSED" }}
+        <input type="hidden" name="open" value="{{ '0' if exam.booking_open else '1' }}">
+        <button type="submit" class="btn btn-sm {% if exam.booking_open %}btn-outline-danger{% else %}btn-success{% endif %}">
+          {{ 'Close booking' if exam.booking_open else 'Open booking' }}
         </button>
       </form>
     </div>
   </div>
 </div>
 
-<!-- Rubrics (ADM-07) & Assigned Examiners (ADM-08) -->
 <div class="row g-4">
-  <!-- Rubric Criteria Panel -->
-  <div class="col-lg-7">
-    <div class="card border-0 shadow-sm p-3 mb-4">
+  <!-- Rubrics Summary Card -->
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm p-3 h-100">
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="h6 fw-bold text-primary mb-0">Evaluation Rubrics</h2>
-        <span class="small fw-semibold {% if total_weightage == 100 %}text-success{% else %}text-danger{% endif %}">
-          Weightage Total: {{ total_weightage }}% / 100%
-        </span>
+        <h2 class="h6 fw-bold text-primary mb-0">Rubric Criteria</h2>
+        <a href="{{ url_for('admin.rubrics', exam_id=exam.id) }}" class="btn btn-outline-primary btn-sm">Manage Rubrics</a>
       </div>
+      <div>
+        <div class="fw-semibold">Weightage Total: {{ total_weightage|money_marks }}% / 100%</div>
+        <div class="small text-muted mb-3">{{ exam.rubrics|length }} criteria defined.</div>
+        {% if total_weightage == 100 %}
+          <div class="text-success small fw-semibold">Ready for booking.</div>
+        {% else %}
+          <div class="text-danger small">Must equal 100% before booking can be opened.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Assigned Examiners Panel (ADM-08) -->
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm p-3 h-100">
+      <h2 class="h6 fw-bold text-primary mb-3">Assigned Faculty Examiners</h2>
       <div class="table-responsive mb-3">
         <table class="table table-sm align-middle mb-0">
-          <thead class="table-light">
-            <tr>
-              <th>Criterion</th>
-              <th>Weightage</th>
-              <th>Max Score</th>
-              <th>Action</th>
-            </tr>
-          </thead>
           <tbody>
-            {% for r in exam.rubrics %}
+            {% for link in exam.examiner_links %}
               <tr>
-                <td class="fw-semibold">{{ r.criterion_name }}</td>
-                <td>{{ r.weightage }}%</td>
-                <td>{{ r.max_score }}</td>
+                <td><strong>{{ link.examiner.full_name }}</strong><div class="small text-muted">{{ link.examiner.email }}</div></td>
                 <td>
-                  <form method="POST" action="{{ url_for('admin.delete_rubric', rubric_id=r.id) }}" class="d-inline">
+                  <form method="POST" action="{{ url_for('admin.remove_examiner', exam_id=exam.id, examiner_id=link.examiner_id) }}" class="d-inline">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn btn-link text-danger p-0 small">Remove</button>
+                    <button type="submit" class="btn btn-outline-danger btn-sm py-0">Remove</button>
                   </form>
                 </td>
               </tr>
             {% else %}
-              <tr><td colspan="4" class="text-muted small py-2">No rubrics added.</td></tr>
+              <tr><td colspan="2" class="text-muted small py-2">No examiners assigned yet.</td></tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
 
-      <!-- Add Rubric Form -->
-      <form method="POST" action="{{ url_for('admin.add_rubric', exam_id=exam.id) }}" class="border-top pt-3">
-        {{ rubric_form.hidden_tag() }}
-        <div class="row g-2">
-          <div class="col-md-5">{{ rubric_form.criterion_name(class="form-control form-control-sm", placeholder="Criterion name") }}</div>
-          <div class="col-md-3">{{ rubric_form.weightage(class="form-control form-control-sm", placeholder="Weight %") }}</div>
-          <div class="col-md-2">{{ rubric_form.max_score(class="form-control form-control-sm", placeholder="Max") }}</div>
-          <div class="col-md-2"><button type="submit" class="btn btn-primary btn-sm w-100">+ Add</button></div>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Assigned Examiners Panel -->
-  <div class="col-lg-5">
-    <div class="card border-0 shadow-sm p-3 mb-4">
-      <h2 class="h6 fw-bold text-primary mb-3">Assigned Faculty Examiners</h2>
-      <ul class="list-group list-group-flush mb-3">
-        {% for link in exam.examiner_links %}
-          <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
-            <div>
-              <div class="fw-semibold small">{{ link.examiner.full_name }}</div>
-              <div class="text-muted small">{{ link.examiner.email }}</div>
-            </div>
-            <form method="POST" action="{{ url_for('admin.unassign_examiner', exam_id=exam.id, examiner_id=link.examiner_id) }}">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <button type="submit" class="btn btn-outline-danger btn-sm py-0">Unassign</button>
-            </form>
-          </li>
-        {% else %}
-          <li class="list-group-item px-0 text-muted small py-2">No examiners assigned.</li>
-        {% endfor %}
-      </ul>
-
-      <!-- Assign Examiner Form -->
+      <!-- Assign Examiner Select -->
       {% if assign_form.examiner_id.choices %}
-        <form method="POST" action="{{ url_for('admin.assign_examiner', exam_id=exam.id) }}" class="border-top pt-3">
+        <form method="POST" action="{{ url_for('admin.assign_examiner', exam_id=exam.id) }}" class="d-flex gap-2 border-top pt-3">
           {{ assign_form.hidden_tag() }}
-          <div class="input-group">
-            {{ assign_form.examiner_id(class="form-select form-select-sm") }}
-            <button type="submit" class="btn btn-primary btn-sm">Assign</button>
-          </div>
+          {{ assign_form.examiner_id(class="form-select form-select-sm") }}
+          <button type="submit" class="btn btn-primary btn-sm">Assign</button>
         </form>
       {% endif %}
     </div>

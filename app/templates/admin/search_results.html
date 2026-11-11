@@ -1,11 +1,78 @@
-<!--
-FILE PURPOSE: ADM-17 search results.
-PROMPT FOR LLM IMPLEMENTATION:
-1. Extend base_admin.html; page_title "Search". A GET form at the top (AdminSearchForm: kind select + q input + Search button, no csrf).
-2. Results table with columns depending on kind (student: ID, name, email, roll; examiner: ID, name, email, department, account badge; examination: ID, name, course, status badge, Deleted badge when applicable; booking: ID, student, examination, slot time, status badge). Every row links to the detail page. Pager preserves q and kind.
-3. States: empty q instruction, no-results message with escaped q, hint text "Tip: enter a number to search by ID".
-DEBUGGING:
-<!-- DEBUG: search kind {{ kind }} q {{ q }} total {{ page.total if page else 0 }} -->
-OFFLINE DOCKER TEST CASES:
-- Each kind renders the right headers; the q value is escaped in the input and in messages.
--->
+{% extends "admin/base_admin.html" %}
+{% import "macros/status_badge.html" as b %}
+{% import "macros/pagination.html" as p %}
+
+{% block title %}Search{% endblock %}
+{% block page_title %}Search{% endblock %}
+
+{% block content %}
+<div class="card border-0 shadow-sm p-4 mb-4">
+  <form method="GET" action="{{ url_for('admin.search') }}" class="row g-2">
+    <div class="col-sm-4">{{ form.kind(class="form-select") }}</div>
+    <div class="col-sm-6">{{ form.q(class="form-control", placeholder="Search by name, email, roll number, or numeric ID...", autofocus=True) }}</div>
+    <div class="col-sm-2"><button type="submit" class="btn btn-primary w-100">Search</button></div>
+  </form>
+  <div class="form-text text-muted small mt-2">Tip: enter a number to search by ID.</div>
+</div>
+
+{% if q %}
+  {% if page and page.items %}
+    <div class="card border-0 shadow-sm">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              {% if kind == 'student' %}
+                <th>ID</th><th>Name</th><th>Email</th><th>Roll number</th><th>Program</th>
+              {% elif kind == 'examiner' %}
+                <th>ID</th><th>Name</th><th>Email</th><th>Department</th><th>Status</th>
+              {% elif kind == 'examination' %}
+                <th>ID</th><th>Name</th><th>Course</th><th>Status</th>
+              {% elif kind == 'booking' %}
+                <th>ID</th><th>Student</th><th>Examination</th><th>Slot Time</th><th>Status</th>
+              {% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in page.items %}
+              <tr>
+                {% if kind == 'student' %}
+                  <td>{{ item.id }}</td>
+                  <td><a href="{{ url_for('admin.student_detail', student_id=item.id) }}" class="fw-bold text-decoration-none">{{ item.full_name }}</a></td>
+                  <td>{{ item.email }}</td>
+                  <td><code>{{ item.student_profile.roll_number if item.student_profile else '-' }}</code></td>
+                  <td>{{ item.student_profile.program if item.student_profile else '-' }}</td>
+                {% elif kind == 'examiner' %}
+                  <td>{{ item.id }}</td>
+                  <td><a href="{{ url_for('admin.examiner_detail', examiner_id=item.id) }}" class="fw-bold text-decoration-none">{{ item.full_name }}</a></td>
+                  <td>{{ item.email }}</td>
+                  <td>{{ item.examiner_profile.department if item.examiner_profile else '-' }}</td>
+                  <td>{{ b.badge('account', item.approval_status) }}</td>
+                {% elif kind == 'examination' %}
+                  <td>{{ item.id }}</td>
+                  <td><a href="{{ url_for('admin.examination_detail', exam_id=item.id) }}" class="fw-bold text-decoration-none">{{ item.name }}</a></td>
+                  <td>{{ item.course.code }}</td>
+                  <td>{{ b.badge('examination', item.status) }}</td>
+                {% elif kind == 'booking' %}
+                  <td>{{ item.id }}</td>
+                  <td><a href="{{ url_for('admin.booking_detail', booking_id=item.id) }}" class="fw-bold text-decoration-none">{{ item.student.full_name }}</a></td>
+                  <td>{{ item.examination.name }}</td>
+                  <td class="small">{{ item.slot.start_at|localdt }}</td>
+                  <td>{{ b.badge('booking', item.status) }}</td>
+                {% endif %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {{ p.pager(page, 'admin.search') }}
+  {% else %}
+    <div class="alert alert-light border text-center py-4 text-muted">
+      No results found for "<strong>{{ q }}</strong>".
+    </div>
+  {% endif %}
+{% else %}
+  <div class="text-center text-muted py-4">Enter a name or ID to search.</div>
+{% endif %}
+{% endblock %}

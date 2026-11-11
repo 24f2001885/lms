@@ -1,10 +1,137 @@
-<!--
-FILE PURPOSE: ADM-18 historical data view with four tabs.
-PROMPT FOR LLM IMPLEMENTATION:
-1. Extend base_admin.html; page_title "History". Bootstrap nav-tabs built from links (?tab=...) with aria-current on the active tab; per-tab table as described in app/blueprints/admin/history.py; filter bar and pager preserving tab and filters.
-2. Audit tab formats the details JSON as short "key: value" pairs, never raw JSON dumps longer than 200 characters.
-DEBUGGING:
-<!-- DEBUG: history tab {{ tab }} total {{ page.total }} -->
-OFFLINE DOCKER TEST CASES:
-- Switching tabs keeps filters; all four tabs render with an empty database (empty states only).
--->
+{% extends "admin/base_admin.html" %}
+{% import "macros/status_badge.html" as b %}
+{% import "macros/pagination.html" as p %}
+
+{% block title %}History{% endblock %}
+{% block page_title %}History{% endblock %}
+
+{% block content %}
+<!-- Tabs (ADM-18) -->
+<ul class="nav nav-tabs mb-4">
+  <li class="nav-item">
+    <a class="nav-link {% if tab == 'examinations' %}active{% endif %}" {% if tab == 'examinations' %}aria-current="page"{% endif %} href="{{ url_for('admin.history', tab='examinations') }}">Examinations</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if tab == 'bookings' %}active{% endif %}" {% if tab == 'bookings' %}aria-current="page"{% endif %} href="{{ url_for('admin.history', tab='bookings') }}">Bookings</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if tab == 'evaluations' %}active{% endif %}" {% if tab == 'evaluations' %}aria-current="page"{% endif %} href="{{ url_for('admin.history', tab='evaluations') }}">Evaluations</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if tab == 'audit' %}active{% endif %}" {% if tab == 'audit' %}aria-current="page"{% endif %} href="{{ url_for('admin.history', tab='audit') }}">Audit</a>
+  </li>
+</ul>
+
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0 small">
+      {% if tab == 'examinations' %}
+        <thead class="table-light">
+          <tr>
+            <th>Name</th>
+            <th>Course</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Booking Window</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for exam in page.items %}
+            <tr>
+              <td>
+                <a href="{{ url_for('admin.examination_detail', exam_id=exam.id) }}" class="fw-bold text-decoration-none">{{ exam.name }}</a>
+                {% if exam.is_deleted %}{{ b.deleted_badge() }}{% endif %}
+              </td>
+              <td>{{ exam.course.code }}</td>
+              <td><span class="badge bg-secondary">{{ exam.exam_type|capitalize }}</span></td>
+              <td>{{ b.badge('examination', exam.status) }}</td>
+              <td>{{ exam.booking_start|localdt }} &rarr; {{ exam.booking_end|localdt }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="5" class="text-center text-muted py-3">No examinations recorded.</td></tr>
+          {% endfor %}
+        </tbody>
+
+      {% elif tab == 'bookings' %}
+        <thead class="table-light">
+          <tr>
+            <th>Booking ID</th>
+            <th>Student</th>
+            <th>Examination</th>
+            <th>Status</th>
+            <th>Booked At</th>
+            <th>Cancelled At</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for bk in page.items %}
+            <tr>
+              <td><a href="{{ url_for('admin.booking_detail', booking_id=bk.id) }}" class="fw-bold text-decoration-none">#{{ bk.id }}</a></td>
+              <td>{{ bk.student.full_name }}</td>
+              <td>{{ bk.examination.name }}</td>
+              <td>{{ b.badge('booking', bk.status) }}</td>
+              <td>{{ bk.booked_at|localdt }}</td>
+              <td>{{ bk.cancelled_at|localdt if bk.cancelled_at else '-' }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="6" class="text-center text-muted py-3">No bookings recorded.</td></tr>
+          {% endfor %}
+        </tbody>
+
+      {% elif tab == 'evaluations' %}
+        <thead class="table-light">
+          <tr>
+            <th>ID</th>
+            <th>Booking</th>
+            <th>Examiner</th>
+            <th>Total Score</th>
+            <th>Status</th>
+            <th>Submitted</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ev in page.items %}
+            <tr>
+              <td>#{{ ev.id }}</td>
+              <td>#{{ ev.booking_id }} ({{ ev.booking.student.full_name }})</td>
+              <td>{{ ev.examiner.full_name }}</td>
+              <td><strong>{{ ev.total_marks|money_marks }}</strong></td>
+              <td>{{ b.badge('evaluation', ev.status) }}</td>
+              <td>{{ ev.submitted_at|localdt if ev.submitted_at else '-' }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="6" class="text-center text-muted py-3">No evaluations recorded.</td></tr>
+          {% endfor %}
+        </tbody>
+
+      {% else %}  {# Audit tab #}
+        <thead class="table-light">
+          <tr>
+            <th>ID</th>
+            <th>Timestamp (Local)</th>
+            <th>Actor</th>
+            <th>Action</th>
+            <th>Entity</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in page.items %}
+            <tr>
+              <td>{{ a.id }}</td>
+              <td>{{ a.created_at|localdt }}</td>
+              <td><strong>{{ a.actor.full_name if a.actor else 'System' }}</strong></td>
+              <td><code>{{ a.action }}</code></td>
+              <td>{{ a.entity_type }} #{{ a.entity_id }}</td>
+              <td><code class="text-muted">{{ a.details if a.details else '-' }}</code></td>
+            </tr>
+          {% else %}
+            <tr><td colspan="6" class="text-center text-muted py-3">No audit records logged.</td></tr>
+          {% endfor %}
+        </tbody>
+      {% endif %}
+    </table>
+  </div>
+</div>
+{{ p.pager(page, 'admin.history') }}
+{% endblock %}

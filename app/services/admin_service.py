@@ -1,20 +1,152 @@
 """
-FILE PURPOSE: Admin rules for people and slots: examiner approval lifecycle, temporary passwords, changing a slot's examiner, and the dashboard totals.
-DEPENDS ON: app/models, app/services/slot_rules.py, app/services/audit_service.py, app/errors.py, werkzeug.security.
-PROMPT FOR LLM IMPLEMENTATION:
-1. dashboard_totals() returns a dict of six main numbers plus sub-numbers: courses (all), examinations (not soft-deleted), examiners (all examiner accounts; sub: pending_approval), students (all), slots (not cancelled), bookings (status booked or completed; sub: cancelled). Use COUNT queries only (no row loading).
-2. Examiner lifecycle (each audits and commits once): approve_examiner(actor_id, user_id) pending or rejected -> approved, profile status active; reject_examiner(...) pending -> rejected; deactivate_user(...) sets users.is_active False and, for examiners, examiner_profiles.status "inactive" (an Admin cannot deactivate themselves: AppError "cannot_deactivate_self"); activate_user(...) reverses it. Only role examiner is approvable; calling approve on a student raises AppError("not_an_examiner").
-3. create_examiner(actor_id, full_name, email, phone, department, designation, temporary_password): creates an APPROVED, active examiner with must_change_password True plus the profile row; email normalised lowercase and unique ("email_taken"). The temporary password is validated with validate_password_strength.
-4. set_temporary_password(actor_id, user_id, new_password=None) works for examiners and students only (never for another admin): when new_password is None generate one with secrets.token_urlsafe(9); store the hash, set must_change_password True, audit "user.temp_password" WITHOUT the password, and RETURN the plain password once so the view can flash it a single time. Note in a comment: existing signed cookies stay valid until they expire (stateless sessions); accepted limitation, revisited in P11.
-5. change_slot_examiner(actor_id, slot_id, new_examiner_id): slot status must be available or full (not cancelled or completed: "slot_not_changeable"); the new examiner must be assigned to the slot's examination (examination_examiners), approved and active ("examiner_not_eligible"); must differ from the current one; slot_rules.has_overlap must be False ("examiner_overlap" with the conflicting time in the message). Update slot.examiner_id, audit "slot.examiner_change" with {"from": old, "to": new}. Existing bookings and evaluations stay attached; evaluations.examiner_id keeps the examiner who actually evaluated (TDR 3.4). P6 moves this logic into booking_engine.change_examiner and leaves this function as a thin wrapper.
-6. Every function raises AppError with stable codes; none flashes or redirects.
-DEBUGGING:
-# print(f"[DEBUG] admin_service {name} actor={actor_id} target={target_id}")
-OFFLINE DOCKER TEST CASES:
-- approve_examiner flips pending to approved; the examiner's next request reaches /examiner/dashboard (integration test).
-- deactivate_user on the Admin's own id raises cannot_deactivate_self.
-- create_examiner stores must_change_password True and the examiner can log in and is forced to /change-password.
-- set_temporary_password returns a string of at least 12 characters, the stored hash verifies against it, and no audit row contains it.
-- change_slot_examiner to an unassigned examiner raises examiner_not_eligible; to an examiner with an overlapping slot raises examiner_overlap; success keeps booked_count and bookings unchanged.
-- dashboard_totals returns six integers matching hand-counted fixtures.
+app/services/admin_service.py - Admin operations for users, slots, and dashboard totals.
 """
+
+import secrets
+from typing import Any
+
+from app.errors import AppError
+from app.extensions import db
+from app.models.booking import Booking
+from app.models.course import Course
+from app.models.examination import Examination
+from app.models.examination_examiner import ExaminationExaminer
+from app.models.slot import ExaminationSlot
+from app.models.user import User
+from app.security.auth_helpers import validate_password_strength
+from app.services import audit_service, slot_rules
+
+
+def dashboard_totals() -> dict[str, Any]:
+    """Execute COUNT queries only to build the 6 dashboard metrics."""
+    courses_count = Course.query.count()
+    exams_count = Examination.query.filter_by(is_deleted=False).count()
+    examiners_count = User.query.filter_by(role="examiner").count()
+    pending_count = User.query.filter_by(role="examiner", approval_status="pending").count()
+    students_count = User.query.filter_by(role="student").count()
+    slots_count = ExaminationSlot.query.filter(ExaminationSlot.status != "cancelled").count()
+    bookings_count = Booking.query.filter(Booking.status.in_(("booked", "completed"))).count()
+    cancelled_bookings = Booking.query.filter_by(status="cancelled").count()
+
+    return {
+        "courses": courses_count,
+        "examinations": exams_count,
+        "examiners": examiners_count,
+        "examiners_pending": pending_count,
+        "students": students_count,
+        "slots": slots_count,
+        "bookings": bookings_count,
+        "cancelled_bookings": cancelled_bookings,
+    }
+
+
+def approve_examiner(actor_id: int, user_id: int) -> User:
+    user = db.session.get(User, user_id)
+    if not user:
+        raise AppError("user_not_found", "User not found.")
+    if user.role != "examiner":
+        raise AppError("not_an_examiner", "Only examiner accounts can be approved.")
+
+    user.approval_status = "approved"
+    user.is_active = True
+    if user.examiner_profile:
+        user.examiner_profile.status = "active"
+
+    audit_service.log_action(actor_id, audit_service.USER_APPROVE, "user", user.id, {"email": user.email})
+    db.session.commit()
+    return user
+
+
+def reject_examiner(actor_id: int, user_id: int) -> User:
+    user = db.session.get(User, user_id)
+    if not user:
+        raise AppError("user_not_found", "User not found.")
+    if user.role != "examiner":
+        raise AppError("not_an_examiner", "Only examiner accounts can be rejected.")
+
+    user.approval_status = "rejected"
+    audit_service.log_action(actor_id, audit_service.USER_REJECT, "user", user.id, {"email": user.email})
+    db.session.commit()
+    return user
+
+
+def deactivate_user(actor_id: int, user_id: int) -> User:
+    if actor_id == user_id:
+        raise AppError("cannot_deactivate_self", "Administrators cannot deactivate their own account.")
+
+    user = db.session.get(User, user_id)
+    if not user:
+        raise AppError("user_not_found", "User not found.")
+
+    user.is_active = False
+    if user.examiner_profile:
+        user.examiner_profile.status = "inactive"
+
+    audit_service.log_action(actor_id, audit_service.USER_DEACTIVATE, "user", user.id, {"email": user.email})
+    db.session.commit()
+    return user
+
+
+def activate_user(actor_id: int, user_id: int) -> User:
+    user = db.session.get(User, user_id)
+    if not user:
+        raise AppError("user_not_found", "User not found.")
+
+    user.is_active = True
+    if user.examiner_profile:
+        user.examiner_profile.status = "active"
+
+    audit_service.log_action(actor_id, audit_service.USER_ACTIVATE, "user", user.id, {"email": user.email})
+    db.session.commit()
+    return user
+
+
+def set_temporary_password(actor_id: int, user_id: int, new_password: str | None = None) -> str:
+    user = db.session.get(User, user_id)
+    if not user:
+        raise AppError("user_not_found", "User not found.")
+    if user.role == "admin":
+        raise AppError("cannot_reset_admin", "Admin temporary passwords cannot be set via this route.")
+
+    plain_pass = new_password.strip() if new_password and new_password.strip() else secrets.token_urlsafe(9)
+    problems = validate_password_strength(plain_pass)
+    if problems:
+        raise AppError("weak_password", problems[0])
+
+    user.set_password(plain_pass)
+    user.must_change_password = True
+
+    audit_service.log_action(actor_id, audit_service.USER_TEMP_PASSWORD, "user", user.id, {"email": user.email})
+    db.session.commit()
+    return plain_pass
+
+
+def change_slot_examiner(actor_id: int, slot_id: int, new_examiner_id: int) -> ExaminationSlot:
+    slot = db.session.get(ExaminationSlot, slot_id)
+    if not slot:
+        raise AppError("slot_not_found", "Slot not found.")
+    if slot.status in ("cancelled", "completed"):
+        raise AppError("slot_not_changeable", f"Cannot change examiner on a {slot.status} slot.")
+
+    if slot.examiner_id == new_examiner_id:
+        return slot
+
+    is_assigned = (
+        ExaminationExaminer.query.join(User, ExaminationExaminer.examiner_id == User.id)
+        .filter(ExaminationExaminer.examination_id == slot.examination_id, User.id == new_examiner_id, User.approval_status == "approved", User.is_active.is_(True))
+        .count()
+        > 0
+    )
+    if not is_assigned:
+        raise AppError("examiner_not_eligible", "Examiner is not assigned or not approved for this examination.")
+
+    conflict = slot_rules.find_overlapping(new_examiner_id, slot.start_at, slot.end_at, exclude_slot_id=slot.id)
+    if conflict:
+        raise AppError("examiner_overlap", f"Examiner has an overlapping slot ({conflict.start_at.strftime('%H:%M')} - {conflict.end_at.strftime('%H:%M')}).")
+
+    old_examiner_id = slot.examiner_id
+    slot.examiner_id = new_examiner_id
+
+    audit_service.log_action(actor_id, audit_service.SLOT_EXAMINER_CHANGE, "examination_slot", slot.id, {"from": old_examiner_id, "to": new_examiner_id})
+    db.session.commit()
+    return slot

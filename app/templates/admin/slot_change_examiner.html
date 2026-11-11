@@ -1,9 +1,34 @@
-<!--
-FILE PURPOSE: ADM-14 change slot examiner.
-PROMPT FOR LLM IMPLEMENTATION:
-1. Extend base_admin.html; summary of the slot and the current examiner; ChangeSlotExaminerForm (select of eligible examiners) with POST to /admin/slots/<id>/examiner; note "Existing bookings stay with this slot." When there are no eligible examiners show a message and a link to the examination's assigned-examiners panel.
-DEBUGGING:
-<!-- DEBUG: eligible examiners {{ form.examiner_id.choices }} -->
-OFFLINE DOCKER TEST CASES:
-- The current examiner is not in the options; the empty state appears when none are eligible.
--->
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Change Slot Examiner{% endblock %}
+{% block page_title %}Change Slot Examiner: Slot #{{ slot.id }}{% endblock %}
+
+{% block content %}
+<div class="card border-0 shadow-sm p-4 col-lg-7">
+  <div class="mb-3 small">
+    <div><strong>Examination:</strong> {{ slot.examination.name }}</div>
+    <div><strong>Current Examiner:</strong> {{ slot.examiner.full_name }}</div>
+    <div><strong>Time:</strong> {{ slot.start_at|localdt }} &rarr; {{ slot.end_at|localdt }}</div>
+    <div class="text-muted fst-italic mt-1">Existing bookings stay with this slot.</div>
+  </div>
+
+  {% if form.examiner_id.choices %}
+    <form method="POST" action="{{ url_for('admin.change_slot_examiner', slot_id=slot.id) }}">
+      {{ form.hidden_tag() }}
+      <div class="mb-3">
+        <label class="form-label fw-semibold text-secondary small">{{ form.examiner_id.label.text }}</label>
+        {{ form.examiner_id(class="form-select") }}
+      </div>
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Change examiner</button>
+        <a href="{{ url_for('admin.slot_detail', slot_id=slot.id) }}" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </form>
+  {% else %}
+    <div class="alert alert-warning small mb-3">
+      No other eligible examiners are assigned to this examination. Assign more examiners first.
+    </div>
+    <a href="{{ url_for('admin.examination_detail', exam_id=slot.examination_id) }}" class="btn btn-outline-primary btn-sm">Go to Assigned Examiners</a>
+  {% endif %}
+</div>
+{% endblock %}
