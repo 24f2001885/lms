@@ -1,17 +1,22 @@
+"""
+tests/unit/test_smoke_app.py - Smoke test suite updated for Phase P2.
+
+In P2, root / redirects anonymous users to /login (HTTP 302).
+"""
+
 from app import create_app
 
 
 def test_root_returns_placeholder_page():
-    """Verify that GET / returns HTTP 200 with the portal title."""
+    """Verify that GET / redirects anonymous users to /login."""
     app = create_app("testing")
     client = app.test_client()
 
     response = client.get("/")
 
-    assert response.status_code == 200
-    response_text = response.get_data(as_text=True)
-    assert "Examination Management Portal (LMS)" in response_text
-    assert "Milestone P0" in response_text
+    # In Phase P2, root redirects anonymous visitors to /login
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/login")
 
 
 def test_factory_returns_independent_apps():

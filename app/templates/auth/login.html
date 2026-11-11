@@ -1,0 +1,48 @@
+{#
+FILE PURPOSE: PUB-01 Login screen (centered card, single column).
+PROMPT FOR LLM IMPLEMENTATION:
+1. Extend base.html. Centered Bootstrap card (max width about 420px) with h1 "Log in", form method post, csrf via macros, fields Email (type email, autocomplete username, autofocus) and Password (type password, autocomplete current-password), submit "Log in".
+2. Link below: "No account? Register" to auth.register. No "forgot password" link: the reset flow is admin-assisted (Design Plan 4.1); show a small muted text "Forgot your password? Contact your administrator."
+3. On error show the generic flash message from the view; do not add field-specific hints that reveal whether the email exists.
+DEBUGGING:
+<!-- DEBUG: form errors {{ form.errors }} -->
+OFFLINE DOCKER TEST CASES:
+- GET /login returns 200 with an h1 "Log in", an email input and a password input, each with a label.
+- Page contains the text "Contact your administrator" and no link to a reset URL.
+#}
+{% extends "base.html" %}
+{% import "macros/forms.html" as f %}
+
+{% block title %}Log in{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+  <div class="col-12 col-sm-10 col-md-8 col-lg-5">
+    <div class="card shadow-sm border-0 auth-card">
+      <div class="card-body p-4 p-md-5">
+        <h1 class="h3 fw-bold text-center mb-1 text-primary">Log in</h1>
+        <p class="text-muted text-center small mb-4">Sign in to your Examination Management account</p>
+
+        <form method="POST" action="{{ url_for('auth.login', next=request.args.get('next')) }}">
+          {{ form.hidden_tag() }}
+
+          {{ f.render_field(form.email, placeholder="name@example.edu", autofocus=True) }}
+          {{ f.render_field(form.password, placeholder="••••••••") }}
+
+          <div class="d-grid mt-4">
+            <button type="submit" class="btn btn-primary btn-lg fs-6 fw-semibold">Sign in</button>
+          </div>
+        </form>
+
+        <div class="text-center mt-4 pt-2 border-top small text-muted">
+          Don't have an account?
+          <a href="{{ url_for('auth.register') }}" class="text-primary fw-semibold text-decoration-none">Register here</a>
+          <div class="mt-2 text-muted">
+            Forgot your password? Contact your administrator.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,68 @@
+{#
+FILE PURPOSE: Reusable Jinja macros for accessible Bootstrap form fields (Design Plan section 7 and 8).
+PROMPT FOR LLM IMPLEMENTATION:
+1. Macro render_field(field, help_text=None): outputs a div.mb-3 containing a visible label (label for = field id), the field with class form-control (or form-select for SelectField, form-check-input for checkbox/radio), and error messages in div.invalid-feedback. When field.errors is not empty add class is-invalid and set aria-invalid="true" plus aria-describedby pointing to the error/help element ids.
+2. Macro render_radio_group(field) for the role RadioField: fieldset with legend, one form-check per choice.
+3. Macro render_submit(label, css_class="btn btn-primary"): a button of type submit.
+4. Macro csrf_field(form): outputs form.hidden_tag() so every form includes the token.
+5. Macros never print password values; password inputs are rendered with value="".
+DEBUGGING:
+<!-- DEBUG: field {{ field.name }} errors={{ field.errors }} -->
+OFFLINE DOCKER TEST CASES:
+- Rendering a field with an error output contains is-invalid, invalid-feedback and aria-describedby.
+- Every rendered input has a matching label (label for equals input id).
+- A password field renders with an empty value attribute even after a failed POST.
+#}
+{# Reusable accessible WTForms macros for Bootstrap 5 #}
+
+{% macro render_field(field, help_text=None, placeholder='') %}
+  <div class="mb-3">
+    <label for="{{ field.id }}" class="form-label fw-semibold text-secondary small">
+      {{ field.label.text }}
+      {% if field.flags.required %}<span class="text-danger">*</span>{% endif %}
+    </label>
+
+    {% set field_classes = 'form-control' %}
+    {% if field.errors %}
+      {% set field_classes = field_classes + ' is-invalid' %}
+    {% endif %}
+
+    {{ field(class=field_classes, id=field.id, placeholder=placeholder, aria_describedby=(field.id ~ '-help') if help_text else None, aria_invalid='true' if field.errors else 'false', **kwargs) }}
+
+    {% if help_text %}
+      <div id="{{ field.id }}-help" class="form-text text-muted small">{{ help_text }}</div>
+    {% endif %}
+
+    {% if field.errors %}
+      <div class="invalid-feedback d-block">
+        {% for error in field.errors %}
+          <div>{{ error }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+{% endmacro %}
+
+{% macro render_radio_group(field) %}
+  <fieldset class="mb-3">
+    <legend class="col-form-label fw-semibold text-secondary small pt-0">
+      {{ field.label.text }}
+      {% if field.flags.required %}<span class="text-danger">*</span>{% endif %}
+    </legend>
+    <div class="d-flex gap-4">
+      {% for subfield in field %}
+        <div class="form-check">
+          {{ subfield(class="form-check-input" ~ (' is-invalid' if field.errors else '')) }}
+          <label class="form-check-label" for="{{ subfield.id }}">{{ subfield.label.text }}</label>
+        </div>
+      {% endfor %}
+    </div>
+    {% if field.errors %}
+      <div class="invalid-feedback d-block">
+        {% for error in field.errors %}
+          <div>{{ error }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </fieldset>
+{% endmacro %}

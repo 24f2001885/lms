@@ -1,0 +1,56 @@
+{#
+FILE PURPOSE: PUB-02 Registration screen for Students and Examiners.
+PROMPT FOR LLM IMPLEMENTATION:
+1. Extend base.html; centered card; h1 "Create an account"; form method post with csrf.
+2. Fields in order: role radio group (Student, Examiner), Full name, Email, Password, Confirm password, then a fieldset "Examiner details (optional)" containing Department and Phone. Hint under the fieldset: "Only needed if you register as an examiner. Examiner accounts must be approved by an administrator."
+3. Password hint text: "At least 8 characters with a letter and a number."
+4. Submit "Register"; link "Already registered? Log in". There must be NO option or hidden field for the Admin role.
+DEBUGGING:
+<!-- DEBUG: role selected {{ form.role.data }} errors {{ form.errors }} -->
+OFFLINE DOCKER TEST CASES:
+- GET /register shows exactly two role choices and the page source contains no value="admin".
+- Submitting mismatched passwords re-renders the page with "Passwords do not match" next to the field.
+#}
+{% extends "base.html" %}
+{% import "macros/forms.html" as f %}
+
+{% block title %}Create an Account{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+  <div class="col-12 col-sm-10 col-md-8 col-lg-6">
+    <div class="card shadow-sm border-0 auth-card">
+      <div class="card-body p-4 p-md-5">
+        <h1 class="h3 fw-bold text-center mb-1 text-primary">Create an Account</h1>
+        <p class="text-muted text-center small mb-4">Register as a Student or Faculty Examiner</p>
+
+        <form method="POST" action="{{ url_for('auth.register') }}">
+          {{ form.hidden_tag() }}
+
+          {{ f.render_radio_group(form.role) }}
+          {{ f.render_field(form.full_name, placeholder="e.g. John Doe") }}
+          {{ f.render_field(form.email, placeholder="e.g. jdoe@example.edu") }}
+          {{ f.render_field(form.password, help_text="At least 8 characters with a letter and a number.", placeholder="••••••••") }}
+          {{ f.render_field(form.confirm_password, placeholder="••••••••") }}
+
+          <div class="border rounded p-3 mb-3 bg-light">
+            <h2 class="h6 fw-bold text-secondary mb-2">Examiner Information (Optional)</h2>
+            <p class="small text-muted mb-3">Required only when registering as an Examiner. Examiner accounts require administrator approval.</p>
+            {{ f.render_field(form.department, placeholder="e.g. Computer Science") }}
+            {{ f.render_field(form.contact_phone, placeholder="e.g. +91 98765 43210") }}
+          </div>
+
+          <div class="d-grid mt-4">
+            <button type="submit" class="btn btn-primary btn-lg fs-6 fw-semibold">Register Account</button>
+          </div>
+        </form>
+
+        <div class="text-center mt-4 pt-2 border-top small text-muted">
+          Already registered?
+          <a href="{{ url_for('auth.login') }}" class="text-primary fw-semibold text-decoration-none">Sign in here</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

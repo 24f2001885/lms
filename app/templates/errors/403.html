@@ -1,0 +1,29 @@
+{#
+FILE PURPOSE: Custom "Forbidden" page (PUB-07).
+PROMPT FOR LLM IMPLEMENTATION:
+1. Extend base.html; h1 "Access denied"; one sentence "You do not have permission to open this page."; a primary button back to the user's dashboard (role_dashboard_url) when signed in, otherwise to the login page.
+2. No technical details, no role names of other users.
+DEBUGGING:
+<!-- DEBUG: path={{ request.path }} -->
+OFFLINE DOCKER TEST CASES:
+- Response status is 403 and body contains "permission".
+#}
+{% extends "base.html" %}
+{% block title %}Access Denied{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+  <div class="col-md-6 text-center">
+    <h1 class="display-4 text-danger fw-bold mb-3">403</h1>
+    <h2 class="h4 mb-3">Access Denied</h2>
+    <p class="text-muted mb-4">
+      You do not have permission to access this page. Please verify your account privileges.
+    </p>
+    {% if current_user %}
+      <a href="{{ role_dashboard_url(current_user) }}" class="btn btn-primary px-4">Return to Dashboard</a>
+    {% else %}
+      <a href="{{ url_for('auth.login') }}" class="btn btn-primary px-4">Log in</a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
