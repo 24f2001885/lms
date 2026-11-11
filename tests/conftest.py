@@ -2,8 +2,9 @@
 tests/conftest.py - Pytest fixtures, test data factories, and login helpers for LMS.
 """
 
-from datetime import datetime, timezone
-from typing import Generator
+from collections.abc import Generator
+from datetime import UTC, datetime
+
 import pytest
 from flask import Flask
 from flask.testing import FlaskClient, FlaskCliRunner
@@ -14,10 +15,7 @@ from app.extensions import db
 from app.models import (
     Booking,
     Course,
-    Evaluation,
-    EvaluationScore,
     Examination,
-    ExaminationExaminer,
     ExaminationRubric,
     ExaminationSlot,
     ExaminerProfile,
@@ -25,7 +23,7 @@ from app.models import (
     User,
 )
 
-BASE_DATETIME = datetime(2030, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+BASE_DATETIME = datetime(2030, 1, 1, 0, 0, 0, tzinfo=UTC)
 
 
 @pytest.fixture

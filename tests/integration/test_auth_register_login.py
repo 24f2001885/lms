@@ -13,8 +13,7 @@ DEBUGGING:
 OFFLINE DOCKER TEST CASES:
 - All 26 tests pass with no network.
 - Running the file twice in a row passes both times (no state leaks between tests).
-"""
-"""
+
 tests/integration/test_auth_register_login.py - Registration, Login, and Session flow tests.
 """
 
@@ -73,7 +72,7 @@ def test_examiner_register_pending_with_profile(client, app):
 
 def test_register_admin_role_rejected(client, app):
     """Verify admin role cannot be registered through UI."""
-    res = client.post(
+    client.post(
         "/register",
         data={
             "role": "admin",

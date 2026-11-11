@@ -9,8 +9,7 @@ DEBUGGING:
 # print(f"[DEBUG] auth_bp endpoints: {[r.endpoint for r in current_app.url_map.iter_rules() if r.endpoint.startswith('auth.')]}")
 OFFLINE DOCKER TEST CASES:
 - app.url_map contains the endpoints auth.index, auth.login, auth.register, auth.logout, auth.change_password, auth.pending_approval, auth.account_inactive, auth.profile.
-"""
-"""
+
 app/blueprints/auth/__init__.py - Authentication and public identity blueprint.
 """
 

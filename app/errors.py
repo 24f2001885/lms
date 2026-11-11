@@ -16,8 +16,7 @@ OFFLINE DOCKER TEST CASES:
 - A route that raises RuntimeError returns 500 whose body contains the request id but NOT the word "Traceback" or the exception message.
 - Raising BookingError("slot_full", "This slot is full.") inside a test route flashes that message and redirects.
 - Anonymous 404 and 403 pages render without a logout button.
-"""
-"""
+
 app/errors.py - Domain exceptions and HTTP error handlers for LMS.
 
 Defines AppError base exception and subclasses with stable error codes,
@@ -25,6 +24,7 @@ and registers custom handlers for 403, 404, 500, and CSRF token errors (PUB-07).
 """
 
 import logging
+
 from flask import Flask, flash, g, redirect, render_template, request, url_for
 from flask_wtf.csrf import CSRFError
 
@@ -63,7 +63,7 @@ class WindowError(AppError):
         super().__init__(code=code, message=message, http_status=400)
 
 
-class PermissionDenied(AppError):
+class PermissionDenied(AppError):  # noqa: N818
     """Raised when a user lacks required role permissions for an action."""
 
     def __init__(self, code: str = "permission_denied", message: str = "Access denied."):

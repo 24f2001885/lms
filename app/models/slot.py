@@ -14,8 +14,7 @@ OFFLINE DOCKER TEST CASES:
 - end_at equal to start_at raises IntegrityError; max_capacity 0 raises IntegrityError.
 - status "open" raises IntegrityError.
 - seats_left is 3 for capacity 5 and booked_count 2.
-"""
-"""
+
 app/models/slot.py - Examination slot model for LMS.
 
 Defines the 'examination_slots' table representing bookable time windows
@@ -23,7 +22,8 @@ created by faculty examiners with capacity limits and active booking tracking.
 """
 
 from datetime import datetime
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
+
 from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -103,7 +103,7 @@ class ExaminationSlot(db.Model, TimestampMixin):
     # -----------------------------------------------------------------
     examination: Mapped["Examination"] = relationship("Examination", back_populates="slots")
     examiner: Mapped["User"] = relationship("User", foreign_keys=[examiner_id])
-    bookings: Mapped[List["Booking"]] = relationship(
+    bookings: Mapped[list["Booking"]] = relationship(
         "Booking",
         back_populates="slot",
         foreign_keys="Booking.slot_id",

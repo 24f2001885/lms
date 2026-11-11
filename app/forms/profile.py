@@ -12,14 +12,13 @@ OFFLINE DOCKER TEST CASES:
 - fields_for_role("admin") == ["full_name"]; examiner and student lists match item 2.
 - A student cannot take another student's roll_number but can resubmit their own.
 - A forged POST containing role=admin or approval_status=approved does not change those columns.
-"""
-"""
+
 app/forms/profile.py - WTForms for editing user profile information (PUB-06).
 
 Provides role-aware profile field resolution and uniqueness validation.
 """
 
-from typing import List
+
 from flask import g
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
@@ -61,7 +60,7 @@ class ProfileForm(FlaskForm):
     submit = SubmitField("Save Changes")
 
     @classmethod
-    def fields_for_role(cls, role: str) -> List[str]:
+    def fields_for_role(cls, role: str) -> list[str]:
         """Return the list of form field names applicable to a specific user role."""
         if role == "admin":
             return ["full_name"]

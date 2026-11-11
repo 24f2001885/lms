@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
+
 from sqlalchemy import CheckConstraint, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -35,7 +36,7 @@ class Course(db.Model, TimestampMixin):
     # Full course name
     name: Mapped[str] = mapped_column(String(150), nullable=False)
 
-    description: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    description: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     # Status: 'active' | 'inactive'
     status: Mapped[str] = mapped_column(
@@ -56,7 +57,7 @@ class Course(db.Model, TimestampMixin):
     # Relationships
     # -----------------------------------------------------------------
     creator: Mapped["User"] = relationship("User", foreign_keys=[created_by])
-    examinations: Mapped[List["Examination"]] = relationship(
+    examinations: Mapped[list["Examination"]] = relationship(
         "Examination",
         back_populates="course",
         passive_deletes=False,

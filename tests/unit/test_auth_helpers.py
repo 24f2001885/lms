@@ -8,12 +8,10 @@ DEBUGGING:
 # print(f"[DEBUG] redirect target for {user.role}: {post_login_redirect_url(user)}")
 OFFLINE DOCKER TEST CASES:
 - 8 tests pass offline; test_verify_credentials_runs_hash_for_unknown_email fails if the dummy-hash step is removed.
-"""
-"""
+
 tests/unit/test_auth_helpers.py - Unit tests for security helpers in app/security/auth_helpers.py.
 """
 
-from werkzeug.security import check_password_hash
 from app.security.auth_helpers import (
     is_safe_redirect_target,
     post_login_redirect_url,

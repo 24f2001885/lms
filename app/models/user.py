@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING, Optional
+
 from sqlalchemy import Boolean, CheckConstraint, DateTime, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -80,7 +81,7 @@ class User(db.Model, TimestampMixin):
     )
 
     # Timestamp of the most recent successful login session
-    last_login_at: Mapped[Optional[DateTime]] = mapped_column(DateTime, nullable=True)
+    last_login_at: Mapped[DateTime | None] = mapped_column(DateTime, nullable=True)
 
     # -----------------------------------------------------------------
     # Relationships (Strict 1-to-1 with profile tables; no cascades)

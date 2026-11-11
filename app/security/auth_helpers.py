@@ -20,18 +20,17 @@ OFFLINE DOCKER TEST CASES:
 - is_safe_redirect_target("/student/dashboard") True; "//evil.com", "https://evil.com", "/\\evil.com", "javascript:alert(1)" all False.
 - verify_credentials returns None for an unknown email and for a wrong password, and returns the user for correct credentials with mixed-case email input.
 - post_login_redirect_url returns the change-password URL for the seeded admin (must_change_password True).
-"""
-"""
+
 app/security/auth_helpers.py - Session-based authentication helpers for LMS (Tier 1).
 
 Provides timing-attack-safe credential verification, session fixation prevention,
 safe redirect validation, and role-based redirect resolvers.
 """
 
-from datetime import datetime, timezone
 import logging
-from typing import List, Optional
+from datetime import UTC, datetime
 from urllib.parse import urlparse
+
 from flask import g, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -77,7 +76,7 @@ def login_user_session(user: User) -> None:
     session.permanent = True
 
     # 3. Update last login timestamp in naive UTC
-    user.last_login_at = datetime.now(timezone.utc).replace(tzinfo=None)
+    user.last_login_at = datetime.now(UTC).replace(tzinfo=None)
     db.session.commit()
 
     logger.info("Login successful: user_id=%s role=%s", user.id, user.role)
@@ -92,18 +91,18 @@ def logout_user_session() -> None:
     logger.info("Logout successful: user_id=%s", user_id)
 
 
-def get_current_user() -> Optional[User]:
+def get_current_user() -> User | None:
     """Return the currently authenticated User or None."""
     return getattr(g, "user", None)
 
 
-def current_user_id() -> Optional[int]:
+def current_user_id() -> int | None:
     """Return the integer ID of the currently authenticated User or None."""
     user = get_current_user()
     return user.id if user else None
 
 
-def role_dashboard_url(user: Optional[User]) -> str:
+def role_dashboard_url(user: User | None) -> str:
     """Return the default dashboard URL endpoint for the given user role."""
     if not user:
         return url_for("auth.login")
@@ -133,12 +132,12 @@ def post_login_redirect_url(user: User) -> str:
     return role_dashboard_url(user)
 
 
-def validate_password_strength(raw: str) -> List[str]:
+def validate_password_strength(raw: str) -> list[str]:
     """
     Validate that password meets minimum complexity requirements.
     Rules: length >= MIN_PASSWORD_LENGTH, contains letter, contains digit.
     """
-    problems: List[str] = []
+    problems: list[str] = []
     if len(raw) < BaseConfig.MIN_PASSWORD_LENGTH:
         problems.append(f"Password must be at least {BaseConfig.MIN_PASSWORD_LENGTH} characters long.")
     if not any(c.isalpha() for c in raw):
@@ -148,7 +147,7 @@ def validate_password_strength(raw: str) -> List[str]:
     return problems
 
 
-def is_safe_redirect_target(target: Optional[str]) -> bool:
+def is_safe_redirect_target(target: str | None) -> bool:
     """
     Validate that target URL is a safe local relative path.
     Prevents Open Redirect vulnerabilities (rejects schemes, //, \\, and control chars).
@@ -167,7 +166,7 @@ def is_safe_redirect_target(target: Optional[str]) -> bool:
     return parsed.scheme == "" and parsed.netloc == "" and target.startswith("/")
 
 
-def verify_credentials(email: str, password: str) -> Optional[User]:
+def verify_credentials(email: str, password: str) -> User | None:
     """
     Verify user credentials in constant time to prevent user-enumeration timing attacks.
     """

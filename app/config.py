@@ -1,7 +1,6 @@
 import os
 from datetime import timedelta
 from pathlib import Path
-from typing import Type
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
@@ -77,13 +76,13 @@ class ProdConfig(BaseConfig):
             )
 
 
-CONFIG_MAP: dict[str, Type[BaseConfig]] = {
+CONFIG_MAP: dict[str, type[BaseConfig]] = {
     "development": DevConfig,
     "testing": TestConfig,
     "production": ProdConfig,
 }
 
-def get_config(config_name: str | None = None) -> Type[BaseConfig]:
+def get_config(config_name: str | None = None) -> type[BaseConfig]:
     if config_name is None:
         config_name = os.environ.get("FLASK_ENV", "development").lower()
 

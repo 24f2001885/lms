@@ -13,12 +13,12 @@ DEBUGGING:
 OFFLINE DOCKER TEST CASES:
 - All tests pass with the network disabled (docker compose --profile test run --rm test).
 - After "docker compose up --build" and a first "init-db" inside the container, instance/emp.db exists on the host through the bind mount.
-"""
-"""
+
 tests/integration/test_init_db_and_pragmas.py - Integration tests for init-db and SQLite pragmas.
 """
 
 from sqlalchemy import text
+
 from app.commands import EXPECTED_TIER1_TABLES
 from app.extensions import db
 from app.models import User

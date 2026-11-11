@@ -16,8 +16,7 @@ OFFLINE DOCKER TEST CASES:
 - Duplicate email differing only by case is rejected.
 - A 7-character password and an all-letters password are rejected; "Passw0rdOK" is accepted.
 - ChangePasswordForm rejects new == current.
-"""
-"""
+
 app/forms/auth.py - WTForms for authentication and account management.
 
 Defines LoginForm, RegisterForm, and ChangePasswordForm with server-side validation.

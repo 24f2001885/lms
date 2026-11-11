@@ -5,7 +5,8 @@ Stores role-specific academic metadata for enrolled students (roll number,
 academic program, contact phone) linked 1-to-1 to users.
 """
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
+
 from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -36,10 +37,10 @@ class StudentProfile(db.Model, TimestampMixin):
     )
 
     # Optional roll number (unique when present; SQLite permits multiple NULLs)
-    roll_number: Mapped[Optional[str]] = mapped_column(String(30), unique=True, nullable=True)
+    roll_number: Mapped[str | None] = mapped_column(String(30), unique=True, nullable=True)
 
-    contact_phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-    program: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    contact_phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    program: Mapped[str | None] = mapped_column(String(120), nullable=True)
 
     # Relationship back to User
     user: Mapped["User"] = relationship("User", back_populates="student_profile")

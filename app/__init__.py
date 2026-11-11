@@ -8,11 +8,12 @@ request authentication hooks, template context processors, error handlers, and b
 import os
 
 from flask import Flask
+
+from app.commands import register_cli
 from app.config import get_config
 from app.errors import register_error_handlers
 from app.extensions import csrf, init_extensions
 from app.logging_config import register_request_logging, setup_logging
-from app.commands import register_cli
 from app.security.auth_helpers import get_current_user, load_current_user, role_dashboard_url
 
 

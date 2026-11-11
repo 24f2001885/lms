@@ -18,16 +18,16 @@ OFFLINE DOCKER TEST CASES:
 - Pending examiner GET /examiner/dashboard -> 302 to /pending-approval; after setting approval_status "approved" in the database, the very next request succeeds (flag checked per request).
 - Approved examiner whose is_active is set False -> next request redirects to /account-inactive.
 - Admin with must_change_password True is redirected to /change-password from /admin/dashboard.
-"""
-"""
+
 app/security/decorators.py - Route protection decorators for RBAC in LMS.
 
 Enforces login requirements, active status, password change mandates,
 and role permissions on every protected endpoint.
 """
 
-from functools import wraps
 import logging
+from functools import wraps
+
 from flask import abort, flash, g, redirect, request, url_for
 
 logger = logging.getLogger("lms")

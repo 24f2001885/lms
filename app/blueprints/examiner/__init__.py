@@ -10,8 +10,7 @@ DEBUGGING:
 OFFLINE DOCKER TEST CASES:
 - Approved examiner gets 200; pending examiner is redirected to /pending-approval; rejected examiner too; student and admin get 403.
 - Deactivated (is_active False) examiner is redirected to /account-inactive on the next request.
-"""
-"""
+
 app/blueprints/examiner/__init__.py - Examiner blueprint stub for Phase P2.
 
 STUB: Replaced in Phase P4 by slot management and evaluation views (EXM-01 onward).
@@ -19,6 +18,7 @@ Enforces @approved_examiner_required to test pending approval locks.
 """
 
 from flask import Blueprint, render_template
+
 from app.security.decorators import approved_examiner_required
 
 examiner_bp = Blueprint("examiner", __name__, url_prefix="/examiner")

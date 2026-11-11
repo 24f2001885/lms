@@ -1,7 +1,9 @@
 from datetime import datetime
+
 import pytest
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
+
 from app.extensions import db
 from app.models import Booking, ExaminationSlot
 

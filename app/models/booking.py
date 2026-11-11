@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
+
 from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Integer, String, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -75,15 +76,15 @@ class Booking(db.Model, TimestampMixin):
     booked_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
     # Cancellation audit tracking
-    cancelled_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    cancelled_by: Mapped[Optional[int]] = mapped_column(
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    cancelled_by: Mapped[int | None] = mapped_column(
         Integer,
         ForeignKey("users.id", ondelete="RESTRICT"),
         nullable=True,
     )
 
     # Rescheduling audit tracking
-    rescheduled_from_slot_id: Mapped[Optional[int]] = mapped_column(
+    rescheduled_from_slot_id: Mapped[int | None] = mapped_column(
         Integer,
         ForeignKey("examination_slots.id", ondelete="RESTRICT"),
         nullable=True,

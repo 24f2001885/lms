@@ -1,6 +1,6 @@
-from datetime import datetime
 import pytest
 from sqlalchemy.exc import IntegrityError
+
 from app.extensions import db
 from app.models import AuditLog, Evaluation, EvaluationScore
 

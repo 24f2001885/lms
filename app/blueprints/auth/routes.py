@@ -21,8 +21,7 @@ OFFLINE DOCKER TEST CASES:
 - Student login redirects to /student/dashboard; examiner (pending) to /pending-approval; seeded admin to /change-password first, then to /admin/dashboard after changing it.
 - GET /logout returns 405; POST /logout (with CSRF disabled in tests) clears the session and redirects to /login.
 - Login with ?next=https://evil.example ignores the next value.
-"""
-"""
+
 app/blueprints/auth/routes.py - Core authentication routes for LMS (PUB-01 to PUB-05).
 
 Handles user login, registration (students/examiners), POST-only logout,
@@ -30,6 +29,7 @@ forced password change, pending approval notice, and inactive account notice.
 """
 
 import logging
+
 from flask import abort, flash, redirect, render_template, request, url_for
 from sqlalchemy.exc import IntegrityError
 

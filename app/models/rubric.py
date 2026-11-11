@@ -1,5 +1,14 @@
-from typing import TYPE_CHECKING, Optional
-from sqlalchemy import CheckConstraint, ForeignKey, Index, Integer, Numeric, String, UniqueConstraint
+from typing import TYPE_CHECKING
+
+from sqlalchemy import (
+    CheckConstraint,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.extensions import db
@@ -39,7 +48,7 @@ class ExaminationRubric(db.Model):
     # Criterion title (e.g., 'System Architecture & Design')
     criterion_name: Mapped[str] = mapped_column(String(120), nullable=False)
 
-    description: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    description: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     # Percentage weightage (0.00 to 100.00)
     weightage: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False)

@@ -7,6 +7,7 @@ and idempotent Administrator account seeding (PDR Section 2.1, Course Requiremen
 
 import click
 from flask import Flask
+
 from app.extensions import db
 
 EXPECTED_TIER1_TABLES = (

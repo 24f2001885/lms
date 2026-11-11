@@ -14,15 +14,13 @@ DEBUGGING:
 OFFLINE DOCKER TEST CASES:
 - The 6 x 5 matrix passes (30 parametrised cases) offline.
 - Removing role_required from any stub dashboard makes at least one matrix case fail.
-"""
-"""
+
 tests/integration/test_rbac_access.py - 6x5 Role-Based Access Control matrix tests.
 """
 
 import pytest
-from flask import Flask
+
 from app import create_app
-from app.models import User
 
 
 @pytest.mark.parametrize(

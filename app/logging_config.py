@@ -1,7 +1,8 @@
-import logging 
+import logging
 from logging.handlers import RotatingFileHandler
-from pathlib import Path 
+from pathlib import Path
 from uuid import uuid4
+
 from flask import Flask, g, request
 
 

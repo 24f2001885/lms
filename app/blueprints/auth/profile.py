@@ -14,12 +14,12 @@ OFFLINE DOCKER TEST CASES:
 - Admin sees only the full name field.
 - POST containing role=admin leaves the user's role unchanged.
 - Anonymous GET /profile redirects to /login.
-"""
-"""
+
 app/blueprints/auth/profile.py - Shared profile management view for all roles (PUB-06).
 """
 
 import logging
+
 from flask import flash, redirect, render_template, url_for
 
 from app.blueprints.auth import auth_bp

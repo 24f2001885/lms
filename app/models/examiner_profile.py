@@ -1,5 +1,6 @@
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
+
 from sqlalchemy import CheckConstraint, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -37,9 +38,9 @@ class ExaminerProfile(db.Model, TimestampMixin):
         nullable=False,
     )
 
-    contact_phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-    department: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
-    designation: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    contact_phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    department: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    designation: Mapped[str | None] = mapped_column(String(120), nullable=True)
 
     # Internal profile status ('active' | 'inactive')
     status: Mapped[str] = mapped_column(

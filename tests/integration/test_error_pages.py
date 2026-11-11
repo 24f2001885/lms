@@ -8,12 +8,10 @@ DEBUGGING:
 # print(f"[DEBUG] {response.status_code} len={len(response.data)} request_id_header={response.headers.get('X-Request-ID')}")
 OFFLINE DOCKER TEST CASES:
 - 8 tests pass offline; the throw-away route does not leak into other tests (registered on a per-test app instance).
-"""
-"""
+
 tests/integration/test_error_pages.py - Custom error page tests (PUB-07).
 """
 
-from app.errors import BookingError
 
 
 def test_404_custom_page(client):

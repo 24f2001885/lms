@@ -9,8 +9,7 @@ DEBUGGING:
 # print(f"[DEBUG] student stub dashboard served to user_id={g.user.id}")
 OFFLINE DOCKER TEST CASES:
 - Student gets 200; examiner and admin get 403; anonymous gets 302 to /login.
-"""
-"""
+
 app/blueprints/student/__init__.py - Student blueprint stub for Phase P2.
 
 STUB: Replaced in Phase P5 by slot booking and result views (STU-01 onward).
@@ -18,6 +17,7 @@ Enforces @student_required to validate student role security.
 """
 
 from flask import Blueprint, render_template
+
 from app.security.decorators import student_required
 
 student_bp = Blueprint("student", __name__, url_prefix="/student")
