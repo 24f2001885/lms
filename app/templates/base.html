@@ -1,22 +1,3 @@
-{#
-FILE PURPOSE: Master layout extended by every page (Design Plan sections 1, 2, 7, 8). P3/P4/P5 add role-specific bases that extend this file.
-DEPENDS ON: app/static/css/app.css, vendored Bootstrap files in app/static/vendor/bootstrap/.
-PROMPT FOR LLM IMPLEMENTATION:
-1. HTML5 document, lang="en", viewport meta, a meta name="csrf-token" tag with the token (used later by fetch calls in Tier 2/3), title block "{% block title %}EMP{% endblock %} - Examination Management Portal".
-2. Load Bootstrap 5 CSS and JS bundle ONLY from url_for static paths vendor/bootstrap/css/bootstrap.min.css and vendor/bootstrap/js/bootstrap.bundle.min.js (no CDN, no web fonts), then css/app.css. System font stack only.
-3. Skip-to-content link as the first focusable element, a header with a navbar (brand "EMP"), a main element with id="main-content" containing flash messages then the content block, and a simple footer.
-4. Navbar is role-aware using current_user from the context processor: anonymous -> Login and Register links; signed in -> Dashboard (role_dashboard_url), Profile, and a Logout FORM (POST to auth.logout with the csrf hidden field, styled as a link button). Show the user's full name and a text role label. Hide the dashboard link for inactive or pending users (they only see Logout).
-5. Flash messages: loop get_flashed_messages(with_categories=true) inside a container with aria-live="polite"; map categories success/info/warning/danger to Bootstrap alert classes, each dismissible with role="alert".
-6. Blocks: title, content, scripts (empty). One h1 per page is provided by child templates. Use semantic landmarks header, nav, main, footer.
-7. Content max-width 1200px via a container; the page background and palette come from app.css.
-DEBUGGING:
-<!-- DEBUG: render with current_user.role and request.endpoint printed in an HTML comment when app.debug is true -->
-OFFLINE DOCKER TEST CASES:
-- The rendered page has no reference to any http(s):// asset URL (offline-safe check with a regex on the HTML).
-- Anonymous page shows Login and Register; a signed-in student page shows Logout and no Register.
-- The Logout control is a form with method post and a csrf_token input.
-- Flash message markup contains role="alert" and sits inside an aria-live="polite" region.
-#}
 <!doctype html>
 <html lang="en">
 <head>
@@ -25,7 +6,7 @@ OFFLINE DOCKER TEST CASES:
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>{% block title %}Home{% endblock %} - LMS Examination Portal</title>
 
-  <!-- Vendored Bootstrap 5 CSS for offline support -->
+  <!-- Offline Bootstrap CSS & Brand Overrides -->
   <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
   {% block extra_css %}{% endblock %}
@@ -35,7 +16,7 @@ OFFLINE DOCKER TEST CASES:
   <!-- Skip-to-content accessible link -->
   <a href="#main-content" class="skip-link">Skip to main content</a>
 
-  <!-- Top Navigation Bar -->
+  {% block site_nav %}
   <header>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
       <div class="container">
@@ -82,6 +63,7 @@ OFFLINE DOCKER TEST CASES:
       </div>
     </nav>
   </header>
+  {% endblock %}
 
   <!-- Flash Messages Region -->
   <div class="container mt-3" aria-live="polite">
@@ -97,12 +79,13 @@ OFFLINE DOCKER TEST CASES:
     {% endwith %}
   </div>
 
-  <!-- Main Content Landmark -->
+  {% block layout %}
   <main id="main-content" class="flex-grow-1 py-4">
     <div class="container">
       {% block content %}{% endblock %}
     </div>
   </main>
+  {% endblock %}
 
   <!-- Footer -->
   <footer class="bg-white border-top py-3 text-center text-muted small mt-auto">
@@ -111,7 +94,6 @@ OFFLINE DOCKER TEST CASES:
     </div>
   </footer>
 
-  <!-- Vendored Bootstrap JS bundle for offline support -->
   <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
   {% block extra_js %}{% endblock %}
 </body>

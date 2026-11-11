@@ -1,0 +1,9 @@
+<!--
+FILE PURPOSE: Form for the Admin to add an examiner directly (approved, forced password change).
+PROMPT FOR LLM IMPLEMENTATION:
+1. Extend base_admin.html; page_title "Add examiner"; ExaminerCreateForm fields via render_field; help text on the temporary password; Save and Cancel.
+DEBUGGING:
+<!-- DEBUG: examiner create errors {{ form.errors }} -->
+OFFLINE DOCKER TEST CASES:
+- Duplicate email shows the email_taken message; success redirects to the examiner detail.
+-->

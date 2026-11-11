@@ -1,0 +1,9 @@
+<!--
+FILE PURPOSE: ADM-14 change slot examiner.
+PROMPT FOR LLM IMPLEMENTATION:
+1. Extend base_admin.html; summary of the slot and the current examiner; ChangeSlotExaminerForm (select of eligible examiners) with POST to /admin/slots/<id>/examiner; note "Existing bookings stay with this slot." When there are no eligible examiners show a message and a link to the examination's assigned-examiners panel.
+DEBUGGING:
+<!-- DEBUG: eligible examiners {{ form.examiner_id.choices }} -->
+OFFLINE DOCKER TEST CASES:
+- The current examiner is not in the options; the empty state appears when none are eligible.
+-->

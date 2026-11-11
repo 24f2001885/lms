@@ -1,0 +1,72 @@
+{# Status badge macro following Design Plan Section 6 #}
+
+{% macro badge(domain, state) %}
+  {% set s = state|lower if state else '' %}
+  
+  {% if domain == 'examination' %}
+    {% if s == 'draft' %}
+      <span class="badge bg-secondary">Draft</span>
+    {% elif s == 'slot_creation' %}
+      <span class="badge bg-primary">Slot Creation</span>
+    {% elif s == 'booking_open' %}
+      <span class="badge bg-success">Booking Open</span>
+    {% elif s == 'closed' %}
+      <span class="badge badge-outline-warning">Closed</span>
+    {% elif s == 'completed' %}
+      <span class="badge bg-dark">Completed</span>
+    {% else %}
+      <span class="badge bg-secondary">{{ s|capitalize }}</span>
+    {% endif %}
+
+  {% elif domain == 'slot' %}
+    {% if s == 'available' %}
+      <span class="badge bg-success">Available</span>
+    {% elif s == 'full' %}
+      <span class="badge badge-full">Full</span>
+    {% elif s == 'cancelled' %}
+      <span class="badge bg-secondary">Cancelled</span>
+    {% elif s == 'completed' %}
+      <span class="badge bg-dark">Completed</span>
+    {% else %}
+      <span class="badge bg-secondary">{{ s|capitalize }}</span>
+    {% endif %}
+
+  {% elif domain == 'booking' %}
+    {% if s == 'booked' %}
+      <span class="badge bg-success">Booked</span>
+    {% elif s == 'completed' %}
+      <span class="badge bg-dark">Completed</span>
+    {% elif s == 'cancelled' %}
+      <span class="badge bg-secondary">Cancelled</span>
+    {% else %}
+      <span class="badge bg-secondary">{{ s|capitalize }}</span>
+    {% endif %}
+
+  {% elif domain == 'account' %}
+    {% if s == 'pending' %}
+      <span class="badge bg-warning text-dark">Pending</span>
+    {% elif s == 'approved' %}
+      <span class="badge bg-success">Approved</span>
+    {% elif s == 'rejected' %}
+      <span class="badge bg-danger">Rejected</span>
+    {% elif s == 'inactive' %}
+      <span class="badge bg-danger">Deactivated</span>
+    {% else %}
+      <span class="badge bg-secondary">{{ s|capitalize }}</span>
+    {% endif %}
+
+  {% elif domain == 'switch' %}
+    {% if s in ('open', 'true', '1') %}
+      <span class="badge bg-success">Open</span>
+    {% else %}
+      <span class="badge bg-secondary">Closed</span>
+    {% endif %}
+
+  {% else %}
+    <span class="badge bg-secondary">{{ s|capitalize }}</span>
+  {% endif %}
+{% endmacro %}
+
+{% macro deleted_badge() %}
+  <span class="badge bg-dark text-white">Deleted</span>
+{% endmacro %}

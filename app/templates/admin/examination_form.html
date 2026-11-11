@@ -1,0 +1,65 @@
+<!--
+FILE PURPOSE: ADM-05 create/edit examination form.
+PROMPT FOR LLM IMPLEMENTATION:
+1. Extend base_admin.html. Sections (fieldsets with legends): Basics (course, name, description, type), Scoring (duration in minutes, maximum marks), Slot creation window (start, end), Booking window (start, end, cancellation deadline with help text "Defaults to the booking end").
+2. Date fields are input type datetime-local with the HTML5 required attribute and a help text showing the timezone from config ("Times are in Asia/Kolkata").
+3. Buttons Save and Cancel; the form posts to /admin/examinations (create) or /admin/examinations/<id>/update (edit). Cross-field errors appear in an alert at the top of the form AND beside the fields.
+DEBUGGING:
+<!-- DEBUG: exam form errors {{ form.errors }} -->
+OFFLINE DOCKER TEST CASES:
+- Each date input has a label and type datetime-local; submitting an invalid window shows the combined message.
+- Editing shows the stored times converted back to local time.
+-->
+{% extends "admin/base_admin.html" %}
+{% import "macros/forms.html" as f %}
+
+{% block title %}Create Examination{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h3 fw-bold text-primary mb-0">Create Examination</h1>
+  <a href="{{ url_for('admin.examinations') }}" class="btn btn-outline-secondary btn-sm">Cancel</a>
+</div>
+
+<div class="card border-0 shadow-sm p-4">
+  <form method="POST" action="{{ url_for('admin.create_examination') }}">
+    {{ form.hidden_tag() }}
+
+    <div class="row g-3">
+      <div class="col-md-6">{{ f.render_field(form.course_id) }}</div>
+      <div class="col-md-6">{{ f.render_field(form.exam_type) }}</div>
+      <div class="col-12">{{ f.render_field(form.name, placeholder="e.g. Midterm Viva Examination") }}</div>
+      <div class="col-12">{{ f.render_field(form.description, placeholder="Candidate instructions...") }}</div>
+      <div class="col-md-6">{{ f.render_field(form.duration_minutes) }}</div>
+      <div class="col-md-6">{{ f.render_field(form.max_marks) }}</div>
+
+      <!-- Window 1: Slot Creation Period -->
+      <div class="col-12"><hr class="my-2"><h2 class="h6 fw-bold text-primary">Window 1: Slot Creation Period (Examiners)</h2></div>
+      <div class="col-md-6">{{ f.render_field(form.slot_creation_start) }}</div>
+      <div class="col-md-6">{{ f.render_field(form.slot_creation_end) }}</div>
+
+      <!-- Window 2: Student Booking Period -->
+      <div class="col-12"><hr class="my-2"><h2 class="h6 fw-bold text-primary">Window 2: Student Booking Period</h2></div>
+      <div class="col-md-6">{{ f.render_field(form.booking_start) }}</div>
+      <div class="col-md-6">{{ f.render_field(form.booking_end) }}</div>
+      <div class="col-md-6">{{ f.render_field(form.cancellation_deadline, help_text="Defaults to Booking End if left blank.") }}</div>
+
+      <!-- Switches -->
+      <div class="col-12 mt-3">
+        <div class="form-check form-switch mb-2">
+          {{ form.slot_creation_open(class="form-check-input") }}
+          <label class="form-check-label fw-semibold" for="{{ form.slot_creation_open.id }}">{{ form.slot_creation_open.label.text }}</label>
+        </div>
+        <div class="form-check form-switch">
+          {{ form.booking_open(class="form-check-input") }}
+          <label class="form-check-label fw-semibold" for="{{ form.booking_open.id }}">{{ form.booking_open.label.text }}</label>
+        </div>
+      </div>
+
+      <div class="col-12 mt-4 pt-3 border-top">
+        <button type="submit" class="btn btn-primary px-4">Create Examination</button>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

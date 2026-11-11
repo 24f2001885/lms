@@ -1,0 +1,9 @@
+<!--
+FILE PURPOSE: ADM-03 create/edit course form.
+PROMPT FOR LLM IMPLEMENTATION:
+1. Extend base_admin.html; page_title "New course" or "Edit course" (variable). Form posts to /admin/courses (create) or /admin/courses/<id>/update (edit), csrf included, fields via render_field: Course code, Course name, Description, Status. Buttons: Save (primary) and Cancel (link to the list).
+DEBUGGING:
+<!-- DEBUG: course form errors {{ form.errors }} -->
+OFFLINE DOCKER TEST CASES:
+- Editing pre-fills all fields; a validation error keeps the user's input and shows the message beside the field.
+-->

@@ -1,0 +1,12 @@
+<!--
+FILE PURPOSE: ADM-10 examiner detail (also reused for the same layout of user actions).
+PROMPT FOR LLM IMPLEMENTATION:
+1. Extend base_admin.html; page_title examiner name with the account badge. Profile card (email, phone, department, designation, registered, last login).
+2. Action buttons by state: Approve and Reject (pending), Deactivate (active, confirm modal), Activate (inactive). A separate card "Temporary password" with the TemporaryPasswordForm and text "Leave blank to generate one. The user must change it at next login."
+3. Cards: assigned examinations, counts of slots and booked students, and the audit history list for this user.
+DEBUGGING:
+<!-- DEBUG: examiner {{ user.id }} approval={{ user.approval_status }} active={{ user.is_active }} -->
+OFFLINE DOCKER TEST CASES:
+- Pending examiner shows Approve and Reject only; active shows Deactivate only.
+- The temp-password form posts to /admin/users/<id>/temporary-password.
+-->

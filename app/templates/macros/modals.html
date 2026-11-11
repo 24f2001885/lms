@@ -1,0 +1,35 @@
+{# Reusable Bootstrap confirm modal for destructive actions #}
+
+{% macro confirm_action(modal_id, button_label, title, message, action_url, button_class="btn btn-outline-danger btn-sm", hidden=None) %}
+  <!-- Trigger Button -->
+  <button type="button" class="{{ button_class }}" data-bs-toggle="modal" data-bs-target="#{{ modal_id }}">
+    {{ button_label }}
+  </button>
+
+  <!-- Modal Component -->
+  <div class="modal fade" id="{{ modal_id }}" tabindex="-1" aria-labelledby="{{ modal_id }}Label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header border-0 pb-0">
+          <h1 class="modal-title fs-5 fw-bold text-danger" id="{{ modal_id }}Label">{{ title }}</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-secondary py-3">
+          {{ message }}
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <form method="POST" action="{{ action_url }}" class="d-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% if hidden %}
+              {% for k, v in hidden.items() %}
+                <input type="hidden" name="{{ k }}" value="{{ v }}">
+              {% endfor %}
+            {% endif %}
+            <button type="submit" class="btn btn-danger btn-sm">Confirm</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endmacro %}

@@ -1,0 +1,58 @@
+<!--
+FILE PURPOSE: ADM-04 examinations table with filters.
+PROMPT FOR LLM IMPLEMENTATION:
+1. Extend base_admin.html; page_title "Examinations"; page_actions "New examination". Filter bar: q, course select, type select, status select, "Show deleted" checkbox.
+2. Table: Name (link to detail), Course code, Type, Status badge (examination domain), Booking window (localdt start - end), Slot creation and Booking switch badges (switch domain, effective state from window_state), Actions (Edit, Delete via modal). Deleted rows show the Deleted badge and no actions except View.
+3. Cards instead of table rows under 576px are handled in P10; for now keep the table inside .table-responsive.
+DEBUGGING:
+<!-- DEBUG: exams total {{ page.total }} filters {{ filters }} -->
+OFFLINE DOCKER TEST CASES:
+- Default list hides deleted examinations; show_deleted=1 reveals them with the badge.
+- Status filter "booking_open" returns only matching rows.
+-->
+{% extends "admin/base_admin.html" %}
+{% block title %}Examinations{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h3 fw-bold text-primary mb-0">Examinations</h1>
+  <a href="{{ url_for('admin.create_examination') }}" class="btn btn-primary btn-sm">+ New Examination</a>
+</div>
+
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Course</th>
+          <th>Type</th>
+          <th>Duration</th>
+          <th>Max Marks</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for exam in examinations %}
+          <tr>
+            <td>{{ exam.id }}</td>
+            <td class="fw-semibold">{{ exam.name }}</td>
+            <td>{{ exam.course.code }}</td>
+            <td><span class="badge bg-secondary">{{ exam.exam_type|capitalize }}</span></td>
+            <td>{{ exam.duration_minutes }} min</td>
+            <td>{{ exam.max_marks }}</td>
+            <td><span class="badge bg-info text-dark">{{ exam.status|capitalize }}</span></td>
+            <td>
+              <a href="{{ url_for('admin.examination_detail', exam_id=exam.id) }}" class="btn btn-outline-primary btn-sm">Manage</a>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="8" class="text-center text-muted py-4">No examinations configured yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

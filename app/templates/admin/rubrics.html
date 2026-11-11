@@ -1,0 +1,11 @@
+<!--
+FILE PURPOSE: ADM-07 rubric management page.
+PROMPT FOR LLM IMPLEMENTATION:
+1. Extend base_admin.html; page_title "Rubric: <examination name>". Progress bar toward 100 percent weightage with the text from the view and an aria-valuenow; separate muted line comparing the sum of max scores with the examination's maximum marks (warning style when different).
+2. Table of criteria: Order, Criterion, Description, Weightage (%), Max score, Actions (Edit link, Delete modal). Add-criterion form below (fields via render_field). When rubric_locked show an info alert and hide forms and action buttons.
+DEBUGGING:
+<!-- DEBUG: rubric total {{ total }} locked {{ locked }} -->
+OFFLINE DOCKER TEST CASES:
+- Total 100 shows the ready state; total 90 shows "add 10 more".
+- Locked state renders no form elements.
+-->

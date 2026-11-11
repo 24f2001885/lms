@@ -1,0 +1,9 @@
+<!--
+FILE PURPOSE: ADM-15 bookings list (read-only in P3).
+PROMPT FOR LLM IMPLEMENTATION:
+1. Extend base_admin.html; page_title "Bookings"; filter bar (status, examination, student q, slot id, date range). Table: ID, Student (link), Examination, Slot time, Examiner, Status badge, Booked, Cancelled, View link. Pager; empty state "No bookings match these filters."
+DEBUGGING:
+<!-- DEBUG: bookings total {{ page.total }} -->
+OFFLINE DOCKER TEST CASES:
+- Status filter and pager work together (page 2 keeps the filter).
+-->

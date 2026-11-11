@@ -1,0 +1,10 @@
+<!--
+FILE PURPOSE: Booking detail for the Admin (read-only in P3; P6 adds reschedule and cancel actions).
+PROMPT FOR LLM IMPLEMENTATION:
+1. Extend base_admin.html; summary card (student link, examination, slot, examiner, status badge, booked, cancelled and by whom, rescheduled-from slot); evaluation summary when present (status badge, total, remarks only for Admin); audit history list for entity booking.
+2. Wrap the actions area in a Jinja block named booking_actions that is empty in P3, so the P6 update only fills the block.
+DEBUGGING:
+<!-- DEBUG: booking {{ booking.id }} status {{ booking.status }} -->
+OFFLINE DOCKER TEST CASES:
+- All booking fields render; the page has no action buttons in P3.
+-->

@@ -1,0 +1,10 @@
+<!--
+FILE PURPOSE: ADM-18 historical data view with four tabs.
+PROMPT FOR LLM IMPLEMENTATION:
+1. Extend base_admin.html; page_title "History". Bootstrap nav-tabs built from links (?tab=...) with aria-current on the active tab; per-tab table as described in app/blueprints/admin/history.py; filter bar and pager preserving tab and filters.
+2. Audit tab formats the details JSON as short "key: value" pairs, never raw JSON dumps longer than 200 characters.
+DEBUGGING:
+<!-- DEBUG: history tab {{ tab }} total {{ page.total }} -->
+OFFLINE DOCKER TEST CASES:
+- Switching tabs keeps filters; all four tabs render with an empty database (empty states only).
+-->

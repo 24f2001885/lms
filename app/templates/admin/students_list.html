@@ -1,0 +1,48 @@
+<!--
+FILE PURPOSE: ADM-11 students list.
+PROMPT FOR LLM IMPLEMENTATION:
+1. Extend base_admin.html; page_title "Students"; search box q (name, email, roll number, ID). Table: ID, Name (link), Email, Roll number, Program, Registered; pager; empty state.
+DEBUGGING:
+<!-- DEBUG: students total {{ page.total }} -->
+OFFLINE DOCKER TEST CASES:
+- Student rows link to /admin/students/<id>; paging keeps the q parameter.
+-->
+{% extends "admin/base_admin.html" %}
+{% block title %}Students Directory{% endblock %}
+
+{% block admin_content %}
+<h1 class="h3 fw-bold text-primary mb-4">Students Directory</h1>
+
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Roll Number</th>
+          <th>Program</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in students %}
+          <tr>
+            <td>{{ s.id }}</td>
+            <td class="fw-semibold">{{ s.full_name }}</td>
+            <td>{{ s.email }}</td>
+            <td><code>{{ s.student_profile.roll_number if s.student_profile and s.student_profile.roll_number else '-' }}</code></td>
+            <td>{{ s.student_profile.program if s.student_profile and s.student_profile.program else '-' }}</td>
+            <td>
+              <a href="{{ url_for('admin.student_detail', user_id=s.id) }}" class="btn btn-outline-primary btn-sm py-0">View History</a>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="6" class="text-center text-muted py-3">No students registered yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

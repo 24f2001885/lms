@@ -28,3 +28,6 @@ admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 def dashboard():
     """Stub admin dashboard view for Phase P2."""
     return render_template("auth/role_landing_stub.html", role="Admin", phase="P3")
+
+
+from app.blueprints.admin import routes  # noqa: E402, F401

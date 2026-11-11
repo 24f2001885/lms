@@ -1,0 +1,11 @@
+<!--
+FILE PURPOSE: ADM-17 search results.
+PROMPT FOR LLM IMPLEMENTATION:
+1. Extend base_admin.html; page_title "Search". A GET form at the top (AdminSearchForm: kind select + q input + Search button, no csrf).
+2. Results table with columns depending on kind (student: ID, name, email, roll; examiner: ID, name, email, department, account badge; examination: ID, name, course, status badge, Deleted badge when applicable; booking: ID, student, examination, slot time, status badge). Every row links to the detail page. Pager preserves q and kind.
+3. States: empty q instruction, no-results message with escaped q, hint text "Tip: enter a number to search by ID".
+DEBUGGING:
+<!-- DEBUG: search kind {{ kind }} q {{ q }} total {{ page.total if page else 0 }} -->
+OFFLINE DOCKER TEST CASES:
+- Each kind renders the right headers; the q value is escaped in the input and in messages.
+-->

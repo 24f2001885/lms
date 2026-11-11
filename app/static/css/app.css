@@ -69,3 +69,132 @@ input:focus-visible {
   outline: 3px solid #1F4E79;
   outline-offset: 2px;
 }
+
+/*
+app/static/css/app.css - Custom Bootstrap 5 Brand Overrides for LMS.
+Design Plan Section 7: Modern accessible typography and administrative shell styling.
+*/
+
+:root {
+  --bs-primary: #1F4E79;
+  --bs-primary-rgb: 31, 78, 121;
+  --bs-body-bg: #F5F7FA;
+  --bs-body-color: #212529;
+  --bs-link-color: #1F4E79;
+  --bs-link-hover-color: #173B5C;
+}
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  min-height: 100vh;
+}
+
+/* Accessible skip-link */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #1F4E79;
+  color: #FFFFFF;
+  padding: 8px 16px;
+  z-index: 10000;
+  text-decoration: none;
+  font-weight: 600;
+  border-radius: 0 0 4px 0;
+  transition: top 0.2s ease;
+}
+.skip-link:focus {
+  top: 0;
+}
+
+.auth-card {
+  border-radius: 8px;
+}
+
+/* Custom Badges (Design Plan Section 6) */
+.badge-full {
+  background-color: #FD7E14 !important;
+  color: #212529 !important;
+}
+
+.badge-outline-warning {
+  color: #997404 !important;
+  border: 1px solid #FFC107 !important;
+  background-color: #FFF3CD !important;
+}
+
+/* Admin Shell Layout */
+.admin-shell {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: calc(100vh - 110px);
+}
+
+.admin-sidebar {
+  width: 240px;
+  background-color: #14283B;
+  flex-shrink: 0;
+  padding: 1rem;
+}
+
+.admin-sidebar a.nav-link {
+  color: #CBD5E1;
+  padding: 0.6rem 0.85rem;
+  border-radius: 4px;
+  margin-bottom: 2px;
+  font-size: 0.9rem;
+}
+
+.admin-sidebar a.nav-link:hover {
+  color: #FFFFFF;
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.admin-sidebar a.nav-link.active {
+  color: #FFFFFF;
+  background-color: rgba(255, 255, 255, 0.12);
+  border-left: 4px solid var(--bs-primary);
+  font-weight: 600;
+}
+
+.admin-content {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 1.5rem 2rem;
+}
+
+/* Stat Cards & Components */
+.stat-card {
+  background-color: #FFFFFF;
+  border-radius: 6px;
+  padding: 1.25rem;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.04);
+}
+
+.timeline-switch {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+}
+
+.table-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* Responsive sidebar collapse below 992px */
+@media (max-width: 991.98px) {
+  .admin-shell {
+    flex-direction: column;
+  }
+  .admin-sidebar {
+    width: 100%;
+    min-height: auto;
+  }
+  .admin-content {
+    padding: 1rem;
+  }
+}
