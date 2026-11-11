@@ -1,0 +1,106 @@
+{% extends "examiner/base_examiner.html" %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1>Evaluation: {{ booking.student.full_name }}</h1>
+      <p class="text-muted mb-0">{{ examination.course.code }} - {{ examination.name }} | Slot: {{ booking.slot.start_at | localdt }}</p>
+    </div>
+    <div>
+      {% if evaluation %}
+        <span class="badge bg-{% if evaluation.status == 'published' %}success{% elif evaluation.status == 'submitted' %}primary{% else %}warning text-dark{% endif %} fs-6">{{ evaluation.status | upper }}</span>
+      {% else %}
+        <span class="badge bg-secondary fs-6">NEW</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <form method="POST">
+    {{ form.hidden_tag() }}
+
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white font-weight-bold">Rubric Scoring</div>
+      <div class="card-body">
+        {% if rubrics %}
+          <div class="table-responsive">
+            <table class="table align-middle">
+              <thead>
+                <tr>
+                  <th>Criterion</th>
+                  <th>Weight / Max</th>
+                  <th>Score</th>
+                  <th>Comment</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in rubrics %}
+                  <tr>
+                    <td>
+                      <strong>{{ r.criterion_name }}</strong>
+                      {% if r.description %}<br><small class="text-muted">{{ r.description }}</small>{% endif %}
+                    </td>
+                    <td>Weight: {{ r.weightage }}<br>Max: {{ r.max_score }}</td>
+                    <td>
+                      {% if ctx.locked %}
+                        {{ ctx.scores_map.get(r.id, '-') }}
+                      {% else %}
+                        {{ form['score_' ~ r.id](class="form-control score-input", step="0.01", min="0", max=r.max_score) }}
+                        {% for err in form['score_' ~ r.id].errors %}
+                          <div class="text-danger small">{{ err }}</div>
+                        {% endfor %}
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if ctx.locked %}
+                        {{ ctx.comments_map.get(r.id, '') }}
+                      {% else %}
+                        {{ form['comment_' ~ r.id](class="form-control", placeholder="Optional comment") }}
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="alert alert-warning mb-0">No rubric criteria defined for this examination.</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <label class="form-label font-weight-bold">Remarks for the student</label>
+        {% if ctx.locked %}
+          <p class="form-control-plaintext">{{ ctx.remarks or 'No remarks provided.' }}</p>
+        {% else %}
+          {{ form.remarks(class="form-control", rows=3, placeholder="Feedback remarks...") }}
+          {% for err in form.remarks.errors %}
+            <div class="text-danger small">{{ err }}</div>
+          {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <h5 class="mb-0">Maximum Marks: {{ examination.max_marks }}</h5>
+          {% if evaluation %}
+            <small class="text-muted">Current Total: {{ evaluation.total_marks }}</small>
+          {% endif %}
+        </div>
+        <div>
+          {% if not ctx.locked and rubrics %}
+            <button type="submit" name="action" value="save_draft" class="btn btn-secondary me-2">Save Draft</button>
+            <button type="submit" name="action" value="submit" class="btn btn-primary me-2">Submit</button>
+            <button type="submit" name="action" value="publish" class="btn btn-success">Submit & Publish</button>
+          {% endif %}
+          <a href="{{ url_for('examiner.evaluations_pending') }}" class="btn btn-outline-secondary">Back</a>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

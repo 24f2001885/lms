@@ -1,0 +1,76 @@
+{% extends "examiner/base_examiner.html" %}
+{% block title %}My Examinations{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>My Examinations</h1>
+  </div>
+
+  <form method="GET" class="row g-3 mb-4">
+    <div class="col-md-4">
+      <input type="text" name="q" class="form-control" placeholder="Search course code or exam name..." value="{{ q }}">
+    </div>
+    <div class="col-md-3">
+      <select name="status" class="form-select">
+        <option value="">All Statuses</option>
+        <option value="draft" {% if status == 'draft' %}selected{% endif %}>Draft</option>
+        <option value="slot_creation" {% if status == 'slot_creation' %}selected{% endif %}>Slot Creation</option>
+        <option value="booking_open" {% if status == 'booking_open' %}selected{% endif %}>Booking Open</option>
+        <option value="closed" {% if status == 'closed' %}selected{% endif %}>Closed</option>
+        <option value="completed" {% if status == 'completed' %}selected{% endif %}>Completed</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <button type="submit" class="btn btn-secondary w-100">Filter</button>
+    </div>
+  </form>
+
+  {% if examinations %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Course Code</th>
+            <th>Examination</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Slot Creation</th>
+            <th>My Slots</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for exam in examinations %}
+            <tr>
+              <td><strong>{{ exam.course.code if exam.course else '-' }}</strong></td>
+              <td>
+                <a href="{{ url_for('examiner.examination_detail', exam_id=exam.id) }}">{{ exam.name }}</a>
+              </td>
+              <td>{{ exam.exam_type }}</td>
+              <td><span class="badge bg-secondary">{{ exam.status }}</span></td>
+              <td>
+                <span class="badge bg-{% if exam.slot_state.can_create %}success{% else %}secondary{% endif %}">
+                  {{ exam.slot_state.label }}
+                </span>
+                <br><small class="text-muted">{{ exam.slot_state.reason }}</small>
+              </td>
+              <td>{{ exam.my_slots_count }}</td>
+              <td>
+                {% if exam.slot_state.can_create %}
+                  <a href="{{ url_for('examiner.slot_create') }}" class="btn btn-sm btn-primary">Create Slot</a>
+                {% else %}
+                  <button type="button" class="btn btn-sm btn-secondary" disabled aria-disabled="true">Create Slot</button>
+                  <div class="small text-muted">{{ exam.slot_state.reason }}</div>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="alert alert-info">You are not assigned to any examination yet.</div>
+  {% endif %}
+</div>
+{% endblock %}

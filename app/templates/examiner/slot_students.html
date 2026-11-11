@@ -1,0 +1,59 @@
+{% extends "examiner/base_examiner.html" %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1>Booked Students</h1>
+      <p class="text-muted mb-0">{{ slot.examination.course.code }} - {{ slot.examination.name }} | {{ slot.start_at | localdt }} to {{ slot.end_at | localdt }}</p>
+    </div>
+    <a href="{{ url_for('examiner.slots_list') }}" class="btn btn-outline-secondary">Back to Slots</a>
+  </div>
+
+  {% if bookings %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Student Name</th>
+            <th>Email</th>
+            <th>Roll Number</th>
+            <th>Booking Status</th>
+            <th>Evaluation Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in bookings %}
+            <tr>
+              <td><strong>{{ b.student.full_name }}</strong></td>
+              <td>{{ b.student.email }}</td>
+              <td>{{ b.student.student_profile.roll_number if b.student.student_profile else '-' }}</td>
+              <td><span class="badge bg-success">{{ b.status }}</span></td>
+              <td>
+                {% set eval = b.evaluation %}
+                {% if eval %}
+                  <span class="badge bg-{% if eval.status == 'published' %}success{% elif eval.status == 'submitted' %}primary{% else %}warning text-dark{% endif %}">{{ eval.status }}</span>
+                {% else %}
+                  <span class="badge bg-light text-dark">None</span>
+                {% endif %}
+              </td>
+              <td>
+                <a href="{{ url_for('examiner.evaluate_booking', booking_id=b.id) }}" class="btn btn-sm btn-primary">Evaluate</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if cancelled_count > 0 %}
+      <p class="text-muted small mt-2">{{ cancelled_count }} cancelled bookings not shown.</p>
+    {% endif %}
+  {% else %}
+    <div class="alert alert-info">No students have booked this slot yet.</div>
+    {% if cancelled_count > 0 %}
+      <p class="text-muted small mt-2">{{ cancelled_count }} cancelled bookings not shown.</p>
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends "examiner/base_examiner.html" %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Submitted Evaluations</h1>
+    <a href="{{ url_for('examiner.evaluations_pending') }}" class="btn btn-outline-secondary">Back to Pending</a>
+  </div>
+
+  <div class="mb-3">
+    <a href="{{ url_for('examiner.evaluations_submitted') }}" class="btn btn-sm {% if not selected_status %}btn-dark{% else %}btn-outline-dark{% endif %}">All</a>
+    <a href="{{ url_for('examiner.evaluations_submitted', status='submitted') }}" class="btn btn-sm {% if selected_status == 'submitted' %}btn-dark{% else %}btn-outline-dark{% endif %}">Submitted</a>
+    <a href="{{ url_for('examiner.evaluations_submitted', status='published') }}" class="btn btn-sm {% if selected_status == 'published' %}btn-dark{% else %}btn-outline-dark{% endif %}">Published</a>
+  </div>
+
+  {% if pagination.items %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Examination</th>
+            <th>Total Marks</th>
+            <th>Status</th>
+            <th>Submitted At</th>
+            <th>Published At</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ev in pagination.items %}
+            <tr>
+              <td><strong>{{ ev.booking.student.full_name }}</strong></td>
+              <td>{{ ev.booking.slot.examination.course.code }}</td>
+              <td>{{ ev.total_marks }} / {{ ev.booking.slot.examination.max_marks }}</td>
+              <td><span class="badge bg-{% if ev.status == 'published' %}success{% else %}primary{% endif %}">{{ ev.status }}</span></td>
+              <td>{{ ev.submitted_at | localdt if ev.submitted_at else '-' }}</td>
+              <td>{{ ev.published_at | localdt if ev.published_at else '-' }}</td>
+              <td>
+                <a href="{{ url_for('examiner.evaluate_booking', booking_id=ev.booking_id) }}" class="btn btn-sm btn-outline-primary">
+                  {% if ev.status == 'submitted' %}Edit{% else %}View{% endif %}
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="alert alert-info">No submitted evaluations found.</div>
+  {% endif %}
+</div>
+{% endblock %}

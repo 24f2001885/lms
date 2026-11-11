@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+  .examiner-subnav .nav-link.active {
+    font-weight: 600;
+    border-bottom: 2px solid var(--bs-primary);
+    color: var(--bs-primary);
+  }
+</style>
+{% endblock %}
+
+{% block site_nav %}
+<header>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+    <div class="container">
+      <a class="navbar-brand fw-bold tracking-wide" href="{{ url_for('examiner.dashboard') }}">
+        LMS Examiner Portal
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#examinerNav"
+              aria-controls="examinerNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="examinerNav">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'examiner.dashboard' %}active{% endif %}" href="{{ url_for('examiner.dashboard') }}">Dashboard</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if 'examination' in request.endpoint %}active{% endif %}" href="{{ url_for('examiner.examinations_list') }}">Examinations</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if 'slot' in request.endpoint %}active{% endif %}" href="{{ url_for('examiner.slots_list') }}">Slots</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if 'evaluat' in request.endpoint %}active{% endif %}" href="{{ url_for('examiner.evaluations_pending') }}">Evaluations</a>
+          </li>
+        </ul>
+        <ul class="navbar-nav ms-auto align-items-lg-center">
+          {% if current_user %}
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('auth.profile') }}">Profile</a>
+            </li>
+            <li class="nav-item ms-lg-2 py-1 py-lg-0 text-white-50 small">
+              <span class="text-white fw-semibold">{{ current_user.full_name }}</span>
+              <span class="badge bg-secondary ms-1">Examiner</span>
+            </li>
+            <li class="nav-item ms-lg-3">
+              <form action="{{ url_for('auth.logout') }}" method="POST" class="d-inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-outline-light btn-sm">Log out</button>
+              </form>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </nav>
+</header>
+{% endblock %}

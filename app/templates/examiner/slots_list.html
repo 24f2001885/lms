@@ -1,0 +1,80 @@
+{% extends "examiner/base_examiner.html" %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>My Slots</h1>
+    <a href="{{ url_for('examiner.slot_create') }}" class="btn btn-primary">Create Slot</a>
+  </div>
+
+  <form method="GET" class="row g-3 mb-4">
+    <div class="col-md-4">
+      <select name="examination_id" class="form-select">
+        <option value="">All Examinations</option>
+        {% for exam in assigned_exams %}
+          <option value="{{ exam.id }}" {% if selected_exam == exam.id %}selected{% endif %}>{{ exam.course.code }} - {{ exam.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <select name="status" class="form-select">
+        <option value="">All Statuses</option>
+        <option value="available" {% if selected_status == 'available' %}selected{% endif %}>Available</option>
+        <option value="cancelled" {% if selected_status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <button type="submit" class="btn btn-secondary w-100">Filter</button>
+    </div>
+  </form>
+
+  {% if pagination.items %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Examination</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+            <th>Seats</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for slot in pagination.items %}
+            <tr>
+              <td><strong>{{ slot.examination.course.code }}</strong><br><small class="text-muted">{{ slot.examination.name }}</small></td>
+              <td>{{ slot.start_at | localdt }}</td>
+              <td>{{ slot.end_at | localdt }}</td>
+              <td>
+                <div class="d-flex align-items-center">
+                  <span class="me-2">{{ slot.booked_count }} / {{ slot.max_capacity }}</span>
+                  <div class="progress flex-grow-1 slot-meter" style="height: 6px; width: 60px;">
+                    <div class="progress-bar {% if slot.booked_count >= slot.max_capacity %}bg-danger{% else %}bg-success{% endif %}" role="progressbar" style="width: {{ (slot.booked_count / slot.max_capacity * 100) if slot.max_capacity > 0 else 0 }}%;"></div>
+                  </div>
+                </div>
+              </td>
+              <td><span class="badge bg-secondary">{{ slot.status }}</span></td>
+              <td>
+                <a href="{{ url_for('examiner.slot_students', slot_id=slot.id) }}" class="btn btn-sm btn-outline-primary">Students</a>
+                {% if slot.status == 'available' %}
+                  <a href="{{ url_for('examiner.slot_edit', slot_id=slot.id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                  <form action="{{ url_for('examiner.slot_delete', slot_id=slot.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to remove this slot?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                  </form>
+                {% else %}
+                  <span class="text-muted small">Locked</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="alert alert-info">No slots found.</div>
+  {% endif %}
+</div>
+{% endblock %}

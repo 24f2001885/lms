@@ -108,7 +108,11 @@ def set_temporary_password(actor_id: int, user_id: int, new_password: str | None
     if user.role == "admin":
         raise AppError("cannot_reset_admin", "Admin temporary passwords cannot be set via this route.")
 
-    plain_pass = new_password.strip() if new_password and new_password.strip() else secrets.token_urlsafe(9)
+    plain_pass = (
+        new_password.strip()
+        if new_password and new_password.strip()
+        else f"Tmp{secrets.token_urlsafe(9)}1"
+    )
     problems = validate_password_strength(plain_pass)
     if problems:
         raise AppError("weak_password", problems[0])

@@ -67,6 +67,30 @@ def session(app: Flask) -> Session:
 
 
 @pytest.fixture
+def db_session(session: Session) -> Session:
+    """Alias for session fixture."""
+    return session
+
+
+@pytest.fixture
+def admin(make_admin) -> User:
+    """Provide a default administrator user."""
+    return make_admin()
+
+
+@pytest.fixture
+def examiner(make_examiner) -> User:
+    """Provide a default approved examiner user."""
+    return make_examiner()
+
+
+@pytest.fixture
+def student(make_student) -> User:
+    """Provide a default student user."""
+    return make_student()
+
+
+@pytest.fixture
 def login(client: FlaskClient):
     """Helper fixture to log in a user via POST /login."""
 
@@ -343,3 +367,100 @@ def make_evaluation():
         return ev
 
     return _make
+
+@pytest.fixture
+def examiner_client(client, examiner, db_session):
+    """Creates an approved active examiner and logs in via POST /login."""
+    examiner.approval_status = "approved"
+    examiner.is_active = True
+    examiner.must_change_password = False
+    db_session.commit()
+
+    client.post(
+        "/login",
+        data={
+            "email": examiner.email,
+            "password": "Passw0rd123!",
+        },
+        follow_redirects=True,
+    )
+    return client, examiner
+
+
+@pytest.fixture
+def make_ready_examination(
+    make_examiner,
+    make_admin,
+    make_course,
+    make_examination,
+    make_rubric,
+    make_assignment,
+):
+    """Factory to create an examination ready for slot creation and booking."""
+
+    def _factory(examiner=None, now=None):
+        from app.services import windows
+
+        if not examiner:
+            examiner = User.query.filter_by(role="examiner").first() or make_examiner()
+
+        admin_user = User.query.filter_by(role="admin").first() or make_admin()
+        course = make_course(created_by=admin_user.id)
+
+        current_time = now if now else windows.now_utc()
+        exam = make_examination(
+            course=course,
+            name="Final Viva",
+            exam_type="viva",
+            duration_minutes=30,
+            max_marks=100,
+            status="slot_creation",
+            slot_creation_open=True,
+            slot_creation_start=current_time - timedelta(days=1),
+            slot_creation_end=current_time + timedelta(days=2),
+            booking_start=current_time + timedelta(days=3),
+            booking_end=current_time + timedelta(days=8),
+            cancellation_deadline=current_time + timedelta(days=8),
+        )
+
+        make_rubric(exam, name="Technical Depth", weightage=60, max_score=60.0, position=1)
+        make_rubric(exam, name="Communication", weightage=40, max_score=40.0, position=2)
+        make_assignment(exam, examiner, assigned_by=admin_user)
+
+        return exam, examiner
+
+    return _factory
+
+
+@pytest.fixture
+def make_booking_with_slot(db_session, make_student):
+    """Helper to create a slot and a student booking."""
+
+    def _helper(examination, examiner, student=None, status="booked"):
+        if not student:
+            student = make_student()
+
+        slot = ExaminationSlot(
+            examination_id=examination.id,
+            examiner_id=examiner.id,
+            start_at=examination.booking_end + timedelta(days=1),
+            end_at=examination.booking_end + timedelta(days=1, hours=1),
+            max_capacity=10,
+            booked_count=1 if status in ("booked", "completed") else 0,
+            status="available",
+        )
+        db_session.add(slot)
+        db_session.flush()
+
+        booking = Booking(
+            slot_id=slot.id,
+            student_id=student.id,
+            examination_id=examination.id,
+            status=status,
+            booked_at=examination.booking_start + timedelta(hours=1),
+        )
+        db_session.add(booking)
+        db_session.commit()
+        return booking, slot
+
+    return _helper
