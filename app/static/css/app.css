@@ -1,0 +1,71 @@
+/*
+FILE PURPOSE: Brand overrides for Bootstrap 5 using CSS variables (Design Plan section 7). No other CSS framework is allowed.
+PROMPT FOR LLM IMPLEMENTATION:
+1. On :root set --bs-primary and --bs-primary-rgb to #1F4E79; link colour #1F4E79 with hover #173B5C; body background #F5F7FA; body text #212529; success #198754, warning #FFC107, danger #DC3545, info #0DCAF0, secondary #6C757D (use the matching --bs-*-rgb variables where Bootstrap needs them).
+2. Override .btn-primary so background, border and hover/active states use the primary and primary-hover colours; keep a visible 3px focus ring (outline) on all interactive elements for keyboard users.
+3. Define the custom badge class .badge-full (background #FD7E14, dark text for contrast) used later for full slots. Do NOT define .badge-refunded (Tier 3).
+4. Typography: system font stack system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; monospace stack ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; base 16px, table text 0.9rem.
+5. Style the skip-to-content link so it is visually hidden until focused, then appears at the top-left.
+6. Provide small utility classes: .auth-card (max-width 420px, margin auto), .page-container (max-width 1200px).
+7. Keep the file under 120 lines; no @import of remote resources, no web fonts.
+DEBUGGING:
+Add temporarily: body { outline: 2px solid magenta; } to check the file is loaded, then remove.
+OFFLINE DOCKER TEST CASES:
+- The file contains no "http://" or "https://" strings.
+- Text/background colour pairs used by .btn-primary and .badge-full meet 4.5:1 contrast (manual check with a contrast tool).
+*/
+/*
+app/static/css/app.css - Custom Bootstrap 5 Brand Overrides for LMS.
+Design Plan Section 7: Modern accessible typography and color system.
+*/
+
+:root {
+  --bs-primary: #1F4E79;
+  --bs-primary-rgb: 31, 78, 121;
+  --bs-body-bg: #F5F7FA;
+  --bs-body-color: #212529;
+  --bs-link-color: #1F4E79;
+  --bs-link-hover-color: #173B5C;
+}
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  min-height: 100vh;
+}
+
+/* Accessible skip-link */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #1F4E79;
+  color: #FFFFFF;
+  padding: 8px 16px;
+  z-index: 10000;
+  text-decoration: none;
+  font-weight: 600;
+  border-radius: 0 0 4px 0;
+  transition: top 0.2s ease;
+}
+.skip-link:focus {
+  top: 0;
+}
+
+/* Authentication card styling */
+.auth-card {
+  border-radius: 8px;
+}
+
+/* Custom Orange Badge for Full Slots (Design Plan Section 6) */
+.badge-full {
+  background-color: #FD7E14 !important;
+  color: #212529 !important;
+}
+
+/* Accessibility focus rings */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 3px solid #1F4E79;
+  outline-offset: 2px;
+}

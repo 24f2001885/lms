@@ -1,0 +1,62 @@
+{#
+FILE PURPOSE: PUB-06 Profile view and edit for any signed-in role.
+PROMPT FOR LLM IMPLEMENTATION:
+1. Extend base.html; h1 "Your profile"; a read-only summary list (dl) with Email, Role, Account status (text), Member since.
+2. Edit form with csrf rendering only the fields in the visible_fields list passed by the view (admin: full name; examiner: full name, phone, department, designation; student: full name, phone, roll number, program).
+3. Submit "Save changes"; link "Change password" to auth.change_password.
+DEBUGGING:
+<!-- DEBUG: visible_fields={{ visible_fields }} -->
+OFFLINE DOCKER TEST CASES:
+- Student page shows roll number and program inputs and no department input; examiner page the reverse.
+- Email appears as plain text, never as an input.
+#}
+{% extends "base.html" %}
+{% import "macros/forms.html" as f %}
+
+{% block title %}User Profile{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+  <div class="col-12 col-md-8">
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-white py-3 border-bottom">
+        <h1 class="h4 fw-bold mb-0 text-primary">Your Profile</h1>
+      </div>
+      <div class="card-body p-4">
+
+        <!-- Read-only Account Identity Metadata -->
+        <dl class="row mb-4 pb-3 border-bottom">
+          <dt class="col-sm-3 text-secondary small">Email</dt>
+          <dd class="col-sm-9 fw-semibold">{{ current_user.email }}</dd>
+
+          <dt class="col-sm-3 text-secondary small">Role</dt>
+          <dd class="col-sm-9"><span class="badge bg-secondary">{{ current_user.role|capitalize }}</span></dd>
+
+          <dt class="col-sm-3 text-secondary small">Account Status</dt>
+          <dd class="col-sm-9">
+            {% if current_user.is_active %}
+              <span class="badge bg-success">Active</span>
+            {% else %}
+              <span class="badge bg-danger">Inactive</span>
+            {% endif %}
+          </dd>
+        </dl>
+
+        <!-- Role-Specific Editable Form -->
+        <form method="POST" action="{{ url_for('auth.profile') }}">
+          {{ form.hidden_tag() }}
+
+          {% for field_name in visible_fields %}
+            {{ f.render_field(form[field_name]) }}
+          {% endfor %}
+
+          <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+            <a href="{{ url_for('auth.change_password') }}" class="btn btn-outline-secondary btn-sm">Change Password</a>
+            <button type="submit" class="btn btn-primary px-4">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

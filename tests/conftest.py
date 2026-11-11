@@ -1,3 +1,7 @@
+"""
+tests/conftest.py - Pytest fixtures, test data factories, and login helpers for LMS.
+"""
+
 from datetime import datetime, timezone
 from typing import Generator
 import pytest
@@ -21,16 +25,12 @@ from app.models import (
     User,
 )
 
-# Fixed base anchor timestamp for repeatable window tests (UTC)
 BASE_DATETIME = datetime(2030, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
 
 
 @pytest.fixture
 def app(tmp_path) -> Generator[Flask, None, None]:
-    """
-    Create a fresh Flask application configured with a temporary file-based
-    SQLite database in tmp_path (required for WAL mode and multi-connection tests).
-    """
+    """Create a fresh Flask application configured with a temporary file-based SQLite database."""
     db_file = tmp_path / "test.db"
     test_db_uri = f"sqlite:///{db_file}"
 
@@ -46,23 +46,36 @@ def app(tmp_path) -> Generator[Flask, None, None]:
 
 @pytest.fixture
 def client(app: Flask) -> FlaskClient:
-    """Provide Flask test client for issuing simulated HTTP requests."""
+    """Provide Flask test client."""
     return app.test_client()
 
 
 @pytest.fixture
 def runner(app: Flask) -> FlaskCliRunner:
-    """Provide Flask CLI runner for testing terminal commands like init-db."""
+    """Provide Flask CLI runner."""
     return app.test_cli_runner()
 
 
 @pytest.fixture
 def session(app: Flask) -> Session:
-    """Provide active SQLAlchemy session for direct DB queries."""
+    """Provide active SQLAlchemy session."""
     return db.session
 
 
-# Test Data Factory Fixtures
+@pytest.fixture
+def login(client: FlaskClient):
+    """Helper fixture to log in a user via POST /login."""
+
+    def _login(email: str, password: str = "Passw0rd123!"):
+        return client.post(
+            "/login",
+            data={"email": email, "password": password},
+            follow_redirects=False,
+        )
+
+    return _login
+
+
 _user_seq = 0
 
 
@@ -101,7 +114,6 @@ def make_user():
         db.session.add(user)
         db.session.flush()
 
-        # Create matching profile row
         if role == "examiner":
             profile = ExaminerProfile(
                 user_id=user.id,
@@ -125,13 +137,11 @@ def make_user():
 
 @pytest.fixture
 def make_admin(make_user):
-    """Factory wrapper for Administrator accounts."""
     return lambda **kw: make_user(role="admin", **kw)
 
 
 @pytest.fixture
 def make_examiner(make_user):
-    """Factory wrapper for Examiner accounts."""
     return lambda approved=True, **kw: make_user(
         role="examiner",
         approval_status="approved" if approved else "pending",
@@ -141,20 +151,15 @@ def make_examiner(make_user):
 
 @pytest.fixture
 def make_student(make_user):
-    """Factory wrapper for Student accounts."""
     return lambda **kw: make_user(role="student", **kw)
 
 
 @pytest.fixture
 def make_course(make_admin):
-    """Factory fixture generating Course instances."""
-
     def _make(code: str | None = None, name: str | None = None, created_by: int | None = None) -> Course:
         global _user_seq
         _user_seq += 1
-        if created_by is None:
-            admin = make_admin()
-            created_by = admin.id
+        created_by = created_by or make_admin().id
 
         course = Course(
             code=code or f"CS{_user_seq:04d}",
@@ -170,15 +175,12 @@ def make_course(make_admin):
 
 @pytest.fixture
 def make_examination(make_course):
-    """Factory fixture generating Examination instances with valid default windows."""
-
     def _make(course: Course | None = None, **overrides) -> Examination:
         global _user_seq
         _user_seq += 1
         if course is None:
             course = make_course()
 
-        # Windows anchored at 2030-01-01
         defaults = {
             "name": f"Exam {_user_seq}",
             "exam_type": "viva",
@@ -204,8 +206,6 @@ def make_examination(make_course):
 
 @pytest.fixture
 def make_rubric():
-    """Factory fixture generating rubric criteria for an examination."""
-
     def _make(
         examination: Examination,
         name: str = "Presentation",
@@ -229,8 +229,6 @@ def make_rubric():
 
 @pytest.fixture
 def make_slot():
-    """Factory fixture generating an examination slot."""
-
     def _make(
         examination: Examination,
         examiner: User,
@@ -256,8 +254,6 @@ def make_slot():
 
 @pytest.fixture
 def make_booking():
-    """Factory fixture generating a booking reservation."""
-
     def _make(student: User, slot: ExaminationSlot, status: str = "booked") -> Booking:
         booking = Booking(
             student_id=student.id,

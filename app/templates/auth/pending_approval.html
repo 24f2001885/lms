@@ -1,0 +1,43 @@
+{#
+FILE PURPOSE: PUB-03 Notice shown to examiners whose account is not yet approved (or was rejected).
+PROMPT FOR LLM IMPLEMENTATION:
+1. Extend base.html; h1 "Approval pending". Explain: "Your examiner account is waiting for administrator approval. You will be able to use the dashboard after it is approved." Show the account email.
+2. When current_user.approval_status is "rejected" show instead: h1 "Account not approved" and "Your examiner registration was not approved. Please contact the administrator."
+3. Provide a Logout form button and a "Check again" link to auth.pending_approval (it redirects to the dashboard once approved). No dashboard links.
+DEBUGGING:
+<!-- DEBUG: approval_status={{ current_user.approval_status }} -->
+OFFLINE DOCKER TEST CASES:
+- Pending examiner sees "Approval pending"; after approval in the database, "Check again" redirects to /examiner/dashboard.
+- Rejected examiner sees "Account not approved".
+#}
+{% extends "base.html" %}
+{% block title %}Account Pending Approval{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+  <div class="col-md-7 text-center">
+    {% if current_user.approval_status == 'rejected' %}
+      <h1 class="h3 fw-bold text-danger mb-3">Account Not Approved</h1>
+      <p class="text-muted mb-4">
+        Your faculty examiner registration was not approved. Please contact the administrator.
+      </p>
+    {% else %}
+      <h1 class="h3 fw-bold text-warning mb-3">Approval Pending</h1>
+      <p class="text-muted mb-3">
+        Your examiner account for <strong>{{ current_user.email }}</strong> is awaiting administrator approval.
+      </p>
+      <p class="text-muted small mb-4">
+        You will receive dashboard access once your credentials have been verified by the examination board.
+      </p>
+    {% endif %}
+
+    <div class="d-flex justify-content-center gap-3">
+      <a href="{{ url_for('auth.pending_approval') }}" class="btn btn-outline-primary px-4">Check Again</a>
+      <form action="{{ url_for('auth.logout') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-secondary px-4">Log out</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
