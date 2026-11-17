@@ -65,6 +65,8 @@ def history():
             .paginate(page=page, per_page=per_page, error_out=False)
         )
     else:  # tab == 'audit'
-        page_data = AuditLog.query.order_by(AuditLog.id.desc()).paginate(page=page, per_page=per_page, error_out=False)
+        page_data = AuditLog.query.order_by(AuditLog.id.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
 
     return render_template("admin/history.html", tab=tab, page=page_data)

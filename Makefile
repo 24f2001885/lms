@@ -59,6 +59,9 @@ test-unit:
 test-integration:
 	pytest tests/integration -q
 
+test-api:
+	pytest -m api -v
+
 test-e2e:
 	pytest tests/e2e -q -m e2e
 

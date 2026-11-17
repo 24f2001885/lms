@@ -139,7 +139,9 @@ def validate_password_strength(raw: str) -> list[str]:
     """
     problems: list[str] = []
     if len(raw) < BaseConfig.MIN_PASSWORD_LENGTH:
-        problems.append(f"Password must be at least {BaseConfig.MIN_PASSWORD_LENGTH} characters long.")
+        problems.append(
+            f"Password must be at least {BaseConfig.MIN_PASSWORD_LENGTH} characters long."
+        )
     if not any(c.isalpha() for c in raw):
         problems.append("Password must contain at least one letter.")
     if not any(c.isdigit() for c in raw):

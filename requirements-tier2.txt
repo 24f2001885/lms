@@ -1,0 +1,8 @@
+-r requirements.txt
+# Tier 2 runtime dependencies on top of Tier 1.
+# P7 adds NO package (hand-written JSON controllers on top of Flask and existing services).
+# P8: none (Chart.js vendored static file)
+# P9: none
+# P10: none
+# P11: Flask-Login
+# P12: Flask-Mail, ReportLab

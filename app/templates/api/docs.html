@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}API reference - Examination Management Portal{% endblock %}
+
+{% block content %}
+<!-- DEBUG: endpoint rows {{ endpoints|length }} -->
+<div class="container py-4">
+  <h1>API reference</h1>
+  <p class="lead">Base path <code>/api/v1</code>. JSON in, JSON out. Sign in through the normal login page; the session cookie is the credential.</p>
+
+  <section class="mb-4">
+    <h2>Authentication</h2>
+    <p>All <code>/api/v1</code> endpoints (except this documentation page) authenticate using the standard Flask session cookie established via <code>POST /login</code>.</p>
+    <ul>
+      <li>Call <code>GET /api/v1/session</code> to verify your active session and retrieve <code>csrf_token</code>.</li>
+      <li>Send <code>X-CSRFToken: &lt;token&gt;</code> and <code>Content-Type: application/json</code> on every <code>POST</code>, <code>PUT</code>, and <code>DELETE</code> request.</li>
+    </ul>
+  </section>
+
+  <section class="mb-4">
+    <h2>Conventions</h2>
+    <ul>
+      <li><strong>Timestamps:</strong> All dates and times use ISO 8601 UTC format ending in <code>Z</code> (e.g., <code>2030-01-10T04:30:00Z</code>). Input timestamps without a timezone offset or <code>Z</code> are rejected with <code>422</code>.</li>
+      <li><strong>Pagination:</strong> List endpoints accept <code>page</code> (default <code>1</code>) and <code>per_page</code> (default <code>20</code>, maximum <code>100</code>) and return <code>{"items": [...], "page": 1, "per_page": 20, "total": 42}</code>.</li>
+    </ul>
+  </section>
+
+  <section class="mb-4">
+    <h2>Errors</h2>
+    <p>Every error response uses the uniform JSON shape:</p>
+    <pre class="bg-light p-3 border rounded"><code>{
+  "error": {
+    "code": "validation_error",
+    "message": "Some fields are invalid.",
+    "fields": {
+      "slot_id": ["This field is required."]
+    }
+  }
+}</code></pre>
+
+    <div class="table-responsive">
+      <table class="table table-sm table-bordered">
+        <thead>
+          <tr>
+            <th scope="col">Status</th>
+            <th scope="col">Code</th>
+            <th scope="col">Meaning</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for code_num, err_code, desc in status_table %}
+            <tr>
+              <td><code>{{ code_num }}</code></td>
+              <td><code>{{ err_code }}</code></td>
+              <td>{{ desc }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="mb-4">
+    <h2>Endpoints</h2>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th scope="col">Method</th>
+            <th scope="col">Path</th>
+            <th scope="col">Who</th>
+            <th scope="col">Query / Body</th>
+            <th scope="col">Success</th>
+            <th scope="col">Possible errors</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ep in endpoints %}
+            <tr>
+              <td>
+                {% if ep.method == 'GET' %}
+                  <span class="badge text-bg-primary">GET</span>
+                {% elif ep.method == 'POST' %}
+                  <span class="badge text-bg-success">POST</span>
+                {% elif ep.method == 'PUT' %}
+                  <span class="badge text-bg-warning">PUT</span>
+                {% elif ep.method == 'DELETE' %}
+                  <span class="badge text-bg-danger">DELETE</span>
+                {% else %}
+                  <span class="badge text-bg-secondary">{{ ep.method }}</span>
+                {% endif %}
+              </td>
+              <td><code>{{ ep.path }}</code></td>
+              <td>{{ ep.roles }}</td>
+              <td>
+                {% if ep.query %}
+                  <div><small class="text-muted">Query:</small> <code>{{ ep.query|join(', ') }}</code></div>
+                {% endif %}
+                {% if ep.body != 'none' %}
+                  <div><small class="text-muted">Body:</small> <code>{{ ep.body|join(', ') }}</code></div>
+                {% endif %}
+                {% if not ep.query and ep.body == 'none' %}
+                  <span class="text-muted">-</span>
+                {% endif %}
+              </td>
+              <td><code>{{ ep.success }}</code></td>
+              <td><code>{{ ep.errors|join(', ') }}</code></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Quick curl example</h3>
+    <pre class="bg-light p-3 border rounded"><code># 1. Fetch CSRF token using an active session cookie jar
+CSRF=$(curl -s -b cookies.txt /api/v1/session | python3 -c "import sys,json; print(json.load(sys.stdin)['csrf_token'])")
+
+# 2. Book a slot
+curl -s -b cookies.txt -X POST /api/v1/bookings \
+  -H "Content-Type: application/json" \
+  -H "X-CSRFToken: ${CSRF}" \
+  -d '{"slot_id": 2}'</code></pre>
+  </section>
+
+  <section class="mb-4">
+    <h2>Intentionally Absent Endpoints</h2>
+    <p class="text-muted">Booking rescheduling (<code>ADM-16</code>), examiner approval, and temporary password generation remain HTML-only administrative actions in Tier 2; there is no <code>PUT /api/v1/bookings/&lt;id&gt;</code> or write endpoints under <code>/api/v1/examiners</code> and <code>/api/v1/students</code>.</p>
+  </section>
+</div>
+{% endblock %}

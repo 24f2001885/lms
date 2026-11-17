@@ -1,6 +1,6 @@
 
-#INCLUDE t1 dependencies 
--r requirements.txt
+#INCLUDE t2 dependencies
+-r requirements-tier2.txt
 
 #local smtp
 aiosmtpd==1.4.6

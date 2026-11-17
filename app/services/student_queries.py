@@ -20,6 +20,7 @@ OFFLINE DOCKER TEST CASES:
 
 FILE PURPOSE: Read-only queries scoped exclusively to the signed-in student (PDR 5.4).
 """
+
 from app.models import Booking, Course, Evaluation, Examination, ExaminationSlot
 from app.services import evaluation_service, windows
 
@@ -33,8 +34,7 @@ def is_examination_visible(exam):
         return False
     if exam.status == "draft":
         non_cancelled_slots = ExaminationSlot.query.filter(
-            ExaminationSlot.examination_id == exam.id,
-            ExaminationSlot.status != "cancelled"
+            ExaminationSlot.examination_id == exam.id, ExaminationSlot.status != "cancelled"
         ).count()
         if non_cancelled_slots == 0:
             return False
@@ -43,7 +43,9 @@ def is_examination_visible(exam):
 
 def list_examinations(student_id, q=None, course_id=None, exam_type=None, page=1, per_page=20):
     query = Examination.query.filter_by(is_deleted=False)
-    query = query.join(Course, Examination.course_id == Course.id).filter(Course.is_active.is_(True))
+    query = query.join(Course, Examination.course_id == Course.id).filter(
+        Course.is_active.is_(True)
+    )
 
     if q:
         query = query.filter((Examination.name.ilike(f"%{q}%")) | (Course.code.ilike(f"%{q}%")))
@@ -61,12 +63,12 @@ def list_examinations(student_id, q=None, course_id=None, exam_type=None, page=1
         exam.own_booking = Booking.query.filter(
             Booking.student_id == student_id,
             Booking.examination_id == exam.id,
-            Booking.status.in_(["booked", "completed"])
+            Booking.status.in_(["booked", "completed"]),
         ).first()
         exam.available_slots_count = ExaminationSlot.query.filter(
             ExaminationSlot.examination_id == exam.id,
             ExaminationSlot.status == "available",
-            ExaminationSlot.start_at > now
+            ExaminationSlot.start_at > now,
         ).count()
 
     total = len(visible_items)
@@ -98,18 +100,22 @@ def get_examination_for_student(exam_id):
 
 def slots_for_examination(exam_id):
     now = windows.now_utc()
-    slots = ExaminationSlot.query.filter(
-        ExaminationSlot.examination_id == exam_id,
-        ExaminationSlot.status.in_(["available", "full"]),
-        ExaminationSlot.start_at > now
-    ).order_by(ExaminationSlot.start_at.asc()).all()
+    slots = (
+        ExaminationSlot.query.filter(
+            ExaminationSlot.examination_id == exam_id,
+            ExaminationSlot.status.in_(["available", "full"]),
+            ExaminationSlot.start_at > now,
+        )
+        .order_by(ExaminationSlot.start_at.asc())
+        .all()
+    )
     return slots
 
 
 def dashboard_data(student_id):
     now = windows.now_utc()
     all_exams = list_examinations(student_id, page=1, per_page=1000).items
-    
+
     available_exams = []
     for e in all_exams:
         if e.window_info["booking"]["open"] and not e.own_booking:
@@ -120,17 +126,28 @@ def dashboard_data(student_id):
     avail_exam_ids = [e.id for e in available_exams]
     available_slots = []
     if avail_exam_ids:
-        available_slots = ExaminationSlot.query.filter(
-            ExaminationSlot.examination_id.in_(avail_exam_ids),
-            ExaminationSlot.status == "available",
-            ExaminationSlot.start_at > now
-        ).order_by(ExaminationSlot.start_at.asc()).limit(6).all()
+        available_slots = (
+            ExaminationSlot.query.filter(
+                ExaminationSlot.examination_id.in_(avail_exam_ids),
+                ExaminationSlot.status == "available",
+                ExaminationSlot.start_at > now,
+            )
+            .order_by(ExaminationSlot.start_at.asc())
+            .limit(6)
+            .all()
+        )
 
-    upcoming_bookings = Booking.query.join(ExaminationSlot, Booking.slot_id == ExaminationSlot.id).filter(
-        Booking.student_id == student_id,
-        Booking.status == "booked",
-        ExaminationSlot.start_at > now
-    ).order_by(ExaminationSlot.start_at.asc()).limit(5).all()
+    upcoming_bookings = (
+        Booking.query.join(ExaminationSlot, Booking.slot_id == ExaminationSlot.id)
+        .filter(
+            Booking.student_id == student_id,
+            Booking.status == "booked",
+            ExaminationSlot.start_at > now,
+        )
+        .order_by(ExaminationSlot.start_at.asc())
+        .limit(5)
+        .all()
+    )
 
     booked_bookings = Booking.query.filter_by(student_id=student_id, status="booked").all()
     published_results = evaluation_service.published_for_student(student_id)[:5]
@@ -140,7 +157,7 @@ def dashboard_data(student_id):
         "available_slots": available_slots,
         "upcoming": upcoming_bookings,
         "booked": booked_bookings,
-        "published_results": published_results
+        "published_results": published_results,
     }
 
 
@@ -148,7 +165,9 @@ def my_bookings(student_id, status=None, page=1, per_page=20):
     query = Booking.query.filter_by(student_id=student_id)
     if status:
         query = query.filter_by(status=status)
-    return query.order_by(Booking.booked_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    return query.order_by(Booking.booked_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
 
 
 def get_owned_booking(student_id, booking_id):
@@ -157,16 +176,25 @@ def get_owned_booking(student_id, booking_id):
 
 def schedule(student_id):
     now = windows.now_utc()
-    return Booking.query.join(ExaminationSlot, Booking.slot_id == ExaminationSlot.id).filter(
-        Booking.student_id == student_id,
-        Booking.status == "booked",
-        ExaminationSlot.start_at > now
-    ).order_by(ExaminationSlot.start_at.asc()).all()
+    return (
+        Booking.query.join(ExaminationSlot, Booking.slot_id == ExaminationSlot.id)
+        .filter(
+            Booking.student_id == student_id,
+            Booking.status == "booked",
+            ExaminationSlot.start_at > now,
+        )
+        .order_by(ExaminationSlot.start_at.asc())
+        .all()
+    )
 
 
 def history(student_id, page=1, per_page=20):
-    pagination = Booking.query.filter_by(student_id=student_id).order_by(Booking.booked_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
-    
+    pagination = (
+        Booking.query.filter_by(student_id=student_id)
+        .order_by(Booking.booked_at.desc())
+        .paginate(page=page, per_page=per_page, error_out=False)
+    )
+
     all_student_bookings = Booking.query.filter_by(student_id=student_id).all()
     exams_map = {}
     for b in all_student_bookings:
@@ -176,23 +204,22 @@ def history(student_id, page=1, per_page=20):
             exams_map[e_id] = {
                 "examination": b.examination,
                 "final_status": b.status,
-                "result_published": eval_pub is not None
+                "result_published": eval_pub is not None,
             }
         else:
             if b.status in ["booked", "completed"]:
                 exams_map[e_id]["final_status"] = b.status
 
-    return {
-        "bookings_page": pagination,
-        "examination_history": list(exams_map.values())
-    }
+    return {"bookings_page": pagination, "examination_history": list(exams_map.values())}
 
 
 def results(student_id, page=1, per_page=20):
-    return Evaluation.query.join(Booking, Evaluation.booking_id == Booking.id).filter(
-        Booking.student_id == student_id,
-        Evaluation.status == "published"
-    ).order_by(Evaluation.published_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    return (
+        Evaluation.query.join(Booking, Evaluation.booking_id == Booking.id)
+        .filter(Booking.student_id == student_id, Evaluation.status == "published")
+        .order_by(Evaluation.published_at.desc())
+        .paginate(page=page, per_page=per_page, error_out=False)
+    )
 
 
 def result_detail(student_id, booking_id):
@@ -206,12 +233,14 @@ def result_detail(student_id, booking_id):
     exam = booking.examination
     scores_list = []
     for sc in evaluation.scores:
-        scores_list.append({
-            "criterion": sc.rubric.criterion_name,
-            "score": sc.score,
-            "max_score": sc.rubric.max_score,
-            "comment": sc.comment
-        })
+        scores_list.append(
+            {
+                "criterion": sc.rubric.criterion_name,
+                "score": sc.score,
+                "max_score": sc.rubric.max_score,
+                "comment": sc.comment,
+            }
+        )
 
     return {
         "booking": booking,
@@ -220,5 +249,5 @@ def result_detail(student_id, booking_id):
         "total": evaluation.total_marks,
         "max_marks": exam.max_marks,
         "scores": scores_list,
-        "remarks": evaluation.remarks
+        "remarks": evaluation.remarks,
     }

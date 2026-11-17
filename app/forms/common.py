@@ -12,6 +12,7 @@ class ConfirmForm(FlaskForm):
     Empty form carrying a CSRF token. Used for state-changing POST actions
     (approve, delete, toggle) that do not require text inputs.
     """
+
     pass
 
 

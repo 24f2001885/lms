@@ -106,7 +106,9 @@ def login(client: FlaskClient):
 @pytest.fixture
 def admin_client(client: FlaskClient, make_admin, login) -> FlaskClient:
     """Provide pre-authenticated Administrator test client."""
-    admin = make_admin(email="admin_client@test.local", password="Passw0rd123!", must_change_password=False)
+    admin = make_admin(
+        email="admin_client@test.local", password="Passw0rd123!", must_change_password=False
+    )
     login(admin.email, "Passw0rd123!")
     return client
 
@@ -210,7 +212,9 @@ def make_student(make_user):
 
 @pytest.fixture
 def make_course(make_admin):
-    def _make(code: str | None = None, name: str | None = None, created_by: int | None = None) -> Course:
+    def _make(
+        code: str | None = None, name: str | None = None, created_by: int | None = None
+    ) -> Course:
         global _user_seq
         _user_seq += 1
         created_by = created_by or make_admin().id
@@ -249,15 +253,30 @@ def make_examination(make_course):
             "is_deleted": False,
         }
         defaults.update(overrides)
-        if "booking_start" not in overrides and defaults["booking_start"] < defaults["slot_creation_end"]:
+        if (
+            "booking_start" not in overrides
+            and defaults["booking_start"] < defaults["slot_creation_end"]
+        ):
             defaults["booking_start"] = defaults["slot_creation_end"]
-            if "booking_end" not in overrides and defaults["booking_end"] <= defaults["booking_start"]:
+            if (
+                "booking_end" not in overrides
+                and defaults["booking_end"] <= defaults["booking_start"]
+            ):
                 defaults["booking_end"] = defaults["booking_start"] + timedelta(days=10)
-            if "cancellation_deadline" not in overrides and defaults["cancellation_deadline"] < defaults["booking_start"]:
+            if (
+                "cancellation_deadline" not in overrides
+                and defaults["cancellation_deadline"] < defaults["booking_start"]
+            ):
                 defaults["cancellation_deadline"] = defaults["booking_end"]
-        if "slot_creation_end" not in overrides and defaults["slot_creation_end"] > defaults["booking_start"]:
+        if (
+            "slot_creation_end" not in overrides
+            and defaults["slot_creation_end"] > defaults["booking_start"]
+        ):
             defaults["slot_creation_end"] = defaults["booking_start"]
-            if "slot_creation_start" not in overrides and defaults["slot_creation_start"] >= defaults["slot_creation_end"]:
+            if (
+                "slot_creation_start" not in overrides
+                and defaults["slot_creation_start"] >= defaults["slot_creation_end"]
+            ):
                 defaults["slot_creation_start"] = defaults["slot_creation_end"] - timedelta(days=5)
 
         exam = Examination(course_id=course.id, **defaults)
@@ -337,7 +356,9 @@ def make_booking():
 def make_assignment():
     """Factory fixture generating examiner assignments."""
 
-    def _make(examination: Examination, examiner: User, assigned_by: User | None = None) -> ExaminationExaminer:
+    def _make(
+        examination: Examination, examiner: User, assigned_by: User | None = None
+    ) -> ExaminationExaminer:
         assignment = ExaminationExaminer(
             examination_id=examination.id,
             examiner_id=examiner.id,
@@ -354,7 +375,9 @@ def make_assignment():
 def make_evaluation():
     """Factory fixture generating evaluation records."""
 
-    def _make(booking: Booking, examiner: User, status: str = "draft", total: float = 0.0) -> Evaluation:
+    def _make(
+        booking: Booking, examiner: User, status: str = "draft", total: float = 0.0
+    ) -> Evaluation:
         ev = Evaluation(
             booking_id=booking.id,
             examiner_id=examiner.id,
@@ -366,6 +389,7 @@ def make_evaluation():
         return ev
 
     return _make
+
 
 @pytest.fixture
 def examiner_client(client, examiner, db_session):
@@ -591,3 +615,12 @@ def make_published_evaluation(db_session):
 
 # --- Phase 6 Additions ---
 from tests.conftest_p6_additions import MutableClock, clock, run_in_threads  # noqa: E402, F401
+
+# --- Phase 7 Additions ---
+from tests.conftest_p7_additions import (  # noqa: E402, F401
+    ApiClientWrapper,
+    api,
+    assert_error,
+    assert_page,
+    assert_shape,
+)

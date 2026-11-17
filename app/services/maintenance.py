@@ -1,6 +1,7 @@
 """
 FILE PURPOSE: Housekeeping rules behind the weekly purge job (TDR section 11, "purge-soft-deleted").
 """
+
 import logging
 from datetime import datetime, timedelta
 
@@ -18,7 +19,11 @@ logger = logging.getLogger(__name__)
 
 
 def purge_soft_deleted(older_than_days: int = 90, now: datetime | None = None) -> int:
-    if isinstance(older_than_days, bool) or not isinstance(older_than_days, int) or older_than_days <= 0:
+    if (
+        isinstance(older_than_days, bool)
+        or not isinstance(older_than_days, int)
+        or older_than_days <= 0
+    ):
         raise ValueError("older_than_days must be a positive integer.")
 
     now_time = now if now is not None else windows.now_utc()

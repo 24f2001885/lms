@@ -1,6 +1,7 @@
 """
 FILE PURPOSE: Rubric-based evaluation rules for examiners: which students may be evaluated, saving drafts, submitting and publishing (PDR 5.5, TDR 4.1 evaluation tables).
 """
+
 from decimal import Decimal
 
 from sqlalchemy import func
@@ -32,7 +33,7 @@ def pending_bookings(examiner_id, examination_id=None, q=None, page=1, per_page=
     query = Booking.query.join(ExaminationSlot, Booking.slot_id == ExaminationSlot.id).filter(
         ExaminationSlot.examiner_id == examiner_id,
         ExaminationSlot.status != "cancelled",
-        Booking.status.in_(["booked", "completed"])
+        Booking.status.in_(["booked", "completed"]),
     )
     if examination_id:
         query = query.filter(ExaminationSlot.examination_id == examination_id)
@@ -40,20 +41,24 @@ def pending_bookings(examiner_id, examination_id=None, q=None, page=1, per_page=
         query = query.join(User, Booking.student_id == User.id).filter(
             (User.full_name.ilike(f"%{q}%")) | (User.email.ilike(f"%{q}%"))
         )
-    
+
     subq = db.session.query(Evaluation.booking_id).filter(
         Evaluation.status.in_(["submitted", "published"])
     )
     query = query.filter(~Booking.id.in_(subq))
 
-    return query.order_by(Booking.booked_at.asc()).paginate(page=page, per_page=per_page, error_out=False)
+    return query.order_by(Booking.booked_at.asc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
 
 
 def submitted_evaluations(examiner_id, status=None, page=1, per_page=20):
     query = Evaluation.query.filter_by(examiner_id=examiner_id)
     if status:
         query = query.filter_by(status=status)
-    return query.order_by(Evaluation.updated_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    return query.order_by(Evaluation.updated_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
 
 
 def pending_evaluations_count(examiner_id):
@@ -63,9 +68,13 @@ def pending_evaluations_count(examiner_id):
 
 def form_context(booking):
     exam = booking.slot.examination
-    rubrics = ExaminationRubric.query.filter_by(examination_id=exam.id).order_by(ExaminationRubric.position.asc()).all()
+    rubrics = (
+        ExaminationRubric.query.filter_by(examination_id=exam.id)
+        .order_by(ExaminationRubric.position.asc())
+        .all()
+    )
     evaluation = Evaluation.query.filter_by(booking_id=booking.id).first()
-    
+
     scores_map = {}
     comments_map = {}
     if evaluation:
@@ -79,7 +88,7 @@ def form_context(booking):
         "comments_map": comments_map,
         "remarks": evaluation.remarks if evaluation else "",
         "status": evaluation.status if evaluation else None,
-        "locked": evaluation and evaluation.status == "published"
+        "locked": evaluation and evaluation.status == "published",
     }
 
 
@@ -121,11 +130,17 @@ def save_evaluation(
             r_def = rubric_dict[r_id]
             max_criterion_score = Decimal(str(r_def.max_score))
             if not (Decimal("0") <= val <= max_criterion_score):
-                raise AppError("score_out_of_range", f"Score for {r_def.criterion_name} out of range (max {r_def.max_score}).")
+                raise AppError(
+                    "score_out_of_range",
+                    f"Score for {r_def.criterion_name} out of range (max {r_def.max_score}).",
+                )
             total += val
 
     if total > exam.max_marks:
-        raise AppError("total_exceeds_max", f"Total marks ({total}) exceed examination maximum ({exam.max_marks}).")
+        raise AppError(
+            "total_exceeds_max",
+            f"Total marks ({total}) exceed examination maximum ({exam.max_marks}).",
+        )
 
     if remarks and len(remarks) > 2000:
         raise AppError("remarks_too_long", "Remarks are too long (max 2000 characters).")
@@ -133,14 +148,16 @@ def save_evaluation(
     if action in ["submit", "publish"]:
         for r_id in rubric_dict:
             if scores.get(r_id) is None:
-                raise AppError("scores_incomplete", "All rubric criteria must be scored before submitting.")
+                raise AppError(
+                    "scores_incomplete", "All rubric criteria must be scored before submitting."
+                )
 
     if not evaluation:
         evaluation = Evaluation(
             booking_id=booking_id,
             examiner_id=examiner_id,
             total_marks=Decimal("0.00"),
-            status="draft"
+            status="draft",
         )
         db.session.add(evaluation)
         db.session.flush()
@@ -163,13 +180,15 @@ def save_evaluation(
                     evaluation=evaluation,
                     rubric_id=r_id,
                     score=q_val,
-                    comment=comments.get(r_id, "")
+                    comment=comments.get(r_id, ""),
                 )
                 db.session.add(new_sc)
 
     db.session.flush()
 
-    actual_total = sum((Decimal(str(sc.score)) for sc in evaluation.scores), Decimal("0.00")).quantize(Decimal("0.01"))
+    actual_total = sum(
+        (Decimal(str(sc.score)) for sc in evaluation.scores), Decimal("0.00")
+    ).quantize(Decimal("0.01"))
     evaluation.total_marks = actual_total
 
     now = windows.now_utc()
@@ -196,7 +215,11 @@ def save_evaluation(
         action=audit_action,
         entity_type="evaluation",
         entity_id=evaluation.id,
-        details={"booking_id": booking_id, "total": float(actual_total), "status": evaluation.status}
+        details={
+            "booking_id": booking_id,
+            "total": float(actual_total),
+            "status": evaluation.status,
+        },
     )
     db.session.commit()
     return evaluation
@@ -227,7 +250,11 @@ def publish_evaluation(examiner_id: int, evaluation_id: int) -> Evaluation:
         action=audit_service.EVALUATION_PUBLISH,
         entity_type="evaluation",
         entity_id=evaluation.id,
-        details={"booking_id": evaluation.booking_id, "total": float(evaluation.total_marks), "status": "published"},
+        details={
+            "booking_id": evaluation.booking_id,
+            "total": float(evaluation.total_marks),
+            "status": "published",
+        },
     )
     db.session.commit()
     return evaluation
@@ -242,7 +269,9 @@ def admin_publish(actor_id: int, evaluation_id: int) -> Evaluation:
     if not evaluation:
         raise BookingError("evaluation_not_found", "Evaluation not found.")
     if evaluation.status == "draft":
-        raise BookingError("evaluation_not_submitted", "Only submitted evaluations can be published.")
+        raise BookingError(
+            "evaluation_not_submitted", "Only submitted evaluations can be published."
+        )
     if evaluation.status == "published":
         raise BookingError("evaluation_locked", "Evaluation is already published.")
 

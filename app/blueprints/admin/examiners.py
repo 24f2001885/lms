@@ -54,13 +54,17 @@ def examiners():
     if q:
         query = query.filter(User.full_name.ilike(f"%{q}%") | User.email.ilike(f"%{q}%"))
 
-    examiners_page = query.order_by(User.id.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    examiners_page = query.order_by(User.id.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
 
     # Status counts for filter pills
     counts = {
         "all": User.query.filter_by(role="examiner").count(),
         "pending": User.query.filter_by(role="examiner", approval_status="pending").count(),
-        "approved": User.query.filter_by(role="examiner", approval_status="approved", is_active=True).count(),
+        "approved": User.query.filter_by(
+            role="examiner", approval_status="approved", is_active=True
+        ).count(),
         "inactive": User.query.filter_by(role="examiner", is_active=False).count(),
         "rejected": User.query.filter_by(role="examiner", approval_status="rejected").count(),
     }
@@ -106,7 +110,13 @@ def new_examiner():
                 status="active",
             )
             db.session.add(profile)
-            audit_service.log_action(g.user.id, audit_service.USER_EXAMINER_CREATE, "user", new_user.id, {"email": new_user.email})
+            audit_service.log_action(
+                g.user.id,
+                audit_service.USER_EXAMINER_CREATE,
+                "user",
+                new_user.id,
+                {"email": new_user.email},
+            )
             db.session.commit()
             flash(f"Examiner '{new_user.full_name}' created.", "success")
             return redirect(url_for("admin.examiner_detail", examiner_id=new_user.id))
@@ -209,9 +219,14 @@ def set_temporary_password(user_id: int):
     if form.validate_on_submit():
         try:
             target_user = db.session.get(User, user_id)
-            plain_pass = admin_service.set_temporary_password(actor_id=g.user.id, user_id=user_id, new_password=form.new_password.data)
+            plain_pass = admin_service.set_temporary_password(
+                actor_id=g.user.id, user_id=user_id, new_password=form.new_password.data
+            )
             # Displayed once in flash message
-            flash(f"Temporary password for {target_user.full_name}: {plain_pass} (Copy now; it will not be shown again).", "warning")
+            flash(
+                f"Temporary password for {target_user.full_name}: {plain_pass} (Copy now; it will not be shown again).",
+                "warning",
+            )
         except AppError as e:
             flash(e.message, "danger")
 

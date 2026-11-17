@@ -13,6 +13,7 @@ OFFLINE DOCKER TEST CASES:
 
 FILE PURPOSE: EXM-01 Examiner dashboard (assigned examinations, created slots, students booked, pending evaluations).
 """
+
 from flask import g, render_template
 
 from app.blueprints.examiner import examiner_bp
@@ -26,7 +27,7 @@ def dashboard():
     examiner_id = g.user.id
     counts = slot_service.examiner_dashboard_counts(examiner_id)
     pending_count = evaluation_service.pending_evaluations_count(examiner_id)
-    
+
     # Get first 5 pending evaluations for the list
     pending_pagination = evaluation_service.pending_bookings(examiner_id, page=1, per_page=5)
     pending_bookings_list = pending_pagination.items
@@ -35,5 +36,5 @@ def dashboard():
         "examiner/dashboard.html",
         counts=counts,
         pending_count=pending_count,
-        pending_bookings=pending_bookings_list
+        pending_bookings=pending_bookings_list,
     )

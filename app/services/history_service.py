@@ -1,6 +1,7 @@
 """
 FILE PURPOSE: Builds per-booking history timelines with role-based redaction (PDR 5.6).
 """
+
 import json
 from typing import Any
 
@@ -40,7 +41,9 @@ def booking_timeline(
             if viewer_role == "student":
                 detail = "Moved to a different slot"
             else:
-                detail = f"Moved from slot #{details.get('from_slot')} to slot #{details.get('to_slot')}"
+                detail = (
+                    f"Moved from slot #{details.get('from_slot')} to slot #{details.get('to_slot')}"
+                )
             events.append({"at": log.created_at, "label": "Rescheduled", "detail": detail})
 
         elif log.action == audit_service.BOOKING_ADMIN_CANCEL:
@@ -51,9 +54,7 @@ def booking_timeline(
             events.append({"at": log.created_at, "label": "Cancelled", "detail": detail})
 
     # Check slot cancellation audit logs referencing this booking
-    slot_logs = AuditLog.query.filter_by(
-        entity_type="slot", action=audit_service.SLOT_CANCEL
-    ).all()
+    slot_logs = AuditLog.query.filter_by(entity_type="slot", action=audit_service.SLOT_CANCEL).all()
     for slog in slot_logs:
         sdetails = json.loads(slog.details) if slog.details else {}
         if booking.id in sdetails.get("booking_ids", []):
@@ -93,9 +94,7 @@ def booking_timeline(
 
 def examination_history_for_student(student_id: int) -> list[dict[str, Any]]:
     bookings = (
-        Booking.query.filter_by(student_id=student_id)
-        .order_by(Booking.booked_at.desc())
-        .all()
+        Booking.query.filter_by(student_id=student_id).order_by(Booking.booked_at.desc()).all()
     )
     summary: dict[int, dict[str, Any]] = {}
     for b in bookings:

@@ -1,6 +1,7 @@
 """
 FILE PURPOSE: Rule tests for reschedule_booking, admin_cancel_booking, cancel_slot, and change_examiner.
 """
+
 from datetime import timedelta
 
 import pytest
@@ -24,7 +25,9 @@ def _clean_hooks():
     hooks.clear_hooks()
 
 
-def test_reschedule_moves_booking_and_counts(app, db_session, admin, make_open_booking_setup, freeze_now):
+def test_reschedule_moves_booking_and_counts(
+    app, db_session, admin, make_open_booking_setup, freeze_now
+):
     exam, slot1, examiner, students = make_open_booking_setup(student_count=1, capacity=1)
     freeze_now(exam.booking_start + timedelta(hours=1))
 
@@ -54,7 +57,9 @@ def test_reschedule_moves_booking_and_counts(app, db_session, admin, make_open_b
     assert slot2.booked_count == 1
     assert slot2.status == "full"
 
-    audit = AuditLog.query.filter_by(action=audit_service.BOOKING_RESCHEDULE, entity_id=booking.id).first()
+    audit = AuditLog.query.filter_by(
+        action=audit_service.BOOKING_RESCHEDULE, entity_id=booking.id
+    ).first()
     assert audit is not None
     _assert_slot_invariants(db_session)
 
@@ -136,7 +141,9 @@ def test_admin_cancel_booking_rules(app, db_session, admin, make_open_booking_se
     _assert_slot_invariants(db_session)
 
 
-def test_cancel_slot_cancels_bookings_and_zeroes_count(app, db_session, make_open_booking_setup, freeze_now):
+def test_cancel_slot_cancels_bookings_and_zeroes_count(
+    app, db_session, make_open_booking_setup, freeze_now
+):
     exam, slot, examiner, students = make_open_booking_setup(student_count=2, capacity=2)
     freeze_now(exam.booking_start + timedelta(hours=1))
 
@@ -156,7 +163,9 @@ def test_cancel_slot_cancels_bookings_and_zeroes_count(app, db_session, make_ope
     _assert_slot_invariants(db_session)
 
 
-def test_change_examiner_delegation_and_rules(app, db_session, admin, make_open_booking_setup, freeze_now):
+def test_change_examiner_delegation_and_rules(
+    app, db_session, admin, make_open_booking_setup, freeze_now
+):
     exam, slot, examiner1, students = make_open_booking_setup(student_count=1, capacity=2)
     freeze_now(exam.booking_start + timedelta(hours=1))
 

@@ -1,31 +1,11 @@
 """
-FILE PURPOSE: Domain exception classes with stable error codes, plus HTML error handlers for 403, 404, 500 and CSRF failures (screen PUB-07).
-DEPENDS ON: app/templates/errors/*.html, flask.
-PROMPT FOR LLM IMPLEMENTATION:
-1. Define a base class AppError(Exception) with attributes code (str), message (str), http_status (int, default 400). Subclasses: BookingError, WindowError, PermissionDenied (http_status 403), plus AttemptError and PaymentError are NOT created now (Tier 3). Each subclass accepts code and message in its constructor and keeps the code stable for later API use.
-2. Define the Tier 1 error code constants as module-level strings (TDR section 12): BOOKING_CLOSED, SLOT_FULL, DUPLICATE_BOOKING, SLOT_NOT_AVAILABLE, CANCEL_DEADLINE_PASSED, NOT_APPROVED. Do NOT define revisit_not_allowed, answer_locked, attempt_*, payment_required, invalid_signature or hold_expired (Tier 3).
-3. register_error_handlers(app): handlers for 403, 404, 500 render errors/403.html, errors/404.html, errors/500.html with the correct status code. The 500 page shows only a reference id (g.request_id) and a friendly sentence, never a stack trace or exception text. Log the 500 with logger.exception including request_id.
-4. Handler for AppError: flash(error.message, "danger") and redirect back to request.referrer when it is a same-host URL, otherwise to the role dashboard (or /login when anonymous); keep the HTTP status semantic by using 302. (JSON error shape arrives in P7 for /api/ paths; leave a comment where that branch will go.)
-5. Handler for flask_wtf.csrf.CSRFError: flash("Your form expired. Please try again.", "warning") and redirect to a safe same-host referrer or to /login; log WARNING without the token value.
-6. Handlers must be safe for anonymous users (no attribute errors when g.user is None) and must work even if the database is unavailable (do not query inside the 500 handler).
-DEBUGGING:
-# print(f"[DEBUG] error handler status={status} path={request.path} request_id={getattr(g, 'request_id', '-')}")
-OFFLINE DOCKER TEST CASES:
-- GET /no-such-page returns 404 with the custom page (contains "Page not found") and still renders the base layout.
-- A student requesting /admin/dashboard gets the custom 403 page (contains "permission").
-- A route that raises RuntimeError returns 500 whose body contains the request id but NOT the word "Traceback" or the exception message.
-- Raising BookingError("slot_full", "This slot is full.") inside a test route flashes that message and redirects.
-- Anonymous 404 and 403 pages render without a logout button.
-
-app/errors.py - Domain exceptions and HTTP error handlers for LMS.
-
-Defines AppError base exception and subclasses with stable error codes,
-and registers custom handlers for 403, 404, 500, and CSRF token errors (PUB-07).
+FILE PURPOSE: Application error hierarchy, HTTP status policy mapping, and HTML/JSON error handlers.
 """
 
 import logging
+from typing import Any
 
-from flask import Flask, flash, g, redirect, render_template, request, url_for
+from flask import flash, g, jsonify, redirect, render_template, request, url_for
 from flask_wtf.csrf import CSRFError
 
 logger = logging.getLogger("lms")
@@ -37,30 +17,100 @@ DUPLICATE_BOOKING = "duplicate_booking"
 SLOT_NOT_AVAILABLE = "slot_not_available"
 CANCEL_DEADLINE_PASSED = "cancel_deadline_passed"
 NOT_APPROVED = "not_approved"
+SLOT_CREATION_CLOSED = "slot_creation_closed"
+SLOT_HAS_BOOKINGS = "slot_has_bookings"
+SLOT_HAS_EVALUATIONS = "slot_has_evaluations"
+SLOT_NOT_CANCELLABLE = "slot_not_cancellable"
+SLOT_STARTED = "slot_started"
+BOOKING_NOT_FOUND = "booking_not_found"
+BOOKING_NOT_CANCELLABLE = "booking_not_cancellable"
+BOOKING_NOT_RESCHEDULABLE = "booking_not_reschedulable"
+BOOKING_HAS_EVALUATION = "booking_has_evaluation"
+SAME_SLOT = "same_slot"
+DIFFERENT_EXAMINATION = "different_examination"
+REASON_REQUIRED = "reason_required"
+NOT_AN_ADMIN = "not_an_admin"
+EXAMINER_OVERLAP = "examiner_overlap"
+SLOT_NOT_FOUND = "slot_not_found"
+
+ERROR_HTTP_STATUS: dict[str, int] = {
+    # 400 Bad Request
+    "invalid_json": 400,
+    "csrf_failed": 400,
+    # 401 Unauthorized
+    "unauthenticated": 401,
+    # 403 Forbidden
+    "forbidden": 403,
+    "not_approved": 403,
+    "not_an_admin": 403,
+    "account_inactive": 403,
+    "password_change_required": 403,
+    # 404 Not Found
+    "not_found": 404,
+    "slot_not_found": 404,
+    "booking_not_found": 404,
+    "examination_not_found": 404,
+    # 405 Method Not Allowed
+    "method_not_allowed": 405,
+    # 409 Conflict (state / business rule conflicts)
+    "booking_closed": 409,
+    "slot_full": 409,
+    "duplicate_booking": 409,
+    "slot_not_available": 409,
+    "cancel_deadline_passed": 409,
+    "booking_not_cancellable": 409,
+    "booking_not_reschedulable": 409,
+    "booking_has_evaluation": 409,
+    "slot_creation_closed": 409,
+    "slot_edit_locked": 409,
+    "slot_started": 409,
+    "slot_has_bookings": 409,
+    "slot_has_evaluations": 409,
+    "slot_not_cancellable": 409,
+    "slot_not_changeable": 409,
+    "examiner_overlap": 409,
+    "exam_has_bookings": 409,
+    "course_in_use": 409,
+    "rubric_locked": 409,
+    "evaluation_locked": 409,
+    # 415 Unsupported Media Type
+    "unsupported_media_type": 415,
+    # 422 Unprocessable Entity (validation / invalid values)
+    "validation_error": 422,
+    "slot_in_past": 422,
+    "invalid_capacity": 422,
+    "invalid_time_range": 422,
+    "reason_required": 422,
+    "total_exceeds_max": 422,
+    "score_out_of_range": 422,
+    "scores_incomplete": 422,
+    "marks_below_existing": 422,
+    "weightage_over_100": 422,
+    "rubric_total_not_100": 422,
+    "examiner_not_eligible": 422,
+    "no_examiner_assigned": 422,
+    # 500 Internal Server Error
+    "internal_error": 500,
+}
 
 
 class AppError(Exception):
-    """Base application exception with error code and HTTP status."""
+    http_status: int = 400
 
-    def __init__(self, code: str, message: str, http_status: int = 400):
+    def __init__(self, code: str, message: str, http_status: int | None = None):
         super().__init__(message)
         self.code = code
         self.message = message
-        self.http_status = http_status
+        if http_status is not None:
+            self.http_status = http_status
 
 
 class BookingError(AppError):
-    """Raised when slot booking or cancellation rules are violated."""
-
-    def __init__(self, code: str, message: str):
-        super().__init__(code=code, message=message, http_status=400)
+    pass
 
 
 class WindowError(AppError):
-    """Raised when slot creation or booking window constraints are violated."""
-
-    def __init__(self, code: str, message: str):
-        super().__init__(code=code, message=message, http_status=400)
+    pass
 
 
 class PermissionDenied(AppError):  # noqa: N818
@@ -70,31 +120,41 @@ class PermissionDenied(AppError):  # noqa: N818
         super().__init__(code=code, message=message, http_status=403)
 
 
-def register_error_handlers(app: Flask) -> None:
-    """Register custom HTTP status and exception handlers on the Flask app."""
+class ValidationError(AppError):
+    http_status = 422
 
-    @app.errorhandler(403)
-    def handle_forbidden(e):
-        return render_template("errors/403.html"), 403
 
-    @app.errorhandler(404)
-    def handle_not_found(e):
-        return render_template("errors/404.html"), 404
+def error_response(
+    code: str,
+    message: str,
+    status: int | None = None,
+    fields: dict[str, list[str]] | None = None,
+):
+    resolved_status = status if status is not None else ERROR_HTTP_STATUS.get(code, 400)
+    err_obj: dict[str, Any] = {
+        "code": code,
+        "message": message,
+    }
+    if fields:
+        err_obj["fields"] = fields
+    req_id = getattr(g, "request_id", None)
+    if req_id:
+        err_obj["request_id"] = req_id
+    return jsonify({"error": err_obj}), resolved_status
 
-    @app.errorhandler(500)
-    def handle_server_error(e):
-        request_id = getattr(g, "request_id", "-")
-        logger.exception("Internal Server Error (500) request_id=%s: %s", request_id, e)
-        # Never leak traceback or internal variables to the user
-        return render_template("errors/500.html", request_id=request_id), 500
 
+def _is_api_request() -> bool:
+    return request.path.startswith("/api/")
+
+
+def register_error_handlers(app) -> None:
     @app.errorhandler(AppError)
-    def handle_app_error(e: AppError):
-        """Handle domain application errors by flashing message and redirecting."""
-        logger.warning("Application error [%s]: %s (path=%s)", e.code, e.message, request.path)
-        flash(e.message, "danger")
-
-        # Redirect back to safe referrer or fallback to role dashboard
+    def handle_app_error(exc: AppError):
+        if _is_api_request():
+            status = ERROR_HTTP_STATUS.get(exc.code, exc.http_status)
+            return error_response(exc.code, exc.message, status=status)
+        logger.warning("Application error [%s]: %s (path=%s)", exc.code, exc.message, request.path)
+        flash(exc.message, "danger")
         from app.security.auth_helpers import get_current_user, role_dashboard_url
 
         user = get_current_user()
@@ -102,8 +162,73 @@ def register_error_handlers(app: Flask) -> None:
         return redirect(fallback_url)
 
     @app.errorhandler(CSRFError)
-    def handle_csrf_error(e: CSRFError):
-        """Handle expired or missing CSRF tokens gracefully."""
-        logger.warning("CSRF validation failure on path=%s: %s", request.path, e.description)
+    def handle_csrf_error(exc: CSRFError):
+        if _is_api_request():
+            return error_response(
+                "csrf_failed",
+                "Missing or invalid CSRF token.",
+                status=400,
+            )
+        logger.warning(
+            "CSRF validation failure on path=%s: %s",
+            request.path,
+            getattr(exc, "description", str(exc)),
+        )
         flash("Your form session expired. Please try submitting again.", "warning")
         return redirect(request.referrer or url_for("auth.login"))
+
+    @app.errorhandler(400)
+    def handle_400(exc):
+        if _is_api_request():
+            return error_response("invalid_json", "Bad request.", status=400)
+        return exc
+
+    @app.errorhandler(401)
+    def handle_401(exc):
+        if _is_api_request():
+            return error_response("unauthenticated", "Authentication is required.", status=401)
+        return exc
+
+    @app.errorhandler(403)
+    def handle_403(exc):
+        if _is_api_request():
+            return error_response(
+                "forbidden", "You do not have permission to perform this action.", status=403
+            )
+        return render_template("errors/403.html"), 403
+
+    @app.errorhandler(404)
+    def handle_404(exc):
+        if _is_api_request():
+            return error_response("not_found", "The requested resource was not found.", status=404)
+        return render_template("errors/404.html"), 404
+
+    @app.errorhandler(405)
+    def handle_405(exc):
+        if _is_api_request():
+            return error_response(
+                "method_not_allowed", "HTTP method is not allowed for this endpoint.", status=405
+            )
+        return exc
+
+    @app.errorhandler(415)
+    def handle_415(exc):
+        if _is_api_request():
+            return error_response(
+                "unsupported_media_type",
+                "Content-Type must be application/json.",
+                status=415,
+            )
+        return exc
+
+    @app.errorhandler(500)
+    def handle_500(exc):
+        req_id = getattr(g, "request_id", "-")
+        logger.exception("Internal Server Error (500) request_id=%s: %s", req_id, exc)
+        if _is_api_request():
+            return error_response(
+                "internal_error",
+                "An unexpected internal server error occurred.",
+                status=500,
+            )
+        return render_template("errors/500.html", request_id=req_id), 500

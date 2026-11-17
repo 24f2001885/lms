@@ -1,6 +1,7 @@
 """
 FILE PURPOSE: EXM-07, EXM-08, EXM-09 pending evaluations, evaluation form, submitted evaluations.
 """
+
 from flask import abort, flash, g, redirect, render_template, request, url_for
 
 from app.blueprints.examiner import examiner_bp
@@ -19,7 +20,9 @@ def evaluations_pending():
     q = request.args.get("q", "").strip()
     page = request.args.get("page", 1, type=int)
 
-    pagination = evaluation_service.pending_bookings(examiner_id, examination_id=examination_id, q=q or None, page=page)
+    pagination = evaluation_service.pending_bookings(
+        examiner_id, examination_id=examination_id, q=q or None, page=page
+    )
     assigned_exams = slot_service.list_assigned_examinations(examiner_id)
 
     return render_template(
@@ -27,7 +30,7 @@ def evaluations_pending():
         pagination=pagination,
         assigned_exams=assigned_exams,
         selected_exam=examination_id,
-        q=q
+        q=q,
     )
 
 
@@ -38,12 +41,12 @@ def evaluations_submitted():
     status = request.args.get("status", "").strip()
     page = request.args.get("page", 1, type=int)
 
-    pagination = evaluation_service.submitted_evaluations(examiner_id, status=status or None, page=page)
+    pagination = evaluation_service.submitted_evaluations(
+        examiner_id, status=status or None, page=page
+    )
 
     return render_template(
-        "examiner/evaluations_submitted.html",
-        pagination=pagination,
-        selected_status=status
+        "examiner/evaluations_submitted.html", pagination=pagination, selected_status=status
     )
 
 
@@ -56,8 +59,12 @@ def evaluate_booking(booking_id):
         abort(404)
 
     exam = booking.slot.examination
-    rubrics = ExaminationRubric.query.filter_by(examination_id=exam.id).order_by(ExaminationRubric.position.asc()).all()
-    
+    rubrics = (
+        ExaminationRubric.query.filter_by(examination_id=exam.id)
+        .order_by(ExaminationRubric.position.asc())
+        .all()
+    )
+
     form_class = build_evaluation_form(rubrics)
     form = form_class()
 
@@ -81,7 +88,9 @@ def evaluate_booking(booking_id):
             scores, comments = extract_scores(form, rubrics)
             remarks = form.remarks.data
             try:
-                evaluation_service.save_evaluation(examiner_id, booking_id, scores, comments, remarks, action)
+                evaluation_service.save_evaluation(
+                    examiner_id, booking_id, scores, comments, remarks, action
+                )
                 if action == "save_draft":
                     flash("Draft saved.", "success")
                     return redirect(url_for("examiner.evaluate_booking", booking_id=booking_id))
@@ -101,5 +110,5 @@ def evaluate_booking(booking_id):
         rubrics=rubrics,
         form=form,
         evaluation=evaluation,
-        ctx=ctx
+        ctx=ctx,
     )

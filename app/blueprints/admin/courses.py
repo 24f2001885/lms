@@ -43,7 +43,9 @@ def courses():
     if status_filter:
         query = query.filter_by(status=status_filter)
 
-    courses_page = query.order_by(Course.code.asc()).paginate(page=page, per_page=per_page, error_out=False)
+    courses_page = query.order_by(Course.code.asc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
     confirm_form = ConfirmForm()
     return render_template(
         "admin/courses_list.html",

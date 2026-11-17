@@ -13,15 +13,17 @@ from app.services import windows
 @pytest.mark.parametrize(
     "test_dt,switch_open,expected_open",
     [
-        (datetime(2030, 1, 1, 9, 59, 59), True, False),   # 1 second before start
-        (datetime(2030, 1, 1, 10, 0, 0), True, True),      # Exactly at start (inclusive)
-        (datetime(2030, 1, 5, 12, 0, 0), True, True),      # Mid-window
-        (datetime(2030, 1, 10, 18, 0, 0), True, True),    # Exactly at end (inclusive)
-        (datetime(2030, 1, 10, 18, 0, 1), True, False),   # 1 second after end
-        (datetime(2030, 1, 5, 12, 0, 0), False, False),   # Inside dates but switch OFF
+        (datetime(2030, 1, 1, 9, 59, 59), True, False),  # 1 second before start
+        (datetime(2030, 1, 1, 10, 0, 0), True, True),  # Exactly at start (inclusive)
+        (datetime(2030, 1, 5, 12, 0, 0), True, True),  # Mid-window
+        (datetime(2030, 1, 10, 18, 0, 0), True, True),  # Exactly at end (inclusive)
+        (datetime(2030, 1, 10, 18, 0, 1), True, False),  # 1 second after end
+        (datetime(2030, 1, 5, 12, 0, 0), False, False),  # Inside dates but switch OFF
     ],
 )
-def test_slot_creation_window_boundaries(app, make_examination, test_dt, switch_open, expected_open):
+def test_slot_creation_window_boundaries(
+    app, make_examination, test_dt, switch_open, expected_open
+):
     exam = make_examination(
         slot_creation_start=datetime(2030, 1, 1, 10, 0, 0),
         slot_creation_end=datetime(2030, 1, 10, 18, 0, 0),
@@ -34,11 +36,11 @@ def test_slot_creation_window_boundaries(app, make_examination, test_dt, switch_
     "test_dt,switch_open,expected_open",
     [
         (datetime(2030, 1, 10, 9, 59, 59), True, False),  # 1 second before start
-        (datetime(2030, 1, 10, 10, 0, 0), True, True),     # Exactly at start (inclusive)
-        (datetime(2030, 1, 15, 12, 0, 0), True, True),     # Mid-window
-        (datetime(2030, 1, 20, 18, 0, 0), True, True),     # Exactly at end (inclusive)
-        (datetime(2030, 1, 20, 18, 0, 1), True, False),    # 1 second after end
-        (datetime(2030, 1, 15, 12, 0, 0), False, False),   # Inside dates but switch OFF
+        (datetime(2030, 1, 10, 10, 0, 0), True, True),  # Exactly at start (inclusive)
+        (datetime(2030, 1, 15, 12, 0, 0), True, True),  # Mid-window
+        (datetime(2030, 1, 20, 18, 0, 0), True, True),  # Exactly at end (inclusive)
+        (datetime(2030, 1, 20, 18, 0, 1), True, False),  # 1 second after end
+        (datetime(2030, 1, 15, 12, 0, 0), False, False),  # Inside dates but switch OFF
     ],
 )
 def test_booking_window_boundaries(app, make_examination, test_dt, switch_open, expected_open):

@@ -18,7 +18,6 @@ app/forms/profile.py - WTForms for editing user profile information (PUB-06).
 Provides role-aware profile field resolution and uniqueness validation.
 """
 
-
 from flask import g
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
@@ -44,7 +43,9 @@ class ProfileForm(FlaskForm):
         validators=[
             Optional(),
             Length(max=20),
-            Regexp(r"^[0-9+\- ]*$", message="Phone number may only contain digits, +, -, and spaces."),
+            Regexp(
+                r"^[0-9+\- ]*$", message="Phone number may only contain digits, +, -, and spaces."
+            ),
         ],
         filters=[lambda x: x.strip() if x else ""],
     )

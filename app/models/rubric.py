@@ -25,7 +25,6 @@ class ExaminationRubric(db.Model):
 
     __tablename__ = "examination_rubrics"
     __table_args__ = (
-        
         CheckConstraint(
             "weightage >= 0 AND weightage <= 100",
             name="ck_examination_rubrics_weightage_range",

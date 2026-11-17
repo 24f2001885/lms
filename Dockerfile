@@ -12,16 +12,17 @@ WORKDIR /app
 RUN groupadd -g 1000 lms && \
     useradd -u 1000 -g lms -m -s /bin/bash lms
 
-COPY requirements.txt ./
+COPY requirements*.txt ./
 COPY wheels/ ./wheels/
 
 #install run time dependency 
-RUN if [ -n "$(find ./wheels -name '*.whl' 2>/dev/null)" ]; then \
+RUN REQ_FILE=$([ -f requirements-tier2.txt ] && echo requirements-tier2.txt || echo requirements.txt); \
+    if [ -n "$(find ./wheels -name '*.whl' 2>/dev/null)" ]; then \
         echo "Found offline wheels; installing without network..." && \
-        pip install --no-cache-dir --no-index --find-links=wheels/ -r requirements.txt; \
+        pip install --no-cache-dir --no-index --find-links=wheels/ -r "$REQ_FILE"; \
     else \
         echo "No offline wheels found; installing from PyPI..." && \
-        pip install --no-cache-dir -r requirements.txt; \
+        pip install --no-cache-dir -r "$REQ_FILE"; \
     fi
 
 #=====runtime tagret : clean container img used to run live app===== 

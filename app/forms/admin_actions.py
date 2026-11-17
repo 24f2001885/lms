@@ -47,7 +47,11 @@ class ExaminerCreateForm(FlaskForm):
     )
     contact_phone = StringField(
         "Phone number",
-        validators=[Optional(), Length(max=20), Regexp(r"^[0-9+\- ]*$", message="Invalid phone number format.")],
+        validators=[
+            Optional(),
+            Length(max=20),
+            Regexp(r"^[0-9+\- ]*$", message="Invalid phone number format."),
+        ],
         filters=[lambda x: x.strip() if x else ""],
     )
     department = StringField("Department", validators=[Optional(), Length(max=120)])

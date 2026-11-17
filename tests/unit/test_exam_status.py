@@ -46,7 +46,9 @@ def test_completed_after_all_slots_past_and_evaluated(
     examiner = make_examiner()
     student = make_student()
 
-    slot = make_slot(exam, examiner, start_at=datetime(2030, 1, 21, 10, 0), end_at=datetime(2030, 1, 21, 12, 0))
+    slot = make_slot(
+        exam, examiner, start_at=datetime(2030, 1, 21, 10, 0), end_at=datetime(2030, 1, 21, 12, 0)
+    )
     booking = make_booking(student, slot)
     make_evaluation(booking, examiner, status="published", total=85.0)
 
@@ -61,7 +63,9 @@ def test_closed_when_one_booking_unevaluated(
     examiner = make_examiner()
     student = make_student()
 
-    slot = make_slot(exam, examiner, start_at=datetime(2030, 1, 21, 10, 0), end_at=datetime(2030, 1, 21, 12, 0))
+    slot = make_slot(
+        exam, examiner, start_at=datetime(2030, 1, 21, 10, 0), end_at=datetime(2030, 1, 21, 12, 0)
+    )
     make_booking(student, slot)  # Unevaluated booking
 
     assert exam_status.compute_status(exam, now=datetime(2030, 1, 22, 10, 0)) == "closed"

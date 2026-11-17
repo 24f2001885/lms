@@ -58,7 +58,9 @@ def examinations():
     if status_filter:
         query = query.filter_by(status=status_filter)
 
-    exams_page = query.order_by(Examination.id.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    exams_page = query.order_by(Examination.id.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
 
     # Compute window_state for each exam in page
     now = windows.now_utc()
@@ -132,7 +134,9 @@ def examination_detail(exam_id: int):
         .all()
     )
     assign_form = AssignExaminerForm()
-    assign_form.examiner_id.choices = [(e.id, f"{e.full_name} ({e.email})") for e in available_examiners]
+    assign_form.examiner_id.choices = [
+        (e.id, f"{e.full_name} ({e.email})") for e in available_examiners
+    ]
 
     confirm_form = ConfirmForm()
     rubric_form = RubricForm()
@@ -202,7 +206,9 @@ def toggle_slot_creation(exam_id: int):
     """Toggle slot creation switch."""
     open_state = request.form.get("open") in ("1", "true", "True")
     try:
-        catalog_service.toggle_slot_creation(actor_id=g.user.id, exam_id=exam_id, open_state=open_state)
+        catalog_service.toggle_slot_creation(
+            actor_id=g.user.id, exam_id=exam_id, open_state=open_state
+        )
         flash(f"Slot creation {'opened' if open_state else 'closed'}.", "success")
     except AppError as e:
         flash(e.message, "danger")
@@ -228,12 +234,16 @@ def assign_examiner(exam_id: int):
     """Assign an examiner to an examination."""
     form = AssignExaminerForm()
     # Populate choices dynamically
-    available_examiners = User.query.filter_by(role="examiner", approval_status="approved", is_active=True).all()
+    available_examiners = User.query.filter_by(
+        role="examiner", approval_status="approved", is_active=True
+    ).all()
     form.examiner_id.choices = [(e.id, e.full_name) for e in available_examiners]
 
     if form.validate_on_submit():
         try:
-            catalog_service.assign_examiner(actor_id=g.user.id, exam_id=exam_id, examiner_id=form.examiner_id.data)
+            catalog_service.assign_examiner(
+                actor_id=g.user.id, exam_id=exam_id, examiner_id=form.examiner_id.data
+            )
             flash("Examiner assigned.", "success")
         except AppError as e:
             flash(e.message, "danger")
@@ -247,7 +257,9 @@ def remove_examiner(exam_id: int, examiner_id: int):
     form = ConfirmForm()
     if form.validate_on_submit():
         try:
-            catalog_service.unassign_examiner(actor_id=g.user.id, exam_id=exam_id, examiner_id=examiner_id)
+            catalog_service.unassign_examiner(
+                actor_id=g.user.id, exam_id=exam_id, examiner_id=examiner_id
+            )
             flash("Examiner removed from examination.", "info")
         except AppError as e:
             flash(e.message, "danger")

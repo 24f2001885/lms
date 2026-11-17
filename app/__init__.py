@@ -74,6 +74,7 @@ def create_app(config_name: str | None = None, test_config: dict | None = None) 
 
     # 11. Register application blueprints
     from app.blueprints.admin import admin_bp
+    from app.blueprints.api_v1 import api_bp
     from app.blueprints.auth import auth_bp
     from app.blueprints.examiner import examiner_bp
     from app.blueprints.student import student_bp
@@ -82,5 +83,8 @@ def create_app(config_name: str | None = None, test_config: dict | None = None) 
     flask_app.register_blueprint(admin_bp)
     flask_app.register_blueprint(examiner_bp)
     flask_app.register_blueprint(student_bp)
+    flask_app.register_blueprint(api_bp, url_prefix="/api/v1")
+
+    flask_app.json.sort_keys = False
 
     return flask_app

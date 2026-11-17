@@ -96,7 +96,9 @@ def register():
                 profile = ExaminerProfile(
                     user_id=new_user.id,
                     department=form.department.data.strip() if form.department.data else None,
-                    contact_phone=form.contact_phone.data.strip() if form.contact_phone.data else None,
+                    contact_phone=(
+                        form.contact_phone.data.strip() if form.contact_phone.data else None
+                    ),
                 )
                 db.session.add(profile)
             elif role == "student":

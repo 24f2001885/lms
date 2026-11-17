@@ -22,9 +22,7 @@ class StudentProfile(db.Model, TimestampMixin):
     """
 
     __tablename__ = "student_profiles"
-    __table_args__ = (
-        {"sqlite_autoincrement": True},
-    )
+    __table_args__ = ({"sqlite_autoincrement": True},)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
 

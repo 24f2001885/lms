@@ -49,13 +49,19 @@ def dashboard():
     stats = {
         "courses": Course.query.count(),
         "examinations": Examination.query.filter_by(is_deleted=False).count(),
-        "examiners_approved": User.query.filter_by(role="examiner", approval_status="approved").count(),
-        "examiners_pending": User.query.filter_by(role="examiner", approval_status="pending").count(),
+        "examiners_approved": User.query.filter_by(
+            role="examiner", approval_status="approved"
+        ).count(),
+        "examiners_pending": User.query.filter_by(
+            role="examiner", approval_status="pending"
+        ).count(),
         "students": User.query.filter_by(role="student").count(),
         "slots": ExaminationSlot.query.count(),
         "bookings": Booking.query.count(),
     }
-    recent_exams = Examination.query.filter_by(is_deleted=False).order_by(Examination.id.desc()).limit(5).all()
+    recent_exams = (
+        Examination.query.filter_by(is_deleted=False).order_by(Examination.id.desc()).limit(5).all()
+    )
     recent_audits = AuditLog.query.order_by(AuditLog.id.desc()).limit(5).all()
     return render_template(
         "admin/dashboard.html",
@@ -156,7 +162,9 @@ def create_examination():
     """Create a new examination offering (ADM-05)."""
     form = ExaminationForm()
     # Populate course choices dynamically
-    form.course_id.choices = [(c.id, f"{c.code} - {c.name}") for c in Course.query.filter_by(status="active").all()]
+    form.course_id.choices = [
+        (c.id, f"{c.code} - {c.name}") for c in Course.query.filter_by(status="active").all()
+    ]
 
     if form.validate_on_submit():
         cancellation_deadline = form.cancellation_deadline.data or form.booking_end.data
@@ -205,15 +213,15 @@ def examination_detail(exam_id: int):
 
     # Get approved examiners not yet assigned to this examination
     assigned_ids = [a.examiner_id for a in exam.examiner_links]
-    available_examiners = (
-        User.query.filter(
-            User.role == "examiner",
-            User.approval_status == "approved",
-            User.is_active.is_(True),
-            ~User.id.in_(assigned_ids) if assigned_ids else True,
-        ).all()
-    )
-    assign_form.examiner_id.choices = [(e.id, f"{e.full_name} ({e.email})") for e in available_examiners]
+    available_examiners = User.query.filter(
+        User.role == "examiner",
+        User.approval_status == "approved",
+        User.is_active.is_(True),
+        ~User.id.in_(assigned_ids) if assigned_ids else True,
+    ).all()
+    assign_form.examiner_id.choices = [
+        (e.id, f"{e.full_name} ({e.email})") for e in available_examiners
+    ]
 
     total_weightage = sum(r.weightage for r in exam.rubrics)
 
@@ -273,7 +281,9 @@ def toggle_slot_creation(exam_id: int):
     exam.slot_creation_open = not exam.slot_creation_open
     db.session.commit()
     sync_examination_status(exam)
-    log_audit("exam.slot_creation_toggle", "examination", exam.id, {"open": exam.slot_creation_open})
+    log_audit(
+        "exam.slot_creation_toggle", "examination", exam.id, {"open": exam.slot_creation_open}
+    )
     status_label = "opened" if exam.slot_creation_open else "closed"
     flash(f"Slot creation {status_label} for '{exam.name}'.", "info")
     return redirect(url_for("admin.examination_detail", exam_id=exam.id))
@@ -329,7 +339,10 @@ def add_rubric(exam_id: int):
     if form.validate_on_submit():
         existing_criteria = [r.criterion_name.lower() for r in exam.rubrics]
         if form.criterion_name.data.strip().lower() in existing_criteria:
-            flash(f"Criterion '{form.criterion_name.data}' already exists on this examination.", "danger")
+            flash(
+                f"Criterion '{form.criterion_name.data}' already exists on this examination.",
+                "danger",
+            )
             return redirect(url_for("admin.examination_detail", exam_id=exam.id))
 
         new_rubric = ExaminationRubric(
@@ -381,7 +394,9 @@ def assign_examiner(exam_id: int):
 
     form = AssignExaminerForm()
     # Populate choices dynamically to validate
-    available_examiners = User.query.filter_by(role="examiner", approval_status="approved", is_active=True).all()
+    available_examiners = User.query.filter_by(
+        role="examiner", approval_status="approved", is_active=True
+    ).all()
     form.examiner_id.choices = [(e.id, e.full_name) for e in available_examiners]
 
     if form.validate_on_submit():
@@ -393,7 +408,9 @@ def assign_examiner(exam_id: int):
         )
         db.session.add(assignment)
         db.session.commit()
-        log_audit("exam.assign_examiner", "examination", exam.id, {"examiner_id": assignment.examiner_id})
+        log_audit(
+            "exam.assign_examiner", "examination", exam.id, {"examiner_id": assignment.examiner_id}
+        )
         flash("Examiner assigned successfully.", "success")
     else:
         flash("Invalid examiner selection.", "danger")
@@ -401,20 +418,32 @@ def assign_examiner(exam_id: int):
     return redirect(url_for("admin.examination_detail", exam_id=exam.id))
 
 
-@admin_bp.route("/examinations/<int:exam_id>/examiners/<int:examiner_id>/unassign", methods=["POST"])
+@admin_bp.route(
+    "/examinations/<int:exam_id>/examiners/<int:examiner_id>/unassign", methods=["POST"]
+)
 @admin_required
 def unassign_examiner(exam_id: int, examiner_id: int):
     """Remove examiner assignment from an examination."""
-    assignment = ExaminationExaminer.query.filter_by(examination_id=exam_id, examiner_id=examiner_id).first()
+    assignment = ExaminationExaminer.query.filter_by(
+        examination_id=exam_id, examiner_id=examiner_id
+    ).first()
     if assignment:
         # Check if examiner has active slots
-        has_slots = ExaminationSlot.query.filter_by(examination_id=exam_id, examiner_id=examiner_id).count() > 0
+        has_slots = (
+            ExaminationSlot.query.filter_by(examination_id=exam_id, examiner_id=examiner_id).count()
+            > 0
+        )
         if has_slots:
-            flash("Cannot unassign examiner: Examiner has created slots for this examination.", "danger")
+            flash(
+                "Cannot unassign examiner: Examiner has created slots for this examination.",
+                "danger",
+            )
         else:
             db.session.delete(assignment)
             db.session.commit()
-            log_audit("exam.unassign_examiner", "examination", exam_id, {"examiner_id": examiner_id})
+            log_audit(
+                "exam.unassign_examiner", "examination", exam_id, {"examiner_id": examiner_id}
+            )
             flash("Examiner unassigned.", "info")
 
     return redirect(url_for("admin.examination_detail", exam_id=exam_id))
@@ -438,7 +467,9 @@ def examiners():
         query = query.filter_by(is_active=False)
 
     examiners_list = query.order_by(User.id.desc()).all()
-    return render_template("admin/examiners.html", examiners=examiners_list, current_status=status_filter)
+    return render_template(
+        "admin/examiners.html", examiners=examiners_list, current_status=status_filter
+    )
 
 
 @admin_bp.route("/examiners/<int:user_id>", methods=["GET", "POST"])
@@ -455,10 +486,15 @@ def examiner_detail(user_id: int):
         examiner.must_change_password = True
         db.session.commit()
         log_audit("user.temp_password", "user", examiner.id, {"target_email": examiner.email})
-        flash(f"Temporary password set for '{examiner.email}'. Forced update required at next login.", "success")
+        flash(
+            f"Temporary password set for '{examiner.email}'. Forced update required at next login.",
+            "success",
+        )
         return redirect(url_for("admin.examiner_detail", user_id=examiner.id))
 
-    return render_template("admin/examiner_detail.html", examiner=examiner, password_form=password_form)
+    return render_template(
+        "admin/examiner_detail.html", examiner=examiner, password_form=password_form
+    )
 
 
 @admin_bp.route("/examiners/<int:user_id>/approve", methods=["POST"])
@@ -606,7 +642,10 @@ def reschedule_booking(booking_id: int):
     ).all()
 
     form.new_slot_id.choices = [
-        (s.id, f"{s.start_at.strftime('%d %b %Y, %H:%M')} (Seats: {s.booked_count}/{s.max_capacity})")
+        (
+            s.id,
+            f"{s.start_at.strftime('%d %b %Y, %H:%M')} (Seats: {s.booked_count}/{s.max_capacity})",
+        )
         for s in available_slots
     ]
 

@@ -3,7 +3,6 @@ tests/integration/test_admin_access_control.py - Dynamic access control matrix f
 """
 
 
-
 def test_admin_routes_reject_non_admins(client, app, make_user, make_admin, login):
     """Verify that all main /admin endpoints strictly reject anonymous and non-admin users."""
     student = make_user(role="student")

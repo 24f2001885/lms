@@ -89,7 +89,8 @@ class ExaminationForm(FlaskForm):
         super().__init__(*args, **kwargs)
         # Populate active courses
         self.course_id.choices = [
-            (c.id, f"{c.code} - {c.name}") for c in Course.query.filter_by(status="active").order_by(Course.code.asc()).all()
+            (c.id, f"{c.code} - {c.name}")
+            for c in Course.query.filter_by(status="active").order_by(Course.code.asc()).all()
         ]
 
     def populate_from(self, exam: Examination) -> None:
@@ -141,13 +142,19 @@ class ExaminationForm(FlaskForm):
 
         # Cross-field validations
         if sc_start and sc_end and sc_end <= sc_start:
-            self.slot_creation_end.errors.append("Slot creation end must be strictly after slot creation start.")
+            self.slot_creation_end.errors.append(
+                "Slot creation end must be strictly after slot creation start."
+            )
         if bk_start and bk_end and bk_end <= bk_start:
             self.booking_end.errors.append("Booking end must be strictly after booking start.")
         if sc_end and bk_start and bk_start < sc_end:
-            self.booking_start.errors.append("Booking start cannot be earlier than slot creation end.")
+            self.booking_start.errors.append(
+                "Booking start cannot be earlier than slot creation end."
+            )
         if cancel_dl and bk_start and cancel_dl < bk_start:
-            self.cancellation_deadline.errors.append("Cancellation deadline cannot be earlier than booking start.")
+            self.cancellation_deadline.errors.append(
+                "Cancellation deadline cannot be earlier than booking start."
+            )
 
         return {
             "course_id": self.course_id.data,

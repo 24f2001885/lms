@@ -47,7 +47,9 @@ def bookings():
     if exam_id:
         query = query.filter_by(examination_id=exam_id)
 
-    bookings_page = query.order_by(Booking.id.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    bookings_page = query.order_by(Booking.id.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
     exams_list = Examination.query.filter_by(is_deleted=False).all()
 
     return render_template(
@@ -77,7 +79,9 @@ def booking_detail(booking_id: int):
         abort(404)
 
     audit_history = audit_service.history_for("booking", booking.id)
-    timeline = history_service.booking_timeline(booking.id, viewer_role="admin", viewer_id=g.user.id)
+    timeline = history_service.booking_timeline(
+        booking.id, viewer_role="admin", viewer_id=g.user.id
+    )
     return render_template(
         "admin/booking_detail.html",
         booking=booking,

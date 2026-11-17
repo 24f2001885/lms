@@ -1,6 +1,7 @@
 """
 FILE PURPOSE: Flask CLI commands for database setup and scheduled jobs (TDR 11).
 """
+
 import sys
 
 import click
@@ -14,6 +15,7 @@ def register_cli(app):
     @with_appcontext
     def init_db_command():
         from app.extensions import db
+
         db.create_all()
         click.echo("Database initialized.")
 

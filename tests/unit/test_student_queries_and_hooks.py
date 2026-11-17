@@ -13,6 +13,7 @@ OFFLINE DOCKER TEST CASES:
 
 FILE PURPOSE: Rule tests for book_slot and cancel_booking.
 """
+
 from datetime import timedelta
 
 import pytest
@@ -22,7 +23,9 @@ from app.models import ExaminationSlot
 from app.services import booking_engine
 
 
-def test_book_success_updates_count_and_audit(app, db_session, student, make_open_booking_setup, freeze_now):
+def test_book_success_updates_count_and_audit(
+    app, db_session, student, make_open_booking_setup, freeze_now
+):
     exam, slot, examiner, students = make_open_booking_setup(student_count=1, capacity=5)
     freeze_now(exam.booking_start + timedelta(hours=1))
 
@@ -63,7 +66,7 @@ def test_duplicate_other_slot_refused(app, db_session, make_open_booking_setup, 
         start_at=slot.start_at + timedelta(hours=2),
         end_at=slot.end_at + timedelta(hours=2),
         max_capacity=5,
-        status="available"
+        status="available",
     )
     db_session.add(s2)
     db_session.commit()
@@ -73,7 +76,9 @@ def test_duplicate_other_slot_refused(app, db_session, make_open_booking_setup, 
     assert exc.value.code == "duplicate_booking"
 
 
-def test_cancel_frees_seat_and_reopens_full_slot(app, db_session, make_open_booking_setup, freeze_now):
+def test_cancel_frees_seat_and_reopens_full_slot(
+    app, db_session, make_open_booking_setup, freeze_now
+):
     exam, slot, examiner, students = make_open_booking_setup(student_count=1, capacity=1)
     freeze_now(exam.booking_start + timedelta(hours=1))
 
