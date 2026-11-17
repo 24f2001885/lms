@@ -148,3 +148,18 @@ def test_seeded_admin_must_change_password_flow(client, make_admin, login):
 
     admin = User.query.filter_by(email="seed_admin@test.local").first()
     assert admin.must_change_password is False
+
+
+def test_session_fixation_old_session_value_removed(client, make_student, login):
+    """Verify session fixation prevention: pre-login session data is cleared, Flask-Login key is set."""
+    student = make_student(email="fixation@test.local", password="Passw0rd123!")
+
+    with client.session_transaction() as sess:
+        sess["pre_login_key"] = "attacker_value"
+
+    login("fixation@test.local", "Passw0rd123!")
+
+    with client.session_transaction() as sess:
+        assert "pre_login_key" not in sess
+        assert "_user_id" in sess
+        assert sess["_user_id"].startswith(f"{student.id}:")

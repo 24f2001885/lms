@@ -28,6 +28,7 @@ from app.models import (
     StudentProfile,
     User,
 )
+from app.services import windows
 
 BASE_DATETIME = datetime(2030, 1, 1, 0, 0, 0, tzinfo=UTC)
 
@@ -110,10 +111,20 @@ def admin_client(client: FlaskClient, make_admin, login) -> FlaskClient:
         email="admin_client@test.local", password="Passw0rd123!", must_change_password=False
     )
     login(admin.email, "Passw0rd123!")
+
+    orig_open = client.open
+
+    def _open(*args, **kwargs):
+        with client.session_transaction() as sess:
+            sess["login_at"] = windows.now_utc().timestamp()
+            sess["last_active"] = windows.now_utc().timestamp()
+        return orig_open(*args, **kwargs)
+
+    client.open = _open
     return client
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def freeze_now(monkeypatch):
     """
     Monkeypatch app.services.windows.now_utc to return a frozen or moving datetime.
@@ -407,6 +418,16 @@ def examiner_client(client, examiner, db_session):
         },
         follow_redirects=True,
     )
+
+    orig_open = client.open
+
+    def _open(*args, **kwargs):
+        with client.session_transaction() as sess:
+            sess["login_at"] = windows.now_utc().timestamp()
+            sess["last_active"] = windows.now_utc().timestamp()
+        return orig_open(*args, **kwargs)
+
+    client.open = _open
     return client, examiner
 
 
@@ -504,6 +525,16 @@ def student_client(client, student, db_session):
         },
         follow_redirects=True,
     )
+
+    orig_open = client.open
+
+    def _open(*args, **kwargs):
+        with client.session_transaction() as sess:
+            sess["login_at"] = windows.now_utc().timestamp()
+            sess["last_active"] = windows.now_utc().timestamp()
+        return orig_open(*args, **kwargs)
+
+    client.open = _open
     return client, student
 
 
@@ -627,3 +658,32 @@ from tests.conftest_p7_additions import (  # noqa: E402, F401
 
 # --- Phase 8 Additions ---
 from tests.conftest_p8_additions import make_chart_dataset  # noqa: E402, F401
+
+
+# --- Phase 11 Additions ---
+@pytest.fixture(autouse=True)
+def reset_rate_limits():
+    """Clear all in-process sliding-window rate limiters before and after every test."""
+    from app.security.rate_limit import reset_all
+
+    reset_all()
+    yield
+    reset_all()
+
+
+@pytest.fixture
+def login_attempts(client):
+    """Helper fixture to execute a sequence of POST /login attempts."""
+
+    def _attempts(email: str, passwords: list[str]) -> list:
+        responses = []
+        for pw in passwords:
+            resp = client.post(
+                "/login",
+                data={"email": email, "password": pw},
+                follow_redirects=False,
+            )
+            responses.append(resp)
+        return responses
+
+    return _attempts

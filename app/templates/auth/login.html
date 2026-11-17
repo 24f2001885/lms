@@ -23,6 +23,12 @@ OFFLINE DOCKER TEST CASES:
         <h1 class="h3 fw-bold text-center mb-1 text-primary">Log in</h1>
         <p class="text-muted text-center small mb-4">Sign in to your Examination Management account</p>
 
+        <div aria-live="polite">
+          {% if lockout_message %}
+            <div class="alert alert-danger" role="alert">{{ lockout_message }}</div>
+          {% endif %}
+        </div>
+
         <form method="POST" action="{{ url_for('auth.login', next=request.args.get('next')) }}">
           {{ form.hidden_tag() }}
 

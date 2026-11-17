@@ -42,7 +42,7 @@ exclude = [
 # N  : pep8-naming (function, class, and variable naming conventions)
 # B  : flake8-bugbear (common bug patterns and anti-patterns)
 # UP : pyupgrade (enforces modern Python 3.11+ idioms)
-select = ["E", "F", "I", "N", "B", "UP"]
+select = ["E", "F", "I", "N", "B", "UP", "S"]
 ignore = [
     "E501",  # Line length is handled and enforced by Black
     "B008",  # Allow function calls in default argument definitions (e.g. Depends / WTForms)
@@ -51,7 +51,7 @@ ignore = [
 #per-file rule customiszation
 [tool.ruff.lint.per-file-ignores]
 #test recent use assertion , slight long line , fixature
-"tests/*" = ["E501","B011"]
+"tests/*" = ["E501", "B011", "S101", "S105", "S106", "S107"]
 
 #pytest runner 
 [tool.pytest.ini_options]
@@ -65,6 +65,7 @@ markers = [
     "concurrency: Concurrent booking and race-condition tests",
     "e2e: End-to-end integration tests using Playwright browser automation",
     "responsive: Responsive layout and viewport tests",
+    "security: Security and authentication hardening tests",
     "slow: Tests with higher execution time (e.g., concurrency checks)",
     "tier3: Tertiary scope tests (online tests, proctoring, payments - Gate B only)",
     "validation: Form and API input validation tests",

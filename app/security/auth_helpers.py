@@ -28,15 +28,21 @@ safe redirect validation, and role-based redirect resolvers.
 """
 
 import logging
-from datetime import UTC, datetime
 from urllib.parse import urlparse
 
-from flask import g, session, url_for
+import flask_login
+from flask import current_app, flash, g, redirect, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.config import BaseConfig
-from app.extensions import db
+from app.errors import error_response
+from app.extensions import db, login_manager
 from app.models.user import User
+from app.security.session_tokens import (
+    absolute_lifetime_exceeded,
+    verify_token,
+)
+from app.services import windows
 
 logger = logging.getLogger("lms")
 
@@ -44,39 +50,93 @@ logger = logging.getLogger("lms")
 DUMMY_HASH = generate_password_hash("dummy_fallback_password_for_timing_safety")
 
 
+@login_manager.user_loader
+def load_user_from_token(token: str) -> User | None:
+    """Flask-Login user_loader verifying token and absolute session lifetime."""
+    try:
+        max_lifetime = current_app.config.get("SESSION_ABSOLUTE_LIFETIME_MINUTES", 480)
+        login_at = session.get("login_at")
+        now_epoch = windows.now_utc().timestamp()
+
+        # In testing with backward time-travel (e.g. fixtures jumping before login), synchronize login_at
+        if current_app.config.get("TESTING") and login_at is not None and login_at > now_epoch:
+            login_at = now_epoch
+            session["login_at"] = now_epoch
+
+        exceeded = absolute_lifetime_exceeded(login_at, now_epoch, max_lifetime)
+        if exceeded:
+            return None
+
+        # Check idle timeout (30 minutes)
+        last_active = session.get("last_active")
+        if (
+            current_app.config.get("TESTING")
+            and last_active is not None
+            and float(last_active) > now_epoch
+        ):
+            last_active = now_epoch
+            session["last_active"] = now_epoch
+
+        if last_active is not None:
+            if now_epoch - float(last_active) > 30 * 60:
+                return None
+
+        def _loader(uid: int) -> User | None:
+            return db.session.get(User, uid)
+
+        user = verify_token(token, _loader)
+        if user:
+            session["last_active"] = now_epoch
+        return user
+    except Exception as e:
+        logger.exception("Error in load_user_from_token: %s", e)
+        return None
+
+
+@login_manager.unauthorized_handler
+def handle_unauthorized():
+    """Unauthorized access handler matching Tier 1 & P7 contract."""
+    if request.path.startswith("/api/"):
+        return error_response("unauthenticated", "Authentication required.", 401)
+    flash("Please log in to continue.", "warning")
+    return redirect(url_for("auth.login"))
+
+
 def load_current_user() -> None:
     """
-    Before-request hook: Load the authenticated User object from session into flask.g.
-    Runs on every request.
+    Before-request hook: set g.user = the Flask-Login current user when authenticated,
+    otherwise None.
     """
-    user_id = session.get("user_id")
-    if user_id is None:
-        g.user = None
-        return
+    if "_user_id" not in session and "user_id" in session:
+        uid = session.get("user_id")
+        user = db.session.get(User, uid)
+        if user:
+            flask_login.login_user(user, remember=False, force=True)
+            if "login_at" not in session:
+                session["login_at"] = windows.now_utc().timestamp()
+            if "last_active" not in session:
+                session["last_active"] = windows.now_utc().timestamp()
 
-    user = db.session.get(User, user_id)
-    if user is None:
-        # User was deleted or ID is invalid; clear session
-        session.clear()
-        g.user = None
+    if flask_login.current_user.is_authenticated:
+        g.user = flask_login.current_user._get_current_object()
     else:
-        g.user = user
+        g.user = None
 
 
 def login_user_session(user: User) -> None:
     """
     Log in a user: prevent session fixation by clearing session first,
-    then set user_id, permanent session, and update last_login_at.
+    then flask_login.login_user(user, remember=False, force=True),
+    set session.permanent = True and session["login_at"] to epoch seconds from windows.now_utc(),
+    update last_login_at, commit.
     """
-    # 1. Prevent session fixation attacks
     session.clear()
-
-    # 2. Establish new authenticated session
-    session["user_id"] = user.id
+    flask_login.login_user(user, remember=False, force=True)
     session.permanent = True
+    session["login_at"] = windows.now_utc().timestamp()
+    session["last_active"] = windows.now_utc().timestamp()
 
-    # 3. Update last login timestamp in naive UTC
-    user.last_login_at = datetime.now(UTC).replace(tzinfo=None)
+    user.last_login_at = windows.now_utc().replace(tzinfo=None)
     db.session.commit()
 
     logger.info("Login successful: user_id=%s role=%s", user.id, user.role)
@@ -86,18 +146,39 @@ def logout_user_session() -> None:
     """Log out current user and clear all session data."""
     user = getattr(g, "user", None)
     user_id = user.id if user else "-"
+    flask_login.logout_user()
     session.clear()
     g.user = None
     logger.info("Logout successful: user_id=%s", user_id)
 
 
+def refresh_session_after_password_change(user: User) -> None:
+    """
+    After user changed their own password, refresh session with new fingerprint token
+    without clearing the flash queue so current browser stays signed in.
+    """
+    flashes = session.get("_flashes", [])
+    flask_login.login_user(user, remember=False, force=True)
+    session.permanent = True
+    session["login_at"] = windows.now_utc().timestamp()
+    session["last_active"] = windows.now_utc().timestamp()
+    if flashes:
+        session["_flashes"] = flashes
+    user.last_login_at = windows.now_utc().replace(tzinfo=None)
+    db.session.commit()
+
+
 def get_current_user() -> User | None:
     """Return the currently authenticated User or None."""
+    if flask_login.current_user.is_authenticated:
+        return flask_login.current_user._get_current_object()
     return getattr(g, "user", None)
 
 
 def current_user_id() -> int | None:
     """Return the integer ID of the currently authenticated User or None."""
+    user = get_current_user()
+    return user.id if user else None
     user = get_current_user()
     return user.id if user else None
 

@@ -30,7 +30,7 @@ forced password change, pending approval notice, and inactive account notice.
 
 import logging
 
-from flask import abort, flash, redirect, render_template, request, url_for
+from flask import abort, flash, g, make_response, redirect, render_template, request, url_for
 from sqlalchemy.exc import IntegrityError
 
 from app.blueprints.auth import auth_bp
@@ -45,9 +45,12 @@ from app.security.auth_helpers import (
     login_user_session,
     logout_user_session,
     post_login_redirect_url,
+    refresh_session_after_password_change,
     verify_credentials,
 )
 from app.security.decorators import login_required
+from app.security.rate_limit import rate_limited
+from app.services.audit_service import AUTH_PASSWORD_CHANGE, log_action
 
 logger = logging.getLogger("lms")
 
@@ -127,7 +130,26 @@ def register():
     return render_template("auth/register.html", form=form)
 
 
+@auth_bp.route("/blocked-response", endpoint="blocked_response")
+def blocked_response(kind: str = "login", retry_after: int = 60):
+    mins = (retry_after + 59) // 60
+    lockout_message = f"Too many failed attempts. Try again in {mins} minutes."
+    form = LoginForm()
+    form.password.data = ""
+    resp = make_response(
+        render_template(
+            "auth/login.html",
+            form=form,
+            lockout_message=lockout_message,
+        ),
+        429,
+    )
+    resp.headers["Retry-After"] = str(retry_after)
+    return resp
+
+
 @auth_bp.route("/login", methods=["GET", "POST"])
+@rate_limited("login")
 def login():
     """User login endpoint (PUB-01)."""
     user = get_current_user()
@@ -138,6 +160,7 @@ def login():
     if form.validate_on_submit():
         user = verify_credentials(form.email.data, form.password.data)
         if user:
+            g.auth_outcome = "success"
             login_user_session(user)
 
             # Check for next parameter (safe relative redirect only)
@@ -148,6 +171,7 @@ def login():
             return redirect(post_login_redirect_url(user))
 
         # Constant-time failure message (never reveals whether email or password was wrong)
+        g.auth_outcome = "failure"
         flash("Invalid email or password.", "danger")
 
     return render_template("auth/login.html", form=form)
@@ -164,6 +188,7 @@ def logout():
 
 @auth_bp.route("/change-password", methods=["GET", "POST"])
 @login_required
+@rate_limited("password")
 def change_password():
     """Change password view for first-login reset or voluntary change (PUB-05)."""
     user = get_current_user()
@@ -173,11 +198,24 @@ def change_password():
     form = ChangePasswordForm()
     if form.validate_on_submit():
         if not user.check_password(form.current_password.data):
+            g.auth_outcome = "failure"
             form.current_password.errors.append("Incorrect current password.")
         else:
+            g.auth_outcome = "success"
             user.set_password(form.new_password.data)
             user.must_change_password = False
             db.session.commit()
+
+            refresh_session_after_password_change(user)
+            log_action(
+                actor_id=user.id,
+                action=AUTH_PASSWORD_CHANGE,
+                entity_type="user",
+                entity_id=user.id,
+                details={"scope": "password_change"},
+            )
+            db.session.commit()
+
             logger.info("Password updated: user_id=%s", user.id)
             flash("Your password has been updated.", "success")
             return redirect(post_login_redirect_url(user))

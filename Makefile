@@ -2,7 +2,7 @@
 PYTHON ?= python3
 FLASK  ?= flask
 
-.PHONY: help run init-db lint format test test-unit test-integration test-e2e test-core test-tier3 gate-check tier3-branch docker-up docker-test docker-down vendor-wheels clean a11y test-ui
+.PHONY: help run init-db lint format test test-unit test-integration test-e2e test-core test-tier3 gate-check tier3-branch docker-up docker-test docker-down vendor-wheels clean a11y test-ui security test-security
 
 # Default target: display self-documenting help menu
 help:
@@ -73,6 +73,12 @@ a11y:
 
 test-ui:
 	pytest -m "a11y or responsive" -v
+
+security:
+	bash scripts/security_check.sh
+
+test-security:
+	pytest -m security -v
 
 test-e2e:
 	pytest tests/e2e -q -m e2e

@@ -37,7 +37,7 @@ USER_APPROVE = "user.approve"
 USER_REJECT = "user.reject"
 USER_DEACTIVATE = "user.deactivate"
 USER_ACTIVATE = "user.activate"
-USER_TEMP_PASSWORD = "user.temp_password"
+USER_TEMP_PASSWORD = "user.temp_password"  # noqa: S105
 EXAMINER_APPROVE = "examiner.approve"
 EXAMINER_DEACTIVATE = "examiner.deactivate"
 
@@ -56,6 +56,9 @@ SLOT_CANCEL = "slot.cancel"
 EVALUATION_ADMIN_PUBLISH = "evaluation.admin_publish"
 SYSTEM_STATUS_SYNC = "system.status_sync"
 SYSTEM_PURGE = "system.purge"
+
+AUTH_LOCKOUT = "auth.lockout"
+AUTH_PASSWORD_CHANGE = "auth.password_change"  # noqa: S105
 
 # (Retaining existing audit service implementation methods from P1-P3)
 
