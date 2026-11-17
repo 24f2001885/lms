@@ -47,12 +47,15 @@ def create_app(config_name: str | None = None, test_config: dict | None = None) 
     def _authenticate_request():
         load_current_user()
 
-    # 9. Context processor injecting current_user and helpers into templates
+    # 9. Context processor injecting current_user, helpers and validation_config into templates
     @flask_app.context_processor
     def inject_template_globals():
+        from app.validation import client_config
+
         return {
             "current_user": get_current_user(),
             "role_dashboard_url": role_dashboard_url,
+            "validation_config": client_config(),
         }
 
     # 10. Custom Jinja Template Filters (P3 Update)

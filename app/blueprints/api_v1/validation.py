@@ -1,41 +1,56 @@
 """
-FILE PURPOSE: Lightweight schema validator for JSON request payloads (mass-assignment safe, 422 field errors).
+Schema validator for JSON request bodies producing field-level 422 errors,
+sharing all numeric/length bounds with app.validation.limits.
 """
 
 from datetime import UTC, datetime
 from typing import Any
 
 from app.models.examination import EXAM_TYPES
+from app.validation import limits, msg
 
 
 class ApiValidationError(Exception):
-    def __init__(self, fields: dict[str, list[str]]):
-        super().__init__("Validation failed")
+    """Raised when a JSON request payload fails schema validation."""
+
+    def __init__(self, fields: dict[str, list[str]], message: str = "Some fields are invalid."):
+        super().__init__(message)
         self.fields = fields
+        self.message = message
 
 
-def _parse_iso_utc(text: str) -> datetime:
+def _has_unsafe_chars(text: str, multiline: bool = False) -> bool:
+    for ch in text:
+        code = ord(ch)
+        if code < 32 or code == 127 or (0x80 <= code <= 0x9F):
+            if multiline and ch in ("\n", "\r", "\t"):
+                continue
+            return True
+    return False
+
+
+def _parse_iso(text: str) -> datetime:
+    if not isinstance(text, str) or not text.strip():
+        raise ValueError("Timestamp must be an ISO 8601 string with a timezone.")
     raw = text.strip()
     if raw.endswith("Z"):
         raw = raw[:-1] + "+00:00"
     dt = datetime.fromisoformat(raw)
     if dt.tzinfo is None:
-        raise ValueError("No timezone")
+        raise ValueError("Timestamp must include a timezone offset or Z.")
     return dt.astimezone(UTC).replace(tzinfo=None)
 
 
 def validate(
-    payload: dict[str, Any],
-    schema: dict[str, dict[str, Any]],
-    partial: bool = False,
+    payload: dict[str, Any], schema: dict[str, dict[str, Any]], partial: bool = False
 ) -> dict[str, Any]:
+    """Validate a JSON object against a schema dict and return cleaned values."""
     if not isinstance(payload, dict):
         raise ApiValidationError({"_schema": ["Payload must be a JSON object."]})
 
     errors: dict[str, list[str]] = {}
     cleaned: dict[str, Any] = {}
 
-    # Reject unknown fields (mass-assignment protection)
     for key in payload:
         if key not in schema:
             errors[key] = ["Unknown field."]
@@ -43,81 +58,93 @@ def validate(
     for field, spec in schema.items():
         required = spec.get("required", False) and not partial
         nullable = spec.get("nullable", False)
-        ftype = spec["type"]
+        f_type = spec["type"]
 
         if field not in payload:
             if required:
-                errors[field] = ["This field is required."]
+                errors[field] = [msg("required")]
             continue
 
         val = payload[field]
         if val is None:
             if nullable:
                 cleaned[field] = None
-            else:
-                errors[field] = ["This field is required." if required else "Cannot be null."]
+            elif required or not partial:
+                errors[field] = [msg("required")]
             continue
 
-        if ftype == "str":
+        if f_type == "str":
             if not isinstance(val, str):
-                errors[field] = ["Must be a text string."]
+                errors[field] = ["Must be a string."]
                 continue
             if spec.get("strip", True):
                 val = val.strip()
-            min_len = spec.get("min")
-            max_len = spec.get("max")
-            if required and len(val) == 0:
-                errors[field] = ["This field is required."]
+            if not val:
+                if required:
+                    errors[field] = [msg("required")]
+                elif nullable:
+                    cleaned[field] = None
+                else:
+                    cleaned[field] = ""
                 continue
-            if min_len is not None and len(val) < min_len:
-                errors[field] = [f"Must be at least {min_len} characters."]
+            if _has_unsafe_chars(val, multiline=spec.get("multiline", False)):
+                errors[field] = [msg("unsafe_characters")]
                 continue
-            if max_len is not None and len(val) > max_len:
-                errors[field] = [f"Must be at most {max_len} characters."]
+            mn = spec.get("min")
+            mx = spec.get("max")
+            if mn is not None and mx is not None and (len(val) < mn or len(val) > mx):
+                errors[field] = [msg("between_length", min=mn, max=mx)]
+                continue
+            if mn is not None and len(val) < mn:
+                errors[field] = [msg("min_length", min=mn)]
+                continue
+            if mx is not None and len(val) > mx:
+                errors[field] = [msg("max_length", max=mx)]
                 continue
             cleaned[field] = val
 
-        elif ftype == "int":
+        elif f_type == "int":
             if isinstance(val, bool) or not isinstance(val, int):
                 errors[field] = ["Must be a whole number."]
                 continue
-            min_val = spec.get("min")
-            max_val = spec.get("max")
-            if min_val is not None and val < min_val:
-                errors[field] = [f"Must be at least {min_val}."]
+            mn = spec.get("min")
+            mx = spec.get("max")
+            if mn is not None and mx is not None and (val < mn or val > mx):
+                errors[field] = [msg("between_value", min=mn, max=mx)]
                 continue
-            if max_val is not None and val > max_val:
-                errors[field] = [f"Must be at most {max_val}."]
+            if mn is not None and val < mn:
+                errors[field] = [msg("min_value", min=mn)]
+                continue
+            if mx is not None and val > mx:
+                errors[field] = [msg("max_value", max=mx)]
                 continue
             cleaned[field] = val
 
-        elif ftype == "bool":
+        elif f_type == "bool":
             if not isinstance(val, bool):
                 errors[field] = ["Must be true or false."]
                 continue
             cleaned[field] = val
 
-        elif ftype == "enum":
-            choices = spec.get("choices", ())
+        elif f_type == "enum":
+            choices = spec["choices"]
             if not isinstance(val, str) or val not in choices:
-                joined = ", ".join(str(c) for c in choices)
-                errors[field] = [f"Must be one of: {joined}."]
+                errors[field] = [f"Must be one of: {', '.join(choices)}."]
                 continue
             cleaned[field] = val
 
-        elif ftype == "datetime":
+        elif f_type == "datetime":
             if not isinstance(val, str):
                 errors[field] = [
                     "Must be a valid ISO 8601 date and time with a zone, for example 2030-01-10T04:30:00Z."
                 ]
                 continue
             try:
-                cleaned[field] = _parse_iso_utc(val)
+                cleaned[field] = _parse_iso(val)
             except ValueError:
                 errors[field] = [
                     "Must be a valid ISO 8601 date and time with a zone, for example 2030-01-10T04:30:00Z."
                 ]
-                continue
 
     if errors:
         raise ApiValidationError(errors)
@@ -127,11 +154,32 @@ def validate(
 
 EXAMINATION_SCHEMA: dict[str, dict[str, Any]] = {
     "course_id": {"type": "int", "required": True, "min": 1},
-    "name": {"type": "str", "required": True, "min": 2, "max": 150},
-    "description": {"type": "str", "required": False, "nullable": True, "max": 2000},
+    "name": {
+        "type": "str",
+        "required": True,
+        "min": limits.EXAM_NAME_MIN,
+        "max": limits.EXAM_NAME_MAX,
+    },
+    "description": {
+        "type": "str",
+        "required": False,
+        "nullable": True,
+        "max": limits.DESCRIPTION_MAX,
+        "multiline": True,
+    },
     "exam_type": {"type": "enum", "required": True, "choices": EXAM_TYPES},
-    "duration_minutes": {"type": "int", "required": True, "min": 1, "max": 1440},
-    "max_marks": {"type": "int", "required": True, "min": 1, "max": 1000},
+    "duration_minutes": {
+        "type": "int",
+        "required": True,
+        "min": limits.DURATION_MIN,
+        "max": limits.DURATION_MAX,
+    },
+    "max_marks": {
+        "type": "int",
+        "required": True,
+        "min": limits.MAX_MARKS_MIN,
+        "max": limits.MAX_MARKS_MAX,
+    },
     "slot_creation_start": {"type": "datetime", "required": True},
     "slot_creation_end": {"type": "datetime", "required": True},
     "booking_start": {"type": "datetime", "required": True},
@@ -143,13 +191,23 @@ SLOT_SCHEMA: dict[str, dict[str, Any]] = {
     "examination_id": {"type": "int", "required": True, "min": 1},
     "start_at": {"type": "datetime", "required": True},
     "end_at": {"type": "datetime", "required": True},
-    "max_capacity": {"type": "int", "required": True, "min": 1, "max": 500},
+    "max_capacity": {
+        "type": "int",
+        "required": True,
+        "min": limits.CAPACITY_MIN,
+        "max": limits.CAPACITY_MAX,
+    },
 }
 
 SLOT_UPDATE_SCHEMA: dict[str, dict[str, Any]] = {
     "start_at": {"type": "datetime", "required": False},
     "end_at": {"type": "datetime", "required": False},
-    "max_capacity": {"type": "int", "required": False, "min": 1, "max": 500},
+    "max_capacity": {
+        "type": "int",
+        "required": False,
+        "min": limits.CAPACITY_MIN,
+        "max": limits.CAPACITY_MAX,
+    },
 }
 
 BOOKING_CREATE_SCHEMA: dict[str, dict[str, Any]] = {
@@ -157,5 +215,11 @@ BOOKING_CREATE_SCHEMA: dict[str, dict[str, Any]] = {
 }
 
 CANCEL_SCHEMA: dict[str, dict[str, Any]] = {
-    "reason": {"type": "str", "required": False, "nullable": True, "min": 3, "max": 200},
+    "reason": {
+        "type": "str",
+        "required": True,
+        "min": limits.REASON_MIN,
+        "max": limits.REASON_MAX,
+        "multiline": True,
+    },
 }

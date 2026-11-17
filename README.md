@@ -59,3 +59,18 @@ EMP includes role-scoped visual analytics powered by Chart.js (v4.4.7 vendored o
 1. **Service:** Add a role-scoped function in `app/services/chart_data.py` returning `{"labels": [...], "series": [{"name": ..., "data": [...]}]}`.
 2. **Endpoint:** Expose a GET route in `app/blueprints/api_v1/charts.py` and document it in `API_REFERENCE` (`app/blueprints/api_v1/docs.py`).
 3. **Template:** Use `{{ chart_card(...) }}` from `app/templates/charts/_macros.html` and include `charts/_scripts.html` in `block scripts`.
+
+---
+
+## 4. Dual-Layer Validation (Milestone P9)
+
+EMP implements a strict dual-layer validation architecture where frontend JavaScript (`app/static/js/validation.js`) and backend WTForms / API schemas share the exact same limits and message catalogue:
+
+- **Shared Limits:** `app/validation/limits.py`
+- **Shared Messages:** `app/validation/messages.py`
+- **Custom Validators:** `app/validation/validators.py` (`SafeText`, `StrongPassword`, `PhoneChars`, `CourseCodeChars`, `RollNumber`, `DecimalPlaces`, `DateTimeLocal`, `EndAfterStart`, `ExaminationWindows`, `ScoreRange`)
+
+### New Rules in P9
+1. **Password Length Limit:** `PASSWORD_MAX = 128` (denial-of-service protection against bcrypt/hash amplification).
+2. **Control Character Rejection:** `SafeText` rejects ASCII/Unicode control characters in all free-text fields.
+3. **Automatic Whitespace Trimming:** Free-text inputs are stripped of leading/trailing whitespace before validation.

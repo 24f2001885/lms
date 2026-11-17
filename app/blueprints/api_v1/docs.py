@@ -312,6 +312,7 @@ def undocumented_endpoints(app) -> list[tuple[str, str]]:
 
 
 @api_bp.route("/docs", methods=["GET"])
+@api_bp.route("/docs", methods=["GET"], endpoint="docs")
 def api_docs():
     return render_template(
         "api/docs.html",

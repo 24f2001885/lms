@@ -1,85 +1,144 @@
 """
-FILE PURPOSE: WTForms for editing the signed-in user's own profile (screen PUB-06, route /profile).
-DEPENDS ON: flask_wtf, wtforms, app/models (User, ExaminerProfile, StudentProfile).
-PROMPT FOR LLM IMPLEMENTATION:
-1. Build ONE form class ProfileForm with these fields: full_name (DataRequired, Length 2-120), contact_phone (Optional, Length max 20, digits plus + - space), department (Optional, Length max 120), designation (Optional, Length max 120), roll_number (Optional, Length max 30), program (Optional, Length max 120).
-2. Which fields are shown/used depends on the role, decided in the view/template: admin uses full_name only; examiner uses full_name, contact_phone, department, designation; student uses full_name, contact_phone, roll_number, program. Provide a classmethod or helper fields_for_role(role) returning the list of field names so the view and the template share the same rule.
-3. roll_number uniqueness: validate_roll_number rejects a roll number already used by ANOTHER student (compare profile ids; the user's own current value is allowed). Normalise to uppercase and strip.
-4. Email is NOT editable here (it is the login identity); role and approval status are never editable through this form (mass-assignment protection: the view copies only whitelisted fields).
-DEBUGGING:
-# print(f"[DEBUG] profile form role_fields={fields_for_role(role)} errors={form.errors}")
-OFFLINE DOCKER TEST CASES:
-- fields_for_role("admin") == ["full_name"]; examiner and student lists match item 2.
-- A student cannot take another student's roll_number but can resubmit their own.
-- A forged POST containing role=admin or approval_status=approved does not change those columns.
-
-app/forms/profile.py - WTForms for editing user profile information (PUB-06).
-
-Provides role-aware profile field resolution and uniqueness validation.
+WTForms for editing the signed-in user's own profile (PUB-06, route /profile).
 """
 
-from flask import g
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
-from wtforms.validators import DataRequired, Length, Optional, Regexp, ValidationError
+from wtforms.validators import DataRequired, Length, Optional, ValidationError
 
 from app.models.student_profile import StudentProfile
+from app.validation import (
+    PhoneChars,
+    RollNumber,
+    SafeText,
+    html_attrs,
+    limits,
+    msg,
+    strip_filter,
+    upper_strip_filter,
+)
+
+
+def fields_for_role(role: str) -> list[str]:
+    """Return the editable profile field names for a given user role."""
+    if role == "admin":
+        return ["full_name"]
+    if role == "examiner":
+        return ["full_name", "contact_phone", "department", "designation"]
+    if role == "student":
+        return ["full_name", "contact_phone", "roll_number", "program"]
+    return []
 
 
 class ProfileForm(FlaskForm):
-    """Unified user profile form with role-scoped field support."""
-
     full_name = StringField(
-        "Full Name",
+        "Full name",
+        filters=[strip_filter],
         validators=[
-            DataRequired(message="Full name is required."),
-            Length(min=2, max=120, message="Name must be between 2 and 120 characters."),
+            DataRequired(message=msg("required")),
+            Length(
+                min=limits.NAME_MIN,
+                max=limits.NAME_MAX,
+                message=msg("between_length", min=limits.NAME_MIN, max=limits.NAME_MAX),
+            ),
+            SafeText(),
         ],
-        filters=[lambda x: x.strip() if x else ""],
+        render_kw=html_attrs(
+            min_len=limits.NAME_MIN,
+            max_len=limits.NAME_MAX,
+            autocomplete="name",
+        ),
     )
-
     contact_phone = StringField(
-        "Contact Phone",
+        "Phone",
+        filters=[strip_filter],
         validators=[
             Optional(),
-            Length(max=20),
-            Regexp(
-                r"^[0-9+\- ]*$", message="Phone number may only contain digits, +, -, and spaces."
+            Length(
+                max=limits.PHONE_MAX,
+                message=msg("max_length", max=limits.PHONE_MAX),
             ),
+            PhoneChars(),
         ],
-        filters=[lambda x: x.strip() if x else ""],
+        render_kw=html_attrs(
+            max_len=limits.PHONE_MAX,
+            pattern=limits.PHONE_PATTERN,
+            title=limits.PHONE_TITLE,
+            autocomplete="tel",
+            field_type="tel",
+        ),
     )
+    department = StringField(
+        "Department",
+        filters=[strip_filter],
+        validators=[
+            Optional(),
+            Length(
+                max=limits.DEPARTMENT_MAX,
+                message=msg("max_length", max=limits.DEPARTMENT_MAX),
+            ),
+            SafeText(),
+        ],
+        render_kw=html_attrs(max_len=limits.DEPARTMENT_MAX),
+    )
+    designation = StringField(
+        "Designation",
+        filters=[strip_filter],
+        validators=[
+            Optional(),
+            Length(
+                max=limits.DESIGNATION_MAX,
+                message=msg("max_length", max=limits.DESIGNATION_MAX),
+            ),
+            SafeText(),
+        ],
+        render_kw=html_attrs(max_len=limits.DESIGNATION_MAX),
+    )
+    roll_number = StringField(
+        "Roll number",
+        filters=[upper_strip_filter],
+        validators=[
+            Optional(),
+            Length(
+                max=limits.ROLL_MAX,
+                message=msg("max_length", max=limits.ROLL_MAX),
+            ),
+            RollNumber(),
+        ],
+        render_kw=html_attrs(
+            max_len=limits.ROLL_MAX,
+            pattern=limits.ROLL_PATTERN,
+            title=limits.ROLL_TITLE,
+        ),
+    )
+    program = StringField(
+        "Program",
+        filters=[strip_filter],
+        validators=[
+            Optional(),
+            Length(
+                max=limits.PROGRAM_MAX,
+                message=msg("max_length", max=limits.PROGRAM_MAX),
+            ),
+            SafeText(),
+        ],
+        render_kw=html_attrs(max_len=limits.PROGRAM_MAX),
+    )
+    submit = SubmitField("Save changes")
 
-    # Examiner fields
-    department = StringField("Department", validators=[Optional(), Length(max=120)])
-    designation = StringField("Designation", validators=[Optional(), Length(max=120)])
-
-    # Student fields
-    roll_number = StringField("Roll Number", validators=[Optional(), Length(max=30)])
-    program = StringField("Academic Program", validators=[Optional(), Length(max=120)])
-
-    submit = SubmitField("Save Changes")
+    def __init__(self, user_id: int | None = None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user_id = user_id
 
     @classmethod
     def fields_for_role(cls, role: str) -> list[str]:
-        """Return the list of form field names applicable to a specific user role."""
-        if role == "admin":
-            return ["full_name"]
-        if role == "examiner":
-            return ["full_name", "contact_phone", "department", "designation"]
-        if role == "student":
-            return ["full_name", "contact_phone", "roll_number", "program"]
-        return ["full_name"]
+        return fields_for_role(role)
 
-    def validate_roll_number(self, field):
-        """Ensure roll number is unique across students (excluding the current user)."""
-        if not field.data or not field.data.strip():
+    def validate_roll_number(self, field) -> None:
+        if not field.data:
             return
-
-        clean_roll = field.data.strip().upper()
-        current_user = getattr(g, "user", None)
-        current_user_id = current_user.id if current_user else None
-
-        existing = StudentProfile.query.filter_by(roll_number=clean_roll).first()
-        if existing and existing.user_id != current_user_id:
-            raise ValidationError("This roll number is already assigned to another student.")
+        q = StudentProfile.query.filter(StudentProfile.roll_number == field.data)
+        if self.user_id is not None:
+            q = q.filter(StudentProfile.user_id != self.user_id)
+        if q.first() is not None:
+            raise ValidationError("This roll number is already in use by another student.")

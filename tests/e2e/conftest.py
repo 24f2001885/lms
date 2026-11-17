@@ -48,3 +48,8 @@ def offline_page(live_server):
         pytest.skip(
             f"Playwright chromium browser unavailable ({exc}); run: playwright install chromium"
         )
+
+
+@pytest.fixture
+def page(offline_page):
+    return offline_page

@@ -1,68 +1,96 @@
-{#
-FILE PURPOSE: Reusable Jinja macros for accessible Bootstrap form fields (Design Plan section 7 and 8).
-PROMPT FOR LLM IMPLEMENTATION:
-1. Macro render_field(field, help_text=None): outputs a div.mb-3 containing a visible label (label for = field id), the field with class form-control (or form-select for SelectField, form-check-input for checkbox/radio), and error messages in div.invalid-feedback. When field.errors is not empty add class is-invalid and set aria-invalid="true" plus aria-describedby pointing to the error/help element ids.
-2. Macro render_radio_group(field) for the role RadioField: fieldset with legend, one form-check per choice.
-3. Macro render_submit(label, css_class="btn btn-primary"): a button of type submit.
-4. Macro csrf_field(form): outputs form.hidden_tag() so every form includes the token.
-5. Macros never print password values; password inputs are rendered with value="".
-DEBUGGING:
-<!-- DEBUG: field {{ field.name }} errors={{ field.errors }} -->
-OFFLINE DOCKER TEST CASES:
-- Rendering a field with an error output contains is-invalid, invalid-feedback and aria-describedby.
-- Every rendered input has a matching label (label for equals input id).
-- A password field renders with an empty value attribute even after a failed POST.
-#}
-{# Reusable accessible WTForms macros for Bootstrap 5 #}
+{# Reusable accessible Bootstrap form field macros (P9 Validation) #}
 
-{% macro render_field(field, help_text=None, placeholder='') %}
+{% macro render_field(field, help_text=None) %}
+  {% set field_id = field.id or field.name %}
+  {% set error_id = field_id ~ '-error' %}
+  {% set help_id = field_id ~ '-help' %}
+  {% set has_errors = field.errors and field.errors|length > 0 %}
+  {% set is_req = field.flags.required %}
+  {% set describedby = (help_id ~ ' ' ~ error_id) if help_text else error_id %}
+  {% set base_cls = 'form-select' if field.type == 'SelectField' else ('form-check-input' if field.type in ('BooleanField', 'RadioField') else 'form-control') %}
+  {% set cls = base_cls ~ (' is-invalid' if has_errors else '') %}
   <div class="mb-3">
-    <label for="{{ field.id }}" class="form-label fw-semibold text-secondary small">
+    <label for="{{ field_id }}" class="form-label">
       {{ field.label.text }}
-      {% if field.flags.required %}<span class="text-danger">*</span>{% endif %}
+      <span class="text-muted small">{{ '(required)' if is_req else '(optional)' }}</span>
     </label>
-
-    {% set field_classes = 'form-control' %}
-    {% if field.errors %}
-      {% set field_classes = field_classes + ' is-invalid' %}
+    {% set extra = dict(kwargs) %}
+    {% if has_errors %}
+      {% set _ = extra.update({'aria-invalid': 'true', 'aria-describedby': describedby}) %}
+    {% else %}
+      {% set _ = extra.update({'aria-describedby': describedby}) %}
     {% endif %}
-
-    {{ field(class=field_classes, id=field.id, placeholder=placeholder, aria_describedby=(field.id ~ '-help') if help_text else None, aria_invalid='true' if field.errors else 'false', **kwargs) }}
-
+    {{ field(id=field_id, class=cls, required=is_req, **extra) }}
     {% if help_text %}
-      <div id="{{ field.id }}-help" class="form-text text-muted small">{{ help_text }}</div>
+      <div id="{{ help_id }}" class="form-text">{{ help_text }}</div>
     {% endif %}
-
-    {% if field.errors %}
-      <div class="invalid-feedback d-block">
-        {% for error in field.errors %}
-          <div>{{ error }}</div>
-        {% endfor %}
-      </div>
+    {% if field.render_kw and field.render_kw.get('maxlength') and field.type == 'TextAreaField' %}
+      {{ char_counter(field, field.render_kw.get('maxlength')) }}
     {% endif %}
+    <div id="{{ error_id }}" class="invalid-feedback"{% if has_errors %} role="alert"{% endif %}>
+      {% if has_errors %}Error: {{ field.errors[0] }}{% endif %}
+    </div>
   </div>
 {% endmacro %}
 
 {% macro render_radio_group(field) %}
-  <fieldset class="mb-3">
-    <legend class="col-form-label fw-semibold text-secondary small pt-0">
+  {% set group_id = field.id or field.name %}
+  {% set error_id = group_id ~ '-error' %}
+  {% set has_errors = field.errors and field.errors|length > 0 %}
+  <fieldset class="mb-3" aria-describedby="{{ error_id }}">
+    <legend class="form-label fs-6">
       {{ field.label.text }}
-      {% if field.flags.required %}<span class="text-danger">*</span>{% endif %}
+      <span class="text-muted small">{{ '(required)' if field.flags.required else '(optional)' }}</span>
     </legend>
-    <div class="d-flex gap-4">
-      {% for subfield in field %}
-        <div class="form-check">
-          {{ subfield(class="form-check-input" ~ (' is-invalid' if field.errors else '')) }}
-          <label class="form-check-label" for="{{ subfield.id }}">{{ subfield.label.text }}</label>
-        </div>
-      {% endfor %}
-    </div>
-    {% if field.errors %}
-      <div class="invalid-feedback d-block">
-        {% for error in field.errors %}
-          <div>{{ error }}</div>
-        {% endfor %}
+    {% for subfield in field %}
+      <div class="form-check">
+        {{ subfield(class='form-check-input' ~ (' is-invalid' if has_errors else ''), required=field.flags.required) }}
+        <label class="form-check-label" for="{{ subfield.id }}">{{ subfield.label.text }}</label>
       </div>
-    {% endif %}
+    {% endfor %}
+    <div id="{{ error_id }}" class="invalid-feedback d-block"{% if has_errors %} role="alert"{% endif %}>
+      {% if has_errors %}Error: {{ field.errors[0] }}{% endif %}
+    </div>
   </fieldset>
+{% endmacro %}
+
+{% macro form_error_summary(form) %}
+  {% set ns = namespace(has_err=false) %}
+  {% for fname, errs in form.errors.items() %}
+    {% if errs %}
+      {% set ns.has_err = true %}
+    {% endif %}
+  {% endfor %}
+  <div data-error-summary="true" class="alert alert-danger error-summary{% if not ns.has_err %} d-none{% endif %}" role="alert" tabindex="-1">
+    {% if ns.has_err %}
+      <p class="fw-bold mb-1">Please fix the following errors:</p>
+      <ul class="mb-0">
+        {% for fname, errs in form.errors.items() %}
+          {% set f_obj = form[fname] if fname in form else None %}
+          {% for err in errs %}
+            <li>
+              {% if f_obj %}
+                <a href="#{{ f_obj.id or fname }}">{{ f_obj.label.text }}: {{ err }}</a>
+              {% else %}
+                {{ err }}
+              {% endif %}
+            </li>
+          {% endfor %}
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+{% endmacro %}
+
+{% macro render_submit(label, css_class="btn btn-primary", once=true) %}
+  <button type="submit" class="{{ css_class }}"{% if once %} data-submit-once="true"{% endif %}>{{ label }}</button>
+{% endmacro %}
+
+{% macro char_counter(field, limit) %}
+  {% set cur_len = (field.data or '')|length %}
+  <span class="char-counter d-block mt-1" aria-live="polite">{{ cur_len }} of {{ limit }} characters</span>
+{% endmacro %}
+
+{% macro csrf_field(form) %}
+  {{ form.hidden_tag() }}
 {% endmacro %}

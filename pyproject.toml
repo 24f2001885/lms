@@ -65,6 +65,7 @@ markers = [
     "e2e: End-to-end integration tests using Playwright browser automation",
     "slow: Tests with higher execution time (e.g., concurrency checks)",
     "tier3: Tertiary scope tests (online tests, proctoring, payments - Gate B only)",
+    "validation: Form and API input validation tests",
 ]
 filterwarnings = [
     "ignore::DeprecationWarning",

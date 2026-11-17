@@ -1,100 +1,182 @@
 """
-app/forms/examination.py - WTForms for creating and editing examinations (ADM-05).
+WTForms for creating and editing an examination (ADM-05) with datetime-local inputs.
 """
 
 from typing import Any
 
 from flask_wtf import FlaskForm
 from wtforms import IntegerField, SelectField, StringField, SubmitField, TextAreaField
-from wtforms.validators import DataRequired, Length, NumberRange, Optional
+from wtforms.validators import DataRequired, InputRequired, Length, NumberRange, Optional
 
 from app.models.course import Course
-from app.models.examination import Examination
+from app.models.examination import EXAM_TYPES
 from app.services import windows
+from app.validation import (
+    DateTimeLocal,
+    ExaminationWindows,
+    SafeText,
+    html_attrs,
+    limits,
+    msg,
+    strip_filter,
+)
+
+EXAM_TYPE_LABELS = {
+    "viva": "Viva",
+    "practical": "Practical",
+    "project_demo": "Project demo",
+    "assessment": "Assessment",
+}
 
 
 class ExaminationForm(FlaskForm):
-    """Form for configuring examinations and dual timeline windows."""
-
     course_id = SelectField(
         "Course",
         coerce=int,
-        validators=[DataRequired(message="Please select a course.")],
+        validators=[DataRequired(message=msg("required"))],
     )
     name = StringField(
         "Examination name",
+        filters=[strip_filter],
         validators=[
-            DataRequired(message="Examination name is required."),
-            Length(min=2, max=150, message="Name must be between 2 and 150 characters."),
+            DataRequired(message=msg("required")),
+            Length(
+                min=limits.EXAM_NAME_MIN,
+                max=limits.EXAM_NAME_MAX,
+                message=msg("between_length", min=limits.EXAM_NAME_MIN, max=limits.EXAM_NAME_MAX),
+            ),
+            SafeText(),
         ],
-        filters=[lambda x: x.strip() if x else ""],
+        render_kw=html_attrs(
+            min_len=limits.EXAM_NAME_MIN,
+            max_len=limits.EXAM_NAME_MAX,
+        ),
     )
     description = TextAreaField(
         "Description",
-        validators=[Optional(), Length(max=2000)],
-        filters=[lambda x: x.strip() if x else ""],
+        filters=[strip_filter],
+        validators=[
+            Optional(),
+            Length(
+                max=limits.DESCRIPTION_MAX,
+                message=msg("max_length", max=limits.DESCRIPTION_MAX),
+            ),
+            SafeText(multiline=True),
+        ],
+        render_kw=html_attrs(max_len=limits.DESCRIPTION_MAX),
     )
     exam_type = SelectField(
         "Examination type",
-        choices=[
-            ("viva", "Viva"),
-            ("practical", "Practical"),
-            ("project_demo", "Project demo"),
-            ("assessment", "Assessment"),
-        ],
-        validators=[DataRequired()],
+        choices=[(t, EXAM_TYPE_LABELS.get(t, t)) for t in EXAM_TYPES],
+        validators=[DataRequired(message=msg("required"))],
     )
     duration_minutes = IntegerField(
         "Duration (minutes)",
         validators=[
-            DataRequired(message="Duration is required."),
-            NumberRange(min=1, max=1440, message="Duration must be between 1 and 1440 minutes."),
+            InputRequired(message=msg("required")),
+            NumberRange(
+                min=limits.DURATION_MIN,
+                max=limits.DURATION_MAX,
+                message=msg("between_value", min=limits.DURATION_MIN, max=limits.DURATION_MAX),
+            ),
         ],
-        default=30,
+        render_kw=html_attrs(
+            minimum=limits.DURATION_MIN,
+            maximum=limits.DURATION_MAX,
+            inputmode="numeric",
+            field_type="number",
+        ),
     )
     max_marks = IntegerField(
         "Maximum marks",
         validators=[
-            DataRequired(message="Maximum marks is required."),
-            NumberRange(min=1, max=1000, message="Maximum marks must be between 1 and 1000."),
+            InputRequired(message=msg("required")),
+            NumberRange(
+                min=limits.MAX_MARKS_MIN,
+                max=limits.MAX_MARKS_MAX,
+                message=msg("between_value", min=limits.MAX_MARKS_MIN, max=limits.MAX_MARKS_MAX),
+            ),
         ],
-        default=100,
+        render_kw=html_attrs(
+            minimum=limits.MAX_MARKS_MIN,
+            maximum=limits.MAX_MARKS_MAX,
+            inputmode="numeric",
+            field_type="number",
+        ),
     )
-
-    # HTML datetime-local inputs
     slot_creation_start = StringField(
         "Slot creation start",
-        validators=[DataRequired(message="Slot creation start date and time is required.")],
+        filters=[strip_filter],
+        validators=[DataRequired(message=msg("required")), DateTimeLocal()],
+        render_kw=html_attrs(field_type="datetime-local"),
     )
     slot_creation_end = StringField(
         "Slot creation end",
-        validators=[DataRequired(message="Slot creation end date and time is required.")],
+        filters=[strip_filter],
+        validators=[DataRequired(message=msg("required")), DateTimeLocal()],
+        render_kw=html_attrs(
+            field_type="datetime-local",
+            rule="after:slot_creation_start|not-after:booking_start",
+        ),
     )
     booking_start = StringField(
         "Booking start",
-        validators=[DataRequired(message="Booking start date and time is required.")],
+        filters=[strip_filter],
+        validators=[DataRequired(message=msg("required")), DateTimeLocal()],
+        render_kw=html_attrs(field_type="datetime-local"),
     )
     booking_end = StringField(
         "Booking end",
-        validators=[DataRequired(message="Booking end date and time is required.")],
+        filters=[strip_filter],
+        validators=[DataRequired(message=msg("required")), DateTimeLocal()],
+        render_kw=html_attrs(
+            field_type="datetime-local",
+            rule="after:booking_start",
+        ),
     )
     cancellation_deadline = StringField(
-        "Cancellation deadline (optional)",
-        validators=[Optional()],
+        "Cancellation deadline",
+        filters=[strip_filter],
+        validators=[Optional(), DateTimeLocal()],
+        render_kw=html_attrs(
+            field_type="datetime-local",
+            rule="not-before:booking_start",
+        ),
     )
-
-    submit = SubmitField("Save examination")
+    submit = SubmitField("Save")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Populate active courses
-        self.course_id.choices = [
-            (c.id, f"{c.code} - {c.name}")
-            for c in Course.query.filter_by(status="active").order_by(Course.code.asc()).all()
-        ]
+        active_courses = Course.query.filter_by(status="active").order_by(Course.code.asc()).all()
+        self.course_id.choices = [(c.id, f"{c.code} - {c.name}") for c in active_courses]
 
-    def populate_from(self, exam: Examination) -> None:
-        """Pre-fill form fields from an existing Examination model using local time."""
+    def validate(self, extra_validators=None) -> bool:
+        base_ok = super().validate(extra_validators=extra_validators)
+        win_ok = ExaminationWindows()(self)
+        return base_ok and win_ok
+
+    def to_service_data(self) -> dict[str, Any]:
+        bk_end = windows.from_local_input(self.booking_end.data)
+        cancel_dl = (
+            windows.from_local_input(self.cancellation_deadline.data)
+            if self.cancellation_deadline.data
+            else bk_end
+        )
+        return {
+            "course_id": self.course_id.data,
+            "name": self.name.data,
+            "description": self.description.data or None,
+            "exam_type": self.exam_type.data,
+            "duration_minutes": self.duration_minutes.data,
+            "max_marks": self.max_marks.data,
+            "slot_creation_start": windows.from_local_input(self.slot_creation_start.data),
+            "slot_creation_end": windows.from_local_input(self.slot_creation_end.data),
+            "booking_start": windows.from_local_input(self.booking_start.data),
+            "booking_end": bk_end,
+            "cancellation_deadline": cancel_dl,
+        }
+
+    def populate_from(self, exam: Any) -> None:
         self.course_id.data = exam.course_id
         self.name.data = exam.name
         self.description.data = exam.description
@@ -106,66 +188,3 @@ class ExaminationForm(FlaskForm):
         self.booking_start.data = windows.to_input_value(exam.booking_start)
         self.booking_end.data = windows.to_input_value(exam.booking_end)
         self.cancellation_deadline.data = windows.to_input_value(exam.cancellation_deadline)
-
-    def to_service_data(self) -> dict[str, Any]:
-        """Convert form inputs and parse datetime strings to naive UTC."""
-        try:
-            sc_start = windows.from_local_input(self.slot_creation_start.data)
-        except ValueError:
-            self.slot_creation_start.errors.append("Enter a valid date and time.")
-            sc_start = None
-
-        try:
-            sc_end = windows.from_local_input(self.slot_creation_end.data)
-        except ValueError:
-            self.slot_creation_end.errors.append("Enter a valid date and time.")
-            sc_end = None
-
-        try:
-            bk_start = windows.from_local_input(self.booking_start.data)
-        except ValueError:
-            self.booking_start.errors.append("Enter a valid date and time.")
-            bk_start = None
-
-        try:
-            bk_end = windows.from_local_input(self.booking_end.data)
-        except ValueError:
-            self.booking_end.errors.append("Enter a valid date and time.")
-            bk_end = None
-
-        cancel_dl = None
-        if self.cancellation_deadline.data and self.cancellation_deadline.data.strip():
-            try:
-                cancel_dl = windows.from_local_input(self.cancellation_deadline.data)
-            except ValueError:
-                self.cancellation_deadline.errors.append("Enter a valid date and time.")
-
-        # Cross-field validations
-        if sc_start and sc_end and sc_end <= sc_start:
-            self.slot_creation_end.errors.append(
-                "Slot creation end must be strictly after slot creation start."
-            )
-        if bk_start and bk_end and bk_end <= bk_start:
-            self.booking_end.errors.append("Booking end must be strictly after booking start.")
-        if sc_end and bk_start and bk_start < sc_end:
-            self.booking_start.errors.append(
-                "Booking start cannot be earlier than slot creation end."
-            )
-        if cancel_dl and bk_start and cancel_dl < bk_start:
-            self.cancellation_deadline.errors.append(
-                "Cancellation deadline cannot be earlier than booking start."
-            )
-
-        return {
-            "course_id": self.course_id.data,
-            "name": self.name.data,
-            "description": self.description.data,
-            "exam_type": self.exam_type.data,
-            "duration_minutes": self.duration_minutes.data,
-            "max_marks": self.max_marks.data,
-            "slot_creation_start": sc_start,
-            "slot_creation_end": sc_end,
-            "booking_start": bk_start,
-            "booking_end": bk_end,
-            "cancellation_deadline": cancel_dl,
-        }

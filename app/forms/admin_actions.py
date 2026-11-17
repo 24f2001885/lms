@@ -1,96 +1,160 @@
 """
-app/forms/admin_actions.py - Admin action forms for examiners, slots, and search.
+Admin-only forms (assign examiner, change slot examiner, create examiner,
+temporary password, search).
 """
 
 from flask_wtf import FlaskForm
 from wtforms import PasswordField, SelectField, StringField, SubmitField
-from wtforms.validators import DataRequired, Length, Optional, Regexp, ValidationError
+from wtforms.validators import DataRequired, Length, Optional
 
-from app.forms.auth import ValidEmail
-from app.security.auth_helpers import validate_password_strength
+from app.forms.common import FilterForm
+from app.validation import (
+    PhoneChars,
+    SafeText,
+    StrongPassword,
+    ValidEmail,
+    html_attrs,
+    limits,
+    lower_strip_filter,
+    msg,
+    strip_filter,
+)
 
 
 class AssignExaminerForm(FlaskForm):
-    """Form for assigning an approved examiner to an examination."""
-
     examiner_id = SelectField(
         "Examiner",
         coerce=int,
-        validators=[DataRequired(message="Please select an examiner.")],
+        validators=[DataRequired(message=msg("required"))],
     )
-    submit = SubmitField("Assign examiner")
+    submit = SubmitField("Assign")
 
 
 class ChangeSlotExaminerForm(FlaskForm):
-    """Form for reassigning a slot's examiner."""
-
     examiner_id = SelectField(
         "New examiner",
         coerce=int,
-        validators=[DataRequired(message="Please select an examiner.")],
+        validators=[DataRequired(message=msg("required"))],
     )
     submit = SubmitField("Change examiner")
 
 
 class ExaminerCreateForm(FlaskForm):
-    """Form for an administrator to directly create an approved examiner."""
-
     full_name = StringField(
         "Full name",
-        validators=[DataRequired(), Length(min=2, max=120)],
-        filters=[lambda x: x.strip() if x else ""],
+        filters=[strip_filter],
+        validators=[
+            DataRequired(message=msg("required")),
+            Length(
+                min=limits.NAME_MIN,
+                max=limits.NAME_MAX,
+                message=msg("between_length", min=limits.NAME_MIN, max=limits.NAME_MAX),
+            ),
+            SafeText(),
+        ],
+        render_kw=html_attrs(
+            min_len=limits.NAME_MIN,
+            max_len=limits.NAME_MAX,
+            autocomplete="name",
+        ),
     )
     email = StringField(
         "Email",
-        validators=[DataRequired(), ValidEmail(), Length(max=254)],
-        filters=[lambda x: x.strip().lower() if x else ""],
+        filters=[lower_strip_filter],
+        validators=[
+            DataRequired(message=msg("required")),
+            ValidEmail(message=msg("invalid_email")),
+            Length(
+                max=limits.EMAIL_MAX,
+                message=msg("max_length", max=limits.EMAIL_MAX),
+            ),
+            SafeText(),
+        ],
+        render_kw=html_attrs(
+            max_len=limits.EMAIL_MAX,
+            autocomplete="email",
+            field_type="email",
+        ),
     )
     contact_phone = StringField(
-        "Phone number",
+        "Phone",
+        filters=[strip_filter],
         validators=[
             Optional(),
-            Length(max=20),
-            Regexp(r"^[0-9+\- ]*$", message="Invalid phone number format."),
+            Length(
+                max=limits.PHONE_MAX,
+                message=msg("max_length", max=limits.PHONE_MAX),
+            ),
+            PhoneChars(),
         ],
-        filters=[lambda x: x.strip() if x else ""],
+        render_kw=html_attrs(
+            max_len=limits.PHONE_MAX,
+            pattern=limits.PHONE_PATTERN,
+            title=limits.PHONE_TITLE,
+            autocomplete="tel",
+            field_type="tel",
+        ),
     )
-    department = StringField("Department", validators=[Optional(), Length(max=120)])
-    designation = StringField("Designation", validators=[Optional(), Length(max=120)])
+    department = StringField(
+        "Department",
+        filters=[strip_filter],
+        validators=[
+            Optional(),
+            Length(
+                max=limits.DEPARTMENT_MAX,
+                message=msg("max_length", max=limits.DEPARTMENT_MAX),
+            ),
+            SafeText(),
+        ],
+        render_kw=html_attrs(max_len=limits.DEPARTMENT_MAX),
+    )
+    designation = StringField(
+        "Designation",
+        filters=[strip_filter],
+        validators=[
+            Optional(),
+            Length(
+                max=limits.DESIGNATION_MAX,
+                message=msg("max_length", max=limits.DESIGNATION_MAX),
+            ),
+            SafeText(),
+        ],
+        render_kw=html_attrs(max_len=limits.DESIGNATION_MAX),
+    )
     temporary_password = PasswordField(
         "Temporary password (the examiner must change it)",
-        validators=[DataRequired()],
+        validators=[
+            DataRequired(message=msg("required")),
+            StrongPassword(limits.PASSWORD_MIN, limits.PASSWORD_MAX),
+        ],
+        render_kw=html_attrs(
+            min_len=limits.PASSWORD_MIN,
+            max_len=limits.PASSWORD_MAX,
+            autocomplete="new-password",
+            strength_target="temp-password-strength-hint",
+        ),
     )
-    submit = SubmitField("Create examiner")
-
-    def validate_temporary_password(self, field):
-        problems = validate_password_strength(field.data)
-        if problems:
-            raise ValidationError(problems[0])
+    submit = SubmitField("Save")
 
 
 class TemporaryPasswordForm(FlaskForm):
-    """Form for generating or setting a temporary password for a user."""
-
     new_password = PasswordField(
-        "New password (leave blank to generate)",
-        validators=[Optional()],
+        "Temporary password",
+        validators=[
+            Optional(),
+            StrongPassword(limits.PASSWORD_MIN, limits.PASSWORD_MAX),
+        ],
+        render_kw=html_attrs(
+            min_len=limits.PASSWORD_MIN,
+            max_len=limits.PASSWORD_MAX,
+            autocomplete="new-password",
+            strength_target="temp-password-strength-hint",
+        ),
     )
     submit = SubmitField("Set temporary password")
 
-    def validate_new_password(self, field):
-        if field.data and field.data.strip():
-            problems = validate_password_strength(field.data.strip())
-            if problems:
-                raise ValidationError(problems[0])
 
-
-class AdminSearchForm(FlaskForm):
-    """Form for GET search bar (CSRF disabled)."""
-
-    class Meta:
-        csrf = False
-
-    q = StringField("Search query", validators=[Optional(), Length(max=100)])
+class AdminSearchForm(FilterForm):
     kind = SelectField(
         "Search in",
         choices=[
@@ -100,5 +164,19 @@ class AdminSearchForm(FlaskForm):
             ("booking", "Bookings"),
         ],
         default="student",
+        validators=[DataRequired(message=msg("required"))],
+    )
+    q = StringField(
+        "Query",
+        filters=[strip_filter],
+        validators=[
+            Optional(),
+            Length(
+                max=limits.SEARCH_Q_MAX,
+                message=msg("max_length", max=limits.SEARCH_Q_MAX),
+            ),
+            SafeText(),
+        ],
+        render_kw=html_attrs(max_len=limits.SEARCH_Q_MAX),
     )
     submit = SubmitField("Search")

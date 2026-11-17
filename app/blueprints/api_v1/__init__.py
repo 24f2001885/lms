@@ -13,7 +13,7 @@ api_bp = Blueprint("api_v1", __name__)
 @api_bp.before_request
 def _enforce_json_request():
     # Exempt GET /docs (PUB-08 HTML page)
-    if request.endpoint == "api_v1.api_docs":
+    if request.endpoint in ("api_v1.api_docs", "api_v1.docs"):
         return None
 
     if request.method in ("POST", "PUT", "PATCH"):

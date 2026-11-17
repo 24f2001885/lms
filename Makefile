@@ -65,6 +65,9 @@ test-api:
 test-charts:
 	pytest -m charts -v
 
+test-validation:
+	pytest -m validation -v
+
 test-e2e:
 	pytest tests/e2e -q -m e2e
 
