@@ -1,0 +1,75 @@
+<!--
+FILE PURPOSE: STU-08 booking and examination history.
+PROMPT FOR LLM IMPLEMENTATION:
+1. Extend base_student.html; page_title "History". Section "Booking history": table of every booking with status badge, booked and cancelled dates. Section "Examination history": one row per examination with final status and "Result published" yes/no. Pager and empty states.
+DEBUGGING:
+<!-- DEBUG: history rows {{ page.total }} -->
+OFFLINE DOCKER TEST CASES:
+- Cancelled bookings are listed; the examination summary shows one row per examination.
+-->
+{% extends "student/base_student.html" %}
+{% block page_title %}History{% endblock %}
+
+{% block student_content %}
+<h4 class="h5 mb-3">Booking History</h4>
+{% if data.bookings_page.items %}
+  <div class="table-responsive mb-5">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Examination</th>
+          <th>Slot Time</th>
+          <th>Status</th>
+          <th>Booked Date</th>
+          <th>Cancelled Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in data.bookings_page.items %}
+          <tr>
+            <td>{{ b.examination.name }}</td>
+            <td>{{ b.slot.start_at|localdt }}</td>
+            <td><span class="badge bg-secondary">{{ b.status|capitalize }}</span></td>
+            <td>{{ b.booked_at|localdt }}</td>
+            <td>{{ b.cancelled_at|localdt if b.cancelled_at else '-' }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <p class="text-muted mb-4">No booking history recorded.</p>
+{% endif %}
+
+<h4 class="h5 mb-3">Examination History</h4>
+{% if data.examination_history %}
+  <div class="table-responsive">
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Examination</th>
+          <th>Final Status</th>
+          <th>Result Published</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for h in data.examination_history %}
+          <tr>
+            <td>{{ h.examination.name }}</td>
+            <td><span class="badge bg-info text-dark">{{ h.final_status|capitalize }}</span></td>
+            <td>
+              {% if h.result_published %}
+                <span class="badge bg-success">Yes</span>
+              {% else %}
+                <span class="badge bg-warning text-dark">No</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <p class="text-muted">No examination history recorded.</p>
+{% endif %}
+{% endblock %}

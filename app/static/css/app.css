@@ -198,3 +198,20 @@ body {
     padding: 1rem;
   }
 }
+
+.slot-row-full {
+  color: var(--bs-secondary);
+}
+
+.deadline-note {
+  font-size: 0.875rem;
+  color: var(--bs-secondary);
+}
+
+.exam-card {
+  transition: box-shadow 0.2s ease;
+}
+
+.exam-card:hover {
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}

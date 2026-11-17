@@ -1,0 +1,65 @@
+<!--
+FILE PURPOSE: STU-10 result detail with feedback (scorecard download link is added in P12).
+PROMPT FOR LLM IMPLEMENTATION:
+1. Extend base_student.html; header with examination, date, examiner name; a large "Total: X of N" figure; per-criterion table (Criterion, Score, Maximum, Comment); a "Feedback" section with the remarks (empty text hidden); back link to Results.
+2. Reserve a Jinja block named result_actions (empty) where P12 adds the scorecard download button.
+DEBUGGING:
+<!-- DEBUG: result booking {{ booking.id }} total {{ detail.total }} -->
+OFFLINE DOCKER TEST CASES:
+- Per-criterion scores sum to the displayed total; remarks are escaped.
+-->
+{% extends "student/base_student.html" %}
+{% block page_title %}Result Scorecard{% endblock %}
+
+{% block student_content %}
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h4 class="card-title mb-1">{{ detail.examination.name }}</h4>
+        <p class="text-muted mb-0">Examiner: {{ detail.booking.slot.examiner.name if detail.booking.slot.examiner else 'Assigned Examiner' }}</p>
+      </div>
+      <div class="text-end">
+        <div class="display-6 fw-bold text-success">{{ detail.total }}</div>
+        <div class="text-muted">Out of {{ detail.max_marks }}</div>
+      </div>
+    </div>
+
+    <h5 class="h6 mt-4 mb-3">Evaluation Breakdown</h5>
+    <div class="table-responsive mb-4">
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Criterion</th>
+            <th>Score</th>
+            <th>Maximum</th>
+            <th>Comment</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in detail.scores %}
+            <tr>
+              <td>{{ s.criterion }}</td>
+              <td><strong>{{ s.score }}</strong></td>
+              <td>{{ s.max_score }}</td>
+              <td>{{ s.comment or '-' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if detail.remarks %}
+      <h5 class="h6 mb-2">Feedback & Remarks</h5>
+      <div class="p-3 bg-light rounded mb-4">
+        {{ detail.remarks }}
+      </div>
+    {% endif %}
+
+    <div class="d-flex justify-content-between">
+      <a href="{{ url_for('student.results_list') }}" class="btn btn-secondary">Back to Results</a>
+      {% block result_actions %}{% endblock %}
+    </div>
+  </div>
+</div>
+{% endblock %}

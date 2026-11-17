@@ -1,0 +1,70 @@
+<!--
+FILE PURPOSE: STU-05 my bookings.
+PROMPT FOR LLM IMPLEMENTATION:
+1. Extend base_student.html; page_title "My bookings"; status filter pills (All, Booked, Completed, Cancelled). Table: Examination, Date/time, Examiner, Status badge, Booked on, Actions (Details link; Cancel button inside the confirm_action modal while allowed, else the "Cancellation closed on ..." text). Pager and empty state with a link to Examinations.
+DEBUGGING:
+<!-- DEBUG: bookings {{ page.total }} -->
+OFFLINE DOCKER TEST CASES:
+- Cancelled rows have no Cancel button; booked rows before the deadline do.
+-->
+{% extends "student/base_student.html" %}
+{% block page_title %}My Bookings{% endblock %}
+
+{% block student_content %}
+<div class="mb-4">
+  <div class="btn-group" role="group">
+    <a href="{{ url_for('student.my_bookings_list') }}" class="btn btn-outline-secondary {% if not selected_status %}active{% endif %}">All</a>
+    <a href="{{ url_for('student.my_bookings_list', status='booked') }}" class="btn btn-outline-secondary {% if selected_status == 'booked' %}active{% endif %}">Booked</a>
+    <a href="{{ url_for('student.my_bookings_list', status='completed') }}" class="btn btn-outline-secondary {% if selected_status == 'completed' %}active{% endif %}">Completed</a>
+    <a href="{{ url_for('student.my_bookings_list', status='cancelled') }}" class="btn btn-outline-secondary {% if selected_status == 'cancelled' %}active{% endif %}">Cancelled</a>
+  </div>
+</div>
+
+{% if pagination.items %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Examination</th>
+          <th>Date & Time</th>
+          <th>Examiner</th>
+          <th>Status</th>
+          <th>Booked On</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in pagination.items %}
+          <tr>
+            <td><strong>{{ b.examination.name }}</strong></td>
+            <td>{{ b.slot.start_at|localdt }}</td>
+            <td>{{ b.slot.examiner.name if b.slot.examiner else 'TBD' }}</td>
+            <td>
+              {% if b.status == 'booked' %}
+                <span class="badge bg-primary">Booked</span>
+              {% elif b.status == 'completed' %}
+                <span class="badge bg-success">Completed</span>
+              {% else %}
+                <span class="badge bg-secondary">Cancelled</span>
+              {% endif %}
+            </td>
+            <td>{{ b.booked_at|localdt }}</td>
+            <td>
+              <a href="{{ url_for('student.booking_detail', booking_id=b.id) }}" class="btn btn-sm btn-outline-info me-1">Details</a>
+              {% if b.status == 'booked' %}
+                <form action="{{ url_for('student.cancel_booking_action', booking_id=b.id) }}" method="POST" class="d-inline">
+                  {{ confirm_form.hidden_tag() if confirm_form else '' }}
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                  <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to cancel this booking?');">Cancel</button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="alert alert-info">No bookings found. <a href="{{ url_for('student.examinations_list') }}">Browse examinations</a>.</div>
+{% endif %}
+{% endblock %}

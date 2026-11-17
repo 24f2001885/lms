@@ -1,0 +1,88 @@
+<!--
+FILE PURPOSE: STU-03 examination detail with slots and booking buttons.
+PROMPT FOR LLM IMPLEMENTATION:
+1. Extend base_student.html; header (name, course, type, duration, maximum marks), a booking-window panel with the open/closed badge and reason line, and the cancellation deadline text.
+2. Slots table: Date/time, Examiner, Seats left (with .slot-meter), Status badge, Action (book_button macro; full slots use the .slot-row-full class). Include one book_modal per bookable slot after the table.
+3. When the student already has an active booking show an info alert linking to the booking and disable every Book button with "You already booked this examination".
+DEBUGGING:
+<!-- DEBUG: exam {{ exam.id }} slots {{ slots|length }} own booking {{ own_booking.id if own_booking else None }} -->
+OFFLINE DOCKER TEST CASES:
+- Full slots show a Full badge and a disabled button; a closed window disables all buttons with the reason.
+-->
+{% extends "student/base_student.html" %}
+{% import "macros/booking_modal.html" as bm %}
+{% block page_title %}{{ examination.name }}{% endblock %}
+
+{% block student_content %}
+<div class="card mb-4">
+  <div class="card-body">
+    <h5 class="card-title">{{ examination.code }} - {{ examination.name }}</h5>
+    <p class="card-text text-muted">
+      Course: {{ examination.course.name if examination.course else '' }} | Type: {{ examination.examination_type|capitalize }} | Duration: {{ examination.duration_minutes }} mins
+    </p>
+    <div class="alert alert-secondary mb-0">
+      <strong>Booking Window:</strong> {{ win_state.booking.reason }}<br/>
+      <small class="text-muted">Cancellation deadline: {{ examination.booking_end|localdt }}</small>
+    </div>
+  </div>
+</div>
+
+{% if own_booking %}
+  <div class="alert alert-success">
+    You already have an active booking for this examination. 
+    <a href="{{ url_for('student.booking_detail', booking_id=own_booking.id) }}" class="alert-link">View your booking</a>.
+  </div>
+{% endif %}
+
+<h4 class="h5 mb-3">Available Slots</h4>
+{% if slots %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Date & Time</th>
+          <th>Examiner</th>
+          <th>Seats Left</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in slots %}
+          <tr class="{% if s.status == 'full' %}slot-row-full text-muted{% endif %}">
+            <td>{{ s.start_at|localdt }} - {{ s.end_at|localdt }}</td>
+            <td>{{ s.examiner.name if s.examiner else 'Assigned Examiner' }}</td>
+            <td>{{ s.seats_left }} / {{ s.max_capacity }}</td>
+            <td>
+              {% if s.status == 'full' %}
+                <span class="badge bg-danger">Full</span>
+              {% else %}
+                <span class="badge bg-success">Available</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if own_booking %}
+                {{ bm.book_button(s, false, "You already booked this examination") }}
+              {% elif not win_state.booking.is_open %}
+                {{ bm.book_button(s, false, win_state.booking.reason) }}
+              {% elif s.status == 'full' %}
+                {{ bm.book_button(s, false, "This slot is full") }}
+              {% else %}
+                {{ bm.book_button(s, true, "") }}
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% for s in slots %}
+    {% if not own_booking and win_state.booking.is_open and s.status != 'full' %}
+      {{ bm.book_modal(s, examination, confirm_form) }}
+    {% endif %}
+  {% endfor %}
+{% else %}
+  <p class="text-muted">No upcoming slots found for this examination.</p>
+{% endif %}
+{% endblock %}

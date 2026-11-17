@@ -143,5 +143,9 @@ class Examination(db.Model, TimestampMixin):
         passive_deletes=False,
     )
 
+    @property
+    def code(self) -> str:
+        return self.course.code if self.course else ""
+
     def __repr__(self) -> str:
         return f"<Examination id={self.id} name={self.name!r} status={self.status!r}>"

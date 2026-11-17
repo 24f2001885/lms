@@ -1,0 +1,58 @@
+<!--
+FILE PURPOSE: Student layout with a top navbar (Design Plan section 2). Extends base.html by overriding the site_nav block.
+PROMPT FOR LLM IMPLEMENTATION:
+1. Extend base.html. Override site_nav with a Bootstrap navbar: brand "EMP", links Dashboard, Examinations, My bookings, Results, Profile, and a Logout POST form with csrf. Active link via request.endpoint with aria-current="page". Collapses to a hamburger below lg.
+2. Reuse the default layout block (flash messages and content). Provide blocks page_title and page_actions in a header row.
+DEBUGGING:
+<!-- DEBUG: student nav endpoint={{ request.endpoint }} -->
+OFFLINE DOCKER TEST CASES:
+- Nav shows exactly Dashboard, Examinations, My bookings, Results, Profile, Logout.
+-->
+{% extends "base.html" %}
+{% block site_nav %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold" href="{{ url_for('student.dashboard') }}">EMP</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#studentNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="studentNav">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'student.dashboard' %}active{% endif %}" {% if request.endpoint == 'student.dashboard' %}aria-current="page"{% endif %} href="{{ url_for('student.dashboard') }}">Dashboard</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if 'student.examinations' in request.endpoint %}active{% endif %}" {% if 'student.examinations' in request.endpoint %}aria-current="page"{% endif %} href="{{ url_for('student.examinations_list') }}">Examinations</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if 'student.my_bookings' in request.endpoint %}active{% endif %}" {% if 'student.my_bookings' in request.endpoint %}aria-current="page"{% endif %} href="{{ url_for('student.my_bookings_list') }}">My bookings</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if 'student.results' in request.endpoint %}active{% endif %}" {% if 'student.results' in request.endpoint %}aria-current="page"{% endif %} href="{{ url_for('student.results_list') }}">Results</a>
+        </li>
+      </ul>
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('auth.profile') }}">Profile</a>
+        </li>
+        <li class="nav-item">
+          <form action="{{ url_for('auth.logout') }}" method="POST" class="d-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit" class="btn btn-link nav-link">Logout</button>
+          </form>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">{% block page_title %}{% endblock %}</h1>
+    <div>{% block page_actions %}{% endblock %}</div>
+  </div>
+  {% block student_content %}{% endblock %}
+</div>
+{% endblock %}

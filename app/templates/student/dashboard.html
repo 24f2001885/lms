@@ -1,0 +1,106 @@
+<!--
+FILE PURPOSE: STU-01 dashboard.
+PROMPT FOR LLM IMPLEMENTATION:
+1. Extend base_student.html; page_title "Dashboard". Five sections as cards: Available examinations (name, type, booking window, View slots link), Available slots (examination, date/time, examiner, seats left, View link), Upcoming (next booked slots with date and examiner), Booked slots (count and list with status badge and link), Published results (examination, total / maximum, View link). Each has an empty state sentence.
+2. Reserve an empty div id="charts-widget" for P8 (comment only).
+DEBUGGING:
+<!-- DEBUG: dashboard data keys {{ data.keys() }} -->
+OFFLINE DOCKER TEST CASES:
+- Empty states render for a new student; sections fill after booking and publishing.
+-->
+{% extends "student/base_student.html" %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block student_content %}
+<div class="row g-4">
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header bg-white fw-bold">Available Examinations</div>
+      <div class="card-body">
+        {% if data.available_examinations %}
+          <div class="list-group list-group-flush">
+            {% for exam in data.available_examinations %}
+              <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="mb-0">{{ exam.name }} ({{ exam.code }})</h6>
+                  <small class="text-muted">{{ exam.examination_type|capitalize }} • Closes {{ exam.booking_end|localdt }}</small>
+                </div>
+                <a href="{{ url_for('student.examination_detail', exam_id=exam.id) }}" class="btn btn-outline-primary btn-sm">View slots</a>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted mb-0">No examinations are currently open for booking.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header bg-white fw-bold">Available Slots</div>
+      <div class="card-body">
+        {% if data.available_slots %}
+          <div class="list-group list-group-flush">
+            {% for s in data.available_slots %}
+              <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="mb-0">{{ s.examination.name }}</h6>
+                  <small class="text-muted">{{ s.start_at|localdt }} • Seats: {{ s.seats_left }}</small>
+                </div>
+                <a href="{{ url_for('student.examination_detail', exam_id=s.examination_id) }}" class="btn btn-sm btn-link">View</a>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted mb-0">No upcoming slots available right now.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header bg-white fw-bold">Upcoming Examinations</div>
+      <div class="card-body">
+        {% if data.upcoming %}
+          <ul class="list-group list-group-flush">
+            {% for b in data.upcoming %}
+              <li class="list-group-item">
+                <strong>{{ b.examination.name }}</strong><br/>
+                <small class="text-muted">{{ b.slot.start_at|localdt }} with {{ b.slot.examiner.name if b.slot.examiner else 'Examiner' }}</small>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-muted mb-0">You have no upcoming booked slots.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header bg-white fw-bold">Published Results</div>
+      <div class="card-body">
+        {% if data.published_results %}
+          <div class="list-group list-group-flush">
+            {% for ev in data.published_results %}
+              <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="mb-0">{{ ev.booking.examination.name }}</h6>
+                  <small class="text-muted">Total: {{ ev.total_marks }} / {{ ev.booking.examination.max_marks }}</small>
+                </div>
+                <a href="{{ url_for('student.result_detail', booking_id=ev.booking_id) }}" class="btn btn-outline-success btn-sm">View</a>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted mb-0">No results have been published yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+<!-- <div id="charts-widget"></div> -->
+{% endblock %}

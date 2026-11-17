@@ -40,16 +40,14 @@ USER_ACTIVATE = "user.activate"
 USER_TEMP_PASSWORD = "user.temp_password"
 
 SLOT_EXAMINER_CHANGE = "slot.examiner_change"
-"""
-FILE PURPOSE: Audit logging service constants and methods.
-"""
-# Action name constants
 SLOT_CREATE = "slot.create"
 SLOT_UPDATE = "slot.update"
 SLOT_DELETE = "slot.delete"
 EVALUATION_SAVE = "evaluation.save"
 EVALUATION_SUBMIT = "evaluation.submit"
 EVALUATION_PUBLISH = "evaluation.publish"
+BOOKING_CREATE = "booking.create"
+BOOKING_CANCEL = "booking.cancel"
 
 # (Retaining existing audit service implementation methods from P1-P3)
 

@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from sqlalchemy import CheckConstraint, ForeignKey, Index, Integer, String
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.extensions import TimestampMixin, db
@@ -62,6 +63,18 @@ class Course(db.Model, TimestampMixin):
         back_populates="course",
         passive_deletes=False,
     )
+
+    @hybrid_property
+    def is_active(self) -> bool:
+        return self.status == "active"
+
+    @is_active.setter
+    def is_active(self, value: bool) -> None:
+        self.status = "active" if value else "inactive"
+
+    @is_active.expression
+    def is_active(cls):  # noqa: N805
+        return cls.status == "active"
 
     def __repr__(self) -> str:
         return f"<Course id={self.id} code={self.code!r} status={self.status!r}>"

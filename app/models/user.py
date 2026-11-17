@@ -99,6 +99,10 @@ class User(db.Model, TimestampMixin):
         passive_deletes=False,
     )
 
+    @property
+    def name(self) -> str:
+        return self.full_name
+
     # -----------------------------------------------------------------
     # Password & Convenience Helpers
     # -----------------------------------------------------------------

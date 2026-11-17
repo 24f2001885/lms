@@ -62,5 +62,9 @@ class ExaminationRubric(db.Model):
     # Relationship back to Examination
     examination: Mapped["Examination"] = relationship("Examination", back_populates="rubrics")
 
+    @property
+    def name(self) -> str:
+        return self.criterion_name
+
     def __repr__(self) -> str:
         return f"<ExaminationRubric id={self.id} exam_id={self.examination_id} name={self.criterion_name!r}>"

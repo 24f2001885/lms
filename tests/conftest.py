@@ -464,3 +464,127 @@ def make_booking_with_slot(db_session, make_student):
         return booking, slot
 
     return _helper
+
+
+@pytest.fixture
+def student_client(client, student, db_session):
+    """Creates an active student (must_change_password False), logs in via POST /login and returns (client, student)."""
+    student.is_active = True
+    student.must_change_password = False
+    db_session.commit()
+
+    client.post(
+        "/login",
+        data={
+            "email": student.email,
+            "password": "Passw0rd123!",
+        },
+        follow_redirects=True,
+    )
+    return client, student
+
+
+@pytest.fixture
+def make_open_booking_setup(
+    db_session,
+    make_examiner,
+    make_admin,
+    make_course,
+    make_examination,
+    make_rubric,
+    make_assignment,
+    make_student,
+):
+    """
+    Builds a ready examination whose BOOKING window contains the frozen now
+    (booking_open True, rubric total 100, approved assigned examiner)
+    with one future available slot, returns (examination, slot, examiner, students).
+    """
+
+    def _setup(student_count=1, capacity=5):
+        from app.services import windows
+
+        now = windows.now_utc()
+
+        examiner = make_examiner()
+        admin_user = make_admin()
+        course = make_course(created_by=admin_user.id)
+
+        exam = make_examination(
+            course=course,
+            name="Midterm Viva",
+            exam_type="viva",
+            duration_minutes=30,
+            max_marks=100,
+            status="booking_open",
+            slot_creation_open=True,
+            booking_open=True,
+            slot_creation_start=now - timedelta(days=5),
+            slot_creation_end=now - timedelta(days=2),
+            booking_start=now - timedelta(days=1),
+            booking_end=now + timedelta(days=5),
+            cancellation_deadline=now + timedelta(days=5),
+        )
+
+        make_rubric(exam, name="Technical Depth", weightage=60, max_score=60.0, position=1)
+        make_rubric(exam, name="Communication", weightage=40, max_score=40.0, position=2)
+        make_assignment(exam, examiner, assigned_by=admin_user)
+
+        slot = ExaminationSlot(
+            examination_id=exam.id,
+            examiner_id=examiner.id,
+            start_at=exam.booking_end + timedelta(days=1),
+            end_at=exam.booking_end + timedelta(days=1, hours=1),
+            max_capacity=capacity,
+            booked_count=0,
+            status="available",
+        )
+        db_session.add(slot)
+        db_session.commit()
+
+        students = [make_student() for _ in range(student_count)]
+        return exam, slot, examiner, students
+
+    return _setup
+
+
+@pytest.fixture
+def make_published_evaluation(db_session):
+    """Creates an evaluation with status published and per-criterion scores summing to total."""
+
+    def _make(booking, examiner, total=85):
+        from app.models import Evaluation, EvaluationScore
+        from app.services import windows
+
+        evaluation = Evaluation(
+            booking_id=booking.id,
+            examiner_id=examiner.id,
+            total_marks=Decimal(str(total)),
+            status="published",
+            submitted_at=windows.now_utc(),
+            published_at=windows.now_utc(),
+        )
+        db_session.add(evaluation)
+        db_session.flush()
+
+        rubrics = booking.slot.examination.rubrics
+        if rubrics:
+            remaining = Decimal(str(total))
+            for i, r in enumerate(rubrics):
+                if i == len(rubrics) - 1:
+                    score = remaining
+                else:
+                    score = min(remaining, Decimal(str(r.max_score)))
+                    remaining -= score
+                sc = EvaluationScore(
+                    evaluation=evaluation,
+                    rubric_id=r.id,
+                    score=score,
+                    comment="Well done",
+                )
+                db_session.add(sc)
+
+        db_session.commit()
+        return evaluation
+
+    return _make

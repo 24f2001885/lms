@@ -1,0 +1,42 @@
+<!--
+FILE PURPOSE: STU-09 results list.
+PROMPT FOR LLM IMPLEMENTATION:
+1. Extend base_student.html; page_title "Results"; table: Examination, Date, Total / maximum, Published on, View link. Pager; empty state "No results have been published yet."
+DEBUGGING:
+<!-- DEBUG: results {{ page.total }} -->
+OFFLINE DOCKER TEST CASES:
+- Only published results appear.
+-->
+{% extends "student/base_student.html" %}
+{% block page_title %}Results{% endblock %}
+
+{% block student_content %}
+{% if pagination.items %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Examination</th>
+          <th>Published On</th>
+          <th>Score</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ev in pagination.items %}
+          <tr>
+            <td><strong>{{ ev.booking.examination.name }}</strong></td>
+            <td>{{ ev.published_at|localdt }}</td>
+            <td><span class="fw-bold text-success">{{ ev.total_marks }}</span> / {{ ev.booking.examination.max_marks }}</td>
+            <td>
+              <a href="{{ url_for('student.result_detail', booking_id=ev.booking_id) }}" class="btn btn-sm btn-outline-primary">View scorecard</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="alert alert-info">No results have been published yet.</div>
+{% endif %}
+{% endblock %}

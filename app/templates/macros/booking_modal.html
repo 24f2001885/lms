@@ -1,0 +1,55 @@
+<!--
+FILE PURPOSE: STU-04 booking confirmation modal macro.
+PROMPT FOR LLM IMPLEMENTATION:
+1. Macro book_modal(slot, exam, form): a Bootstrap modal with unique id "book-slot-" ~ slot.id, title "Confirm booking", a summary list (examination name, date and time via localdt, examiner name, seats left), a note showing the cancellation deadline, a POST form to url_for student.book with form.hidden_tag() for CSRF, a primary "Confirm booking" button and a Cancel button.
+2. Companion macro book_button(slot, enabled, reason): when enabled a button opening the modal, otherwise a disabled button with aria-disabled="true" followed by a visible reason line (class deadline-note).
+DEBUGGING:
+<!-- DEBUG: book modal slot {{ slot.id }} enabled {{ enabled }} -->
+OFFLINE DOCKER TEST CASES:
+- The modal form posts to /student/slots/<id>/book and contains a csrf_token input.
+- A disabled button is followed by its reason text.
+-->
+{% macro book_modal(slot, exam, form) %}
+<div class="modal fade" id="book-slot-{{ slot.id }}" tabindex="-1" aria-labelledby="bookModalLabel{{ slot.id }}" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="bookModalLabel{{ slot.id }}">Confirm Booking</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <ul class="list-group list-group-flush mb-3">
+          <li class="list-group-item"><strong>Examination:</strong> {{ exam.name }} ({{ exam.code }})</li>
+          <li class="list-group-item"><strong>Date & Time:</strong> {{ slot.start_at|localdt }} - {{ slot.end_at|localdt }}</li>
+          <li class="list-group-item"><strong>Examiner:</strong> {{ slot.examiner.name if slot.examiner else 'TBD' }}</li>
+          <li class="list-group-item"><strong>Seats Left:</strong> {{ slot.seats_left }} / {{ slot.max_capacity }}</li>
+        </ul>
+        <p class="small text-muted deadline-note">
+          Cancellation is allowed until <strong>{{ exam.booking_end|localdt }}</strong>.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form action="{{ url_for('student.book_slot_action', slot_id=slot.id) }}" method="POST" class="d-inline">
+          {{ form.hidden_tag() if form else '' }}
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <button type="submit" class="btn btn-primary">Confirm booking</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endmacro %}
+
+{% macro book_button(slot, enabled, reason) %}
+{% if enabled %}
+  <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#book-slot-{{ slot.id }}">
+    Book
+  </button>
+{% else %}
+  <button type="button" class="btn btn-secondary btn-sm" disabled aria-disabled="true">
+    Book
+  </button>
+  <div class="small text-muted deadline-note mt-1">{{ reason }}</div>
+{% endif %}
+{% endmacro %}
