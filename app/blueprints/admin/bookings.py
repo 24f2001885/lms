@@ -15,15 +15,16 @@ OFFLINE DOCKER TEST CASES:
 app/blueprints/admin/bookings.py - ADM-15 bookings overview (read-only in Phase P3).
 """
 
-from flask import abort, render_template, request
+from flask import abort, g, render_template, request
 from sqlalchemy.orm import joinedload
 
 from app.blueprints.admin import admin_bp
-from app.forms.common import parse_page
+from app.forms.booking_actions import ReasonForm
+from app.forms.common import ConfirmForm, parse_page
 from app.models.booking import Booking
 from app.models.examination import Examination
 from app.security.decorators import admin_required
-from app.services import audit_service
+from app.services import audit_service, history_service
 
 
 @admin_bp.route("/bookings", methods=["GET"])
@@ -76,4 +77,12 @@ def booking_detail(booking_id: int):
         abort(404)
 
     audit_history = audit_service.history_for("booking", booking.id)
-    return render_template("admin/booking_detail.html", booking=booking, history=audit_history)
+    timeline = history_service.booking_timeline(booking.id, viewer_role="admin", viewer_id=g.user.id)
+    return render_template(
+        "admin/booking_detail.html",
+        booking=booking,
+        history=audit_history,
+        timeline=timeline,
+        reason_form=ReasonForm(),
+        confirm_form=ConfirmForm(),
+    )

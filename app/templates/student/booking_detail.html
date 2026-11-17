@@ -43,6 +43,22 @@ OFFLINE DOCKER TEST CASES:
       </div>
     {% endif %}
 
+    {% if timeline %}
+      <div class="mt-4 pt-3 border-top mb-4">
+        <h6 class="fw-bold mb-3">History</h6>
+        <ol class="list-group list-group-flush list-group-numbered small">
+          {% for ev in timeline %}
+            <li class="list-group-item px-0 py-2">
+              <span class="fw-semibold">{{ ev.label }}</span> &mdash; <span>{{ ev.at|localdt }}</span>
+              {% if ev.detail %}
+                <div class="text-muted mt-1">{{ ev.detail }}</div>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ol>
+      </div>
+    {% endif %}
+
     <div class="d-flex justify-content-between">
       <a href="{{ url_for('student.my_bookings_list') }}" class="btn btn-secondary">Back to My Bookings</a>
       {% if booking.status == 'booked' %}

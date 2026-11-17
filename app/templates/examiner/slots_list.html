@@ -58,6 +58,31 @@
               <td><span class="badge bg-secondary">{{ slot.status }}</span></td>
               <td>
                 <a href="{{ url_for('examiner.slot_students', slot_id=slot.id) }}" class="btn btn-sm btn-outline-primary">Students</a>
+                {% if slot.status in ('available', 'full') %}
+                  <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelSlotModal{{ slot.id }}">Cancel slot</button>
+                  <div class="modal fade" id="cancelSlotModal{{ slot.id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                      <form action="{{ url_for('examiner.cancel_slot_action', slot_id=slot.id) }}" method="POST" class="modal-content">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="modal-header">
+                          <h5 class="modal-title h6">Cancel Slot #{{ slot.id }}</h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body text-start">
+                          <p class="small text-muted">Cancelling this slot will cancel all active student bookings for it.</p>
+                          <div class="mb-3">
+                            <label class="form-label small fw-semibold">Cancellation Reason (3-200 characters)</label>
+                            <textarea name="reason" class="form-control form-control-sm" rows="3" required minlength="3" maxlength="200" placeholder="Reason for cancellation..."></textarea>
+                          </div>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                          <button type="submit" class="btn btn-danger btn-sm">Confirm Cancel</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                {% endif %}
                 {% if slot.status == 'available' %}
                   <a href="{{ url_for('examiner.slot_edit', slot_id=slot.id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
                   <form action="{{ url_for('examiner.slot_delete', slot_id=slot.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to remove this slot?');">

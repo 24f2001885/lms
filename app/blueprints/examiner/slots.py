@@ -4,10 +4,11 @@ FILE PURPOSE: EXM-04, EXM-05, EXM-06 slot list, create, edit, delete and booked 
 from flask import abort, flash, g, redirect, render_template, request, url_for
 
 from app.blueprints.examiner import examiner_bp
-from app.errors import AppError, WindowError
+from app.errors import AppError, BookingError, WindowError
+from app.forms.booking_actions import ReasonForm
 from app.forms.slot import SlotForm
 from app.security.decorators import approved_examiner_required
-from app.services import slot_service
+from app.services import booking_engine, slot_service
 
 
 @examiner_bp.route("/slots")
@@ -132,3 +133,24 @@ def slot_students(slot_id):
         bookings=bookings,
         cancelled_count=cancelled_count
     )
+
+
+@examiner_bp.route("/slots/<int:slot_id>/cancel", methods=["POST"])
+@approved_examiner_required
+def cancel_slot_action(slot_id: int):
+    slot = slot_service.get_owned_slot(g.user.id, slot_id)
+    if not slot:
+        abort(404)
+
+    form = ReasonForm()
+    if not form.validate_on_submit():
+        flash("Please provide a valid cancellation reason (3-200 characters).", "danger")
+        return redirect(url_for("examiner.slots_list"))
+
+    try:
+        cancelled_count = booking_engine.cancel_slot(slot.id, g.user.id, form.reason.data)
+        flash(f"Slot cancelled. {cancelled_count} bookings were cancelled.", "success")
+    except BookingError as exc:
+        flash(str(exc), "danger")
+
+    return redirect(url_for("examiner.slots_list"))

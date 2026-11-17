@@ -38,8 +38,7 @@ def app(tmp_path) -> Generator[Flask, None, None]:
     db_file = tmp_path / "test.db"
     test_db_uri = f"sqlite:///{db_file}"
 
-    test_app = create_app("testing")
-    test_app.config["SQLALCHEMY_DATABASE_URI"] = test_db_uri
+    test_app = create_app("testing", test_config={"SQLALCHEMY_DATABASE_URI": test_db_uri})
 
     with test_app.app_context():
         db.create_all()
@@ -588,3 +587,7 @@ def make_published_evaluation(db_session):
         return evaluation
 
     return _make
+
+
+# --- Phase 6 Additions ---
+from tests.conftest_p6_additions import MutableClock, clock, run_in_threads  # noqa: E402, F401

@@ -38,6 +38,7 @@
     <nav class="nav flex-column">
       <a class="nav-link {% if 'slot' in request.endpoint %}active{% endif %}" {% if 'slot' in request.endpoint %}aria-current="page"{% endif %} href="{{ url_for('admin.slots') }}">Slots</a>
       <a class="nav-link {% if 'booking' in request.endpoint %}active{% endif %}" {% if 'booking' in request.endpoint %}aria-current="page"{% endif %} href="{{ url_for('admin.bookings') }}">Bookings</a>
+      <a class="nav-link {% if 'evaluation' in request.endpoint %}active{% endif %}" {% if 'evaluation' in request.endpoint %}aria-current="page"{% endif %} href="{{ url_for('admin.evaluations_list') }}">Evaluations</a>
       <a class="nav-link {% if request.endpoint == 'admin.search' %}active{% endif %}" {% if request.endpoint == 'admin.search' %}aria-current="page"{% endif %} href="{{ url_for('admin.search') }}">Search</a>
       <a class="nav-link {% if request.endpoint == 'admin.history' %}active{% endif %}" {% if request.endpoint == 'admin.history' %}aria-current="page"{% endif %} href="{{ url_for('admin.history') }}">History</a>
     </nav>
@@ -50,7 +51,7 @@
       <h1 class="h3 fw-bold text-primary mb-0">{% block page_title %}{% endblock %}</h1>
       <div>{% block page_actions %}{% endblock %}</div>
     </div>
-    {% block content %}{% endblock %}
+    {% block content %}{% block admin_content %}{% endblock %}{% endblock %}
   </main>
 </div>
 {% endblock %}

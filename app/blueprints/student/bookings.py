@@ -25,7 +25,7 @@ from app.errors import BookingError, WindowError
 from app.forms.common import ConfirmForm
 from app.models import ExaminationSlot
 from app.security.decorators import student_required
-from app.services import booking_engine, student_queries
+from app.services import booking_engine, history_service, student_queries
 
 
 @student_bp.route("/slots/<int:slot_id>/book", methods=["POST"])
@@ -97,12 +97,14 @@ def booking_detail(booking_id):
 
     result_pub = student_queries.result_detail(g.user.id, booking_id)
     confirm_form = ConfirmForm()
+    timeline = history_service.booking_timeline(booking_id, viewer_role="student", viewer_id=g.user.id)
 
     return render_template(
         "student/booking_detail.html",
         booking=booking,
         result_pub=result_pub,
-        confirm_form=confirm_form
+        confirm_form=confirm_form,
+        timeline=timeline,
     )
 
 

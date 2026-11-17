@@ -38,6 +38,8 @@ USER_REJECT = "user.reject"
 USER_DEACTIVATE = "user.deactivate"
 USER_ACTIVATE = "user.activate"
 USER_TEMP_PASSWORD = "user.temp_password"
+EXAMINER_APPROVE = "examiner.approve"
+EXAMINER_DEACTIVATE = "examiner.deactivate"
 
 SLOT_EXAMINER_CHANGE = "slot.examiner_change"
 SLOT_CREATE = "slot.create"
@@ -48,6 +50,12 @@ EVALUATION_SUBMIT = "evaluation.submit"
 EVALUATION_PUBLISH = "evaluation.publish"
 BOOKING_CREATE = "booking.create"
 BOOKING_CANCEL = "booking.cancel"
+BOOKING_RESCHEDULE = "booking.reschedule"
+BOOKING_ADMIN_CANCEL = "booking.admin_cancel"
+SLOT_CANCEL = "slot.cancel"
+EVALUATION_ADMIN_PUBLISH = "evaluation.admin_publish"
+SYSTEM_STATUS_SYNC = "system.status_sync"
+SYSTEM_PURGE = "system.purge"
 
 # (Retaining existing audit service implementation methods from P1-P3)
 
@@ -59,6 +67,7 @@ def log_action(
     entity_id: int | None = None,
     details: dict[str, Any] | None = None,
     ip_address: str | None = None,
+    created_at: Any = None,
 ) -> AuditLog:
     """
     Stage an AuditLog row without committing. Caller must commit the session.
@@ -70,6 +79,11 @@ def log_action(
     if details is not None:
         details_json = json.dumps(details, sort_keys=True, default=str)
 
+    if created_at is None:
+        from app.services import windows
+
+        created_at = windows.now_utc()
+
     row = AuditLog(
         actor_id=actor_id,
         action=action,
@@ -77,6 +91,7 @@ def log_action(
         entity_id=entity_id,
         details=details_json,
         ip_address=ip_address,
+        created_at=created_at,
     )
     db.session.add(row)
     return row

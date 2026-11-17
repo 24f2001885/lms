@@ -18,6 +18,7 @@ def test_admin_routes_reject_non_admins(client, app, make_user, make_admin, logi
         "/admin/students",
         "/admin/slots",
         "/admin/bookings",
+        "/admin/evaluations",
         "/admin/search",
         "/admin/history",
     ]

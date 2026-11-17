@@ -1,0 +1,38 @@
+{% extends "admin/base_admin.html" %}
+{% block page_title %}Reschedule booking #{{ booking.id }}{% endblock %}
+
+{% block content %}
+<!-- DEBUG: reschedule booking {{ booking.id }} targets {{ form.new_slot_id.choices|length }} -->
+<div class="card mb-4">
+  <div class="card-body">
+    <h5 class="card-title mb-3">Current Booking Summary</h5>
+    <p class="mb-1"><strong>Student:</strong> {{ booking.student.full_name }} ({{ booking.student.email }})</p>
+    <p class="mb-1"><strong>Examination:</strong> {{ booking.examination.name }}</p>
+    <p class="mb-1"><strong>Current Slot:</strong> {{ booking.slot.start_at|localdt }} - {{ booking.slot.end_at|localdt }}</p>
+    <p class="mb-1"><strong>Examiner:</strong> {{ booking.slot.examiner.full_name }}</p>
+    <p class="mb-0"><strong>Status:</strong> <span class="badge text-bg-success">{{ booking.status|capitalize }}</span></p>
+  </div>
+</div>
+
+{% if form.new_slot_id.choices %}
+  <div class="card">
+    <div class="card-body">
+      <p class="text-muted">The student keeps the same booking. Seats are updated on both slots.</p>
+      <form method="POST" action="{{ url_for('admin.reschedule_booking', booking_id=booking.id) }}">
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+          {{ form.new_slot_id.label(class="form-label") }}
+          {{ form.new_slot_id(class="form-select") }}
+        </div>
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-primary">Move booking</button>
+          <a href="{{ url_for('admin.booking_detail', booking_id=booking.id) }}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+{% else %}
+  <div class="alert alert-secondary">No other available future slots exist for this examination.</div>
+  <a href="{{ url_for('admin.booking_detail', booking_id=booking.id) }}" class="btn btn-outline-secondary">Back to booking</a>
+{% endif %}
+{% endblock %}

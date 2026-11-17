@@ -47,29 +47,51 @@ class TimestampMixin:
 
 # SQLite Concurrency & Integrity Pragmas
 _pragmas_registered = False
+_WRITE_LOCK_ATTACHED = False
 
 
-def register_sqlite_pragmas() -> None:
+def write_lock_enabled() -> bool:
+    """Return True when the SQLite BEGIN IMMEDIATE listener is registered."""
+    return _WRITE_LOCK_ATTACHED
+
+
+def register_sqlite_pragmas(engine: Engine | type[Engine] | None = None) -> None:
+    """Attach idempotent SQLite pragmas and BEGIN IMMEDIATE write locking.
+
+    Trade-off documented per TDR 3.2:
+    Every transaction takes SQLite's RESERVED write lock up front via BEGIN IMMEDIATE.
+    Concurrent requests queue behind PRAGMA busy_timeout = 5000 rather than failing
+    with 'database is locked' during read-then-write booking sequences. Transactions
+    must remain short and sessions are always removed at request teardown.
     """
-    Attach an idempotent connect listener to SQLAlchemy's Engine to enforce:
-    1. PRAGMA foreign_keys=ON: Enforce relational constraints.
-    2. PRAGMA journal_mode=WAL: Enable concurrent read/write transactions.
-    3. PRAGMA busy_timeout=5000: Wait up to 5s on locked DB before raising.
-    """
-    global _pragmas_registered
+    global _pragmas_registered, _WRITE_LOCK_ATTACHED
     if _pragmas_registered:
         return
 
-    @event.listens_for(Engine, "connect")
+    target = engine if engine is not None else Engine
+    if hasattr(target, "_emp_sqlite_configured") and target._emp_sqlite_configured:
+        return
+
+    @event.listens_for(target, "connect")
     def _set_sqlite_pragmas(dbapi_connection, connection_record):
         if isinstance(dbapi_connection, sqlite3.Connection):
+            dbapi_connection.isolation_level = None
             cursor = dbapi_connection.cursor()
-            cursor.execute("PRAGMA foreign_keys=ON;")
-            cursor.execute("PRAGMA journal_mode=WAL;")
-            cursor.execute("PRAGMA busy_timeout=5000;")
+            cursor.execute("PRAGMA foreign_keys = ON")
+            cursor.execute("PRAGMA journal_mode = WAL")
+            cursor.execute("PRAGMA synchronous = NORMAL")
+            cursor.execute("PRAGMA busy_timeout = 5000")
             cursor.close()
 
+    @event.listens_for(target, "begin")
+    def _begin_immediate(conn):
+        if conn.dialect.name == "sqlite":
+            conn.exec_driver_sql("BEGIN IMMEDIATE")
+
+    if hasattr(target, "_emp_sqlite_configured"):
+        target._emp_sqlite_configured = True
     _pragmas_registered = True
+    _WRITE_LOCK_ATTACHED = True
 
 
 def init_extensions(app: Flask) -> None:

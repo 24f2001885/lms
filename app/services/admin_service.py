@@ -10,11 +10,10 @@ from app.extensions import db
 from app.models.booking import Booking
 from app.models.course import Course
 from app.models.examination import Examination
-from app.models.examination_examiner import ExaminationExaminer
 from app.models.slot import ExaminationSlot
 from app.models.user import User
 from app.security.auth_helpers import validate_password_strength
-from app.services import audit_service, slot_rules
+from app.services import audit_service
 
 
 def dashboard_totals() -> dict[str, Any]:
@@ -126,31 +125,11 @@ def set_temporary_password(actor_id: int, user_id: int, new_password: str | None
 
 
 def change_slot_examiner(actor_id: int, slot_id: int, new_examiner_id: int) -> ExaminationSlot:
-    slot = db.session.get(ExaminationSlot, slot_id)
-    if not slot:
-        raise AppError("slot_not_found", "Slot not found.")
-    if slot.status in ("cancelled", "completed"):
-        raise AppError("slot_not_changeable", f"Cannot change examiner on a {slot.status} slot.")
+    """Delegate slot examiner reassignment to the write-locked booking engine."""
+    from app.services import booking_engine
 
-    if slot.examiner_id == new_examiner_id:
-        return slot
+    return booking_engine.change_examiner(slot_id, new_examiner_id, actor_id)
 
-    is_assigned = (
-        ExaminationExaminer.query.join(User, ExaminationExaminer.examiner_id == User.id)
-        .filter(ExaminationExaminer.examination_id == slot.examination_id, User.id == new_examiner_id, User.approval_status == "approved", User.is_active.is_(True))
-        .count()
-        > 0
-    )
-    if not is_assigned:
-        raise AppError("examiner_not_eligible", "Examiner is not assigned or not approved for this examination.")
 
-    conflict = slot_rules.find_overlapping(new_examiner_id, slot.start_at, slot.end_at, exclude_slot_id=slot.id)
-    if conflict:
-        raise AppError("examiner_overlap", f"Examiner has an overlapping slot ({conflict.start_at.strftime('%H:%M')} - {conflict.end_at.strftime('%H:%M')}).")
-
-    old_examiner_id = slot.examiner_id
-    slot.examiner_id = new_examiner_id
-
-    audit_service.log_action(actor_id, audit_service.SLOT_EXAMINER_CHANGE, "examination_slot", slot.id, {"from": old_examiner_id, "to": new_examiner_id})
-    db.session.commit()
-    return slot
+def deactivate_examiner(actor_id: int, examiner_id: int) -> User:
+    return deactivate_user(actor_id, examiner_id)

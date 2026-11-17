@@ -27,7 +27,7 @@ def test_students_search_by_roll_number(admin_client, make_student):
     assert b"RollStudent" in res.data
 
 
-def test_booking_detail_no_action_buttons_in_p3(admin_client, make_examination, make_examiner, make_student, make_slot, make_booking):
+def test_booking_detail_action_buttons_in_p6(admin_client, make_examination, make_examiner, make_student, make_slot, make_booking):
     exam = make_examination()
     examiner = make_examiner()
     student = make_student()
@@ -37,5 +37,5 @@ def test_booking_detail_no_action_buttons_in_p3(admin_client, make_examination, 
     res = admin_client.get(f"/admin/bookings/{booking.id}")
     assert res.status_code == 200
     assert booking.student.full_name.encode() in res.data
-    # Reschedule button belongs to P6 and must NOT be in P3
-    assert b"reschedule" not in res.data.lower()
+    # Reschedule button belongs to P6 and must be present
+    assert b"reschedule" in res.data.lower()

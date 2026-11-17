@@ -98,6 +98,46 @@ def init_db_command():
         click.echo(f"Admin account already exists: {admin_email}")
 
 
+@click.group("jobs")
+def jobs_group():
+    """Periodic maintenance and status synchronization jobs."""
+
+
+@jobs_group.command("sync-exam-status")
+def sync_exam_status_command():
+    import sys
+
+    from app.services import exam_status
+
+    try:
+        summary = exam_status.sync_all()
+        click.echo(
+            f"Synced {summary['examinations']} examinations: "
+            f"{summary['slots_completed']} slots completed, "
+            f"{summary['bookings_completed']} bookings completed, "
+            f"{summary['status_changes']} status changes."
+        )
+    except Exception as exc:
+        click.echo(f"ERROR: sync-exam-status failed: {exc}", err=True)
+        sys.exit(1)
+
+
+@jobs_group.command("purge-soft-deleted")
+@click.option("--days", default=90, show_default=True, type=int, help="Minimum age in days.")
+def purge_soft_deleted_command(days):
+    import sys
+
+    from app.services import maintenance
+
+    try:
+        count = maintenance.purge_soft_deleted(older_than_days=days)
+        click.echo(f"Purged {count} soft-deleted examinations older than {days} days.")
+    except Exception as exc:
+        click.echo(f"ERROR: purge-soft-deleted failed: {exc}", err=True)
+        sys.exit(1)
+
+
 def register_cli(flask_app: Flask) -> None:
     """Register custom CLI commands with the Flask application instance."""
-    flask_app.cli.add_command(init_db_command)  
+    flask_app.cli.add_command(init_db_command)
+    flask_app.cli.add_command(jobs_group)  

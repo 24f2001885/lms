@@ -8,9 +8,11 @@ admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
 # Import all route modules so their views register on admin_bp
 from app.blueprints.admin import (  # noqa: E402, F401
+    booking_actions,
     bookings,
     courses,
     dashboard,
+    evaluations,
     examinations,
     examiners,
     history,

@@ -1,0 +1,103 @@
+{% extends "admin/base_admin.html" %}
+{% block page_title %}Evaluations{% endblock %}
+
+{% block content %}
+<!-- DEBUG: evaluation tracking {{ page.total }} state {{ state }} -->
+<div class="card mb-4">
+  <div class="card-body py-2">
+    <strong>Pending by Examiner:</strong>
+    {% if pending_strip %}
+      {% for examiner, cnt in pending_strip %}
+        <span class="badge text-bg-warning me-2">{{ examiner.full_name }}: {{ cnt }} not yet submitted</span>
+      {% endfor %}
+    {% else %}
+      <span class="text-muted">All evaluations submitted.</span>
+    {% endif %}
+  </div>
+</div>
+
+<div class="mb-3">
+  <div class="btn-group" role="group">
+    <a href="{{ url_for('admin.evaluations_list') }}" class="btn btn-outline-secondary btn-sm {% if not state %}active{% endif %}">All</a>
+    <a href="{{ url_for('admin.evaluations_list', state='not_started') }}" class="btn btn-outline-secondary btn-sm {% if state == 'not_started' %}active{% endif %}">Not started</a>
+    <a href="{{ url_for('admin.evaluations_list', state='draft') }}" class="btn btn-outline-secondary btn-sm {% if state == 'draft' %}active{% endif %}">Draft</a>
+    <a href="{{ url_for('admin.evaluations_list', state='submitted') }}" class="btn btn-outline-secondary btn-sm {% if state == 'submitted' %}active{% endif %}">Submitted</a>
+    <a href="{{ url_for('admin.evaluations_list', state='published') }}" class="btn btn-outline-secondary btn-sm {% if state == 'published' %}active{% endif %}">Published</a>
+  </div>
+</div>
+
+<form method="GET" action="{{ url_for('admin.evaluations_list') }}" class="row g-2 mb-4">
+  <input type="hidden" name="state" value="{{ state }}"/>
+  <div class="col-md-3">
+    <select name="examination_id" class="form-select form-select-sm">
+      <option value="">All Examinations</option>
+      {% for ex in examinations %}
+        <option value="{{ ex.id }}" {% if examination_id == ex.id %}selected{% endif %}>{{ ex.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <select name="examiner_id" class="form-select form-select-sm">
+      <option value="">All Examiners</option>
+      {% for exm in examiners %}
+        <option value="{{ exm.id }}" {% if examiner_id == exm.id %}selected{% endif %}>{{ exm.full_name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-4">
+    <input type="text" name="q" class="form-control form-control-sm" placeholder="Student name..." value="{{ q }}"/>
+  </div>
+  <div class="col-md-2">
+    <button type="submit" class="btn btn-primary btn-sm w-100">Filter</button>
+  </div>
+</form>
+
+{% if page.items %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Examination</th>
+          <th>Slot Time</th>
+          <th>Examiner</th>
+          <th>Status</th>
+          <th>Total</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in page.items %}
+          <tr>
+            <td>{{ row.booking.student.full_name }}</td>
+            <td>{{ row.booking.examination.name }}</td>
+            <td>{{ row.booking.slot.start_at|localdt }}</td>
+            <td>{{ row.booking.slot.examiner.full_name }}</td>
+            <td>
+              {% if row.tracking_state == 'published' %}
+                <span class="badge text-bg-success">Published</span>
+              {% elif row.tracking_state == 'submitted' %}
+                <span class="badge text-bg-primary">Submitted</span>
+              {% else %}
+                <span class="badge text-bg-secondary">{{ row.tracking_state|replace('_', ' ')|capitalize }}</span>
+              {% endif %}
+            </td>
+            <td>{{ row.evaluation.total_marks if row.evaluation else '-' }}</td>
+            <td>
+              <a href="{{ url_for('admin.booking_detail', booking_id=row.booking.id) }}" class="btn btn-sm btn-outline-secondary">View</a>
+              {% if row.tracking_state == 'submitted' and row.evaluation %}
+                <form method="POST" action="{{ url_for('admin.admin_publish_evaluation', evaluation_id=row.evaluation.id) }}" class="d-inline">
+                  {{ confirm_form.hidden_tag() }}
+                  <button type="submit" class="btn btn-sm btn-success">Publish</button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="alert alert-info">No evaluation records match the selected filters.</div>
+{% endif %}
+{% endblock %}

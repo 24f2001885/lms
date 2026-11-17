@@ -3,7 +3,9 @@ FILE PURPOSE: Rubric-based evaluation rules for examiners: which students may be
 """
 from decimal import Decimal
 
-from app.errors import AppError
+from sqlalchemy import func
+
+from app.errors import AppError, BookingError
 from app.extensions import db
 from app.models import (
     Booking,
@@ -81,7 +83,21 @@ def form_context(booking):
     }
 
 
-def save_evaluation(examiner_id, booking_id, scores, comments, remarks, action):
+def save_evaluation(
+    examiner_id,
+    booking_id,
+    scores,
+    comments=None,
+    remarks="",
+    action=None,
+    submit=False,
+):
+    if action is None:
+        action = "submit" if submit else "draft"
+    if comments is None:
+        comments = {}
+    if remarks is None:
+        remarks = ""
     booking = get_owned_booking(examiner_id, booking_id)
     if not booking:
         raise AppError("booking_not_found", "Booking not found or not evaluable.")
@@ -157,7 +173,7 @@ def save_evaluation(examiner_id, booking_id, scores, comments, remarks, action):
     evaluation.total_marks = actual_total
 
     now = windows.now_utc()
-    if action == "save_draft":
+    if action in ("save_draft", "draft"):
         evaluation.status = "draft"
         audit_action = audit_service.EVALUATION_SAVE
     elif action == "submit":
@@ -187,7 +203,141 @@ def save_evaluation(examiner_id, booking_id, scores, comments, remarks, action):
 
 
 def published_for_student(student_id):
-    return Evaluation.query.join(Booking, Evaluation.booking_id == Booking.id).filter(
-        Booking.student_id == student_id,
-        Evaluation.status == "published"
-    ).all()
+    return (
+        Evaluation.query.join(Booking, Evaluation.booking_id == Booking.id)
+        .filter(Booking.student_id == student_id, Evaluation.status == "published")
+        .order_by(Evaluation.published_at.desc())
+        .all()
+    )
+
+
+def publish_evaluation(examiner_id: int, evaluation_id: int) -> Evaluation:
+    evaluation = db.session.get(Evaluation, evaluation_id)
+    if not evaluation or evaluation.examiner_id != examiner_id:
+        raise AppError("evaluation_not_found", "Evaluation not found.")
+    if evaluation.status == "published":
+        return evaluation
+    now = windows.now_utc()
+    evaluation.status = "published"
+    if not evaluation.submitted_at:
+        evaluation.submitted_at = now
+    evaluation.published_at = now
+    audit_service.log_action(
+        actor_id=examiner_id,
+        action=audit_service.EVALUATION_PUBLISH,
+        entity_type="evaluation",
+        entity_id=evaluation.id,
+        details={"booking_id": evaluation.booking_id, "total": float(evaluation.total_marks), "status": "published"},
+    )
+    db.session.commit()
+    return evaluation
+
+
+def admin_publish(actor_id: int, evaluation_id: int) -> Evaluation:
+    actor = db.session.get(User, actor_id)
+    if not actor or actor.role != "admin" or not actor.is_active:
+        raise BookingError("not_an_admin", "Administrator privileges are required.")
+
+    evaluation = db.session.get(Evaluation, evaluation_id)
+    if not evaluation:
+        raise BookingError("evaluation_not_found", "Evaluation not found.")
+    if evaluation.status == "draft":
+        raise BookingError("evaluation_not_submitted", "Only submitted evaluations can be published.")
+    if evaluation.status == "published":
+        raise BookingError("evaluation_locked", "Evaluation is already published.")
+
+    evaluation.status = "published"
+    evaluation.published_at = windows.now_utc()
+
+    audit_service.log_action(
+        actor_id=actor_id,
+        action=audit_service.EVALUATION_ADMIN_PUBLISH,
+        entity_type="evaluation",
+        entity_id=evaluation.id,
+        details={"booking_id": evaluation.booking_id},
+    )
+    db.session.commit()
+    return evaluation
+
+
+def list_evaluation_tracking(
+    status: str | None = None,
+    examiner_id: int | None = None,
+    examination_id: int | None = None,
+    q: str | None = None,
+    page: int = 1,
+    per_page: int = 20,
+):
+    query = (
+        db.session.query(Booking, Evaluation)
+        .join(ExaminationSlot, Booking.slot_id == ExaminationSlot.id)
+        .join(User, Booking.student_id == User.id)
+        .outerjoin(Evaluation, Evaluation.booking_id == Booking.id)
+        .filter(
+            Booking.status.in_(["booked", "completed"]),
+            ExaminationSlot.status != "cancelled",
+        )
+    )
+
+    if examiner_id:
+        query = query.filter(ExaminationSlot.examiner_id == examiner_id)
+    if examination_id:
+        query = query.filter(Booking.examination_id == examination_id)
+    if q:
+        query = query.filter(User.full_name.ilike(f"%{q}%"))
+
+    if status == "not_started":
+        query = query.filter(Evaluation.id.is_(None))
+    elif status in ("draft", "submitted", "published"):
+        query = query.filter(Evaluation.status == status)
+
+    rows = query.order_by(ExaminationSlot.start_at.desc()).all()
+
+    wrapped = []
+    for booking, evaluation in rows:
+        state = evaluation.status if evaluation else "not_started"
+        wrapped.append(
+            {
+                "booking": booking,
+                "evaluation": evaluation,
+                "tracking_state": state,
+            }
+        )
+
+    total = len(wrapped)
+    start = (page - 1) * per_page
+    end = start + per_page
+    items = wrapped[start:end]
+
+    class TrackingPagination:
+        def __init__(self, items, page, per_page, total):
+            self.items = items
+            self.page = page
+            self.per_page = per_page
+            self.total = total
+            self.pages = max(1, (total + per_page - 1) // per_page)
+            self.has_prev = page > 1
+            self.has_next = page < self.pages
+            self.prev_num = page - 1
+            self.next_num = page + 1
+
+    return TrackingPagination(items, page, per_page, total)
+
+
+def pending_by_examiner() -> list[tuple[User, int]]:
+    rows = (
+        db.session.query(User, func.count(Booking.id))
+        .join(ExaminationSlot, ExaminationSlot.examiner_id == User.id)
+        .join(Booking, Booking.slot_id == ExaminationSlot.id)
+        .outerjoin(Evaluation, Evaluation.booking_id == Booking.id)
+        .filter(
+            User.role == "examiner",
+            Booking.status.in_(["booked", "completed"]),
+            ExaminationSlot.status != "cancelled",
+            (Evaluation.id.is_(None)) | (Evaluation.status == "draft"),
+        )
+        .group_by(User.id)
+        .order_by(func.count(Booking.id).desc())
+        .all()
+    )
+    return [(user, int(count)) for user, count in rows]

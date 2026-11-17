@@ -12,13 +12,15 @@ from app.security.auth_helpers import get_current_user, load_current_user, role_
 from app.services.windows import format_local
 
 
-def create_app(config_name: str | None = None) -> Flask:
+def create_app(config_name: str | None = None, test_config: dict | None = None) -> Flask:
     """Construct, configure, and return the LMS Flask application instance."""
     flask_app = Flask(__name__, instance_relative_config=True)
 
     # 1. Load configuration
     config_class = get_config(config_name)
     flask_app.config.from_object(config_class)
+    if test_config:
+        flask_app.config.update(test_config)
     os.makedirs(flask_app.instance_path, exist_ok=True)
 
     # 2. Structured logging & request tracing

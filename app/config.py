@@ -62,7 +62,7 @@ class TestConfig(BaseConfig):
     ADMIN_INITIAL_PASSWORD = "Admin#TestPass123"
 
     # SQLite test database (overridden dynamically by pytest fixtures in conftest.py)
-    SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+    SQLALCHEMY_DATABASE_URI = _normalize_db_uri(os.environ.get("DATABASE_URL")) if os.environ.get("DATABASE_URL") else "sqlite:///:memory:"
 
 class ProdConfig(BaseConfig):
     DEBUG = False
