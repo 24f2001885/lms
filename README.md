@@ -43,3 +43,19 @@ flask --app app init-db
 
 # 6. Start the local Flask development server
 flask --app app run --debug
+```
+
+---
+
+## 3. Charts & Visualizations (Milestone P8)
+
+EMP includes role-scoped visual analytics powered by Chart.js (v4.4.7 vendored offline at `app/static/vendor/chartjs/chart.umd.min.js`):
+
+- **Admin (`/admin/charts` & dashboard widget):** Bookings over time (line), Booking status breakdown (doughnut), Examination completion (bar), Examiner workload (grouped bar), and Average results per examination (bar).
+- **Examiner (`/examiner/charts` & dashboard widget):** Students evaluated per examination (bar), Upcoming slot participants (stacked bar), Bookings over time (line), and Average result per examination (bar).
+- **Student (`/student/charts` & dashboard widget):** Booking history (doughnut), Booking trend (line), and Examination results (bar).
+
+### Adding a New Chart
+1. **Service:** Add a role-scoped function in `app/services/chart_data.py` returning `{"labels": [...], "series": [{"name": ..., "data": [...]}]}`.
+2. **Endpoint:** Expose a GET route in `app/blueprints/api_v1/charts.py` and document it in `API_REFERENCE` (`app/blueprints/api_v1/docs.py`).
+3. **Template:** Use `{{ chart_card(...) }}` from `app/templates/charts/_macros.html` and include `charts/_scripts.html` in `block scripts`.

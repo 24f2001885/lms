@@ -74,10 +74,18 @@ class ApiClientWrapper:
 def api(app, db_session):
     counter = {"n": 0}
 
-    def _factory(role: str | None = None) -> ApiClientWrapper:
+    def _factory(role: str | User | None = None) -> ApiClientWrapper:
         client = app.test_client()
         if role is None:
             return ApiClientWrapper(client, user=None)
+
+        if isinstance(role, User):
+            user = role
+            with client.session_transaction() as sess:
+                sess["user_id"] = user.id
+            wrapper = ApiClientWrapper(client, user=user)
+            wrapper.refresh_csrf()
+            return wrapper
 
         counter["n"] += 1
         idx = counter["n"]

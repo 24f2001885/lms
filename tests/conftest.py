@@ -624,3 +624,6 @@ from tests.conftest_p7_additions import (  # noqa: E402, F401
     assert_page,
     assert_shape,
 )
+
+# --- Phase 8 Additions ---
+from tests.conftest_p8_additions import make_chart_dataset  # noqa: E402, F401

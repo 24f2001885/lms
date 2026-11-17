@@ -20,6 +20,7 @@ def test_admin_routes_reject_non_admins(client, app, make_user, make_admin, logi
         "/admin/evaluations",
         "/admin/search",
         "/admin/history",
+        "/admin/charts",
     ]
 
     for url in admin_endpoints:

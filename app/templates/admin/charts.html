@@ -1,0 +1,36 @@
+{% extends "admin/base_admin.html" %}
+{% from "charts/_macros.html" import chart_card, chart_days_selector %}
+
+{% block page_title %}Charts{% endblock %}
+
+{% block page_actions %}
+  {{ chart_days_selector(days, 'admin.charts') }}
+{% endblock %}
+
+{% block content %}
+<!-- admin charts days={{ days }} -->
+<div class="container-fluid px-0">
+  <div class="row g-4">
+    <div class="col-12 col-lg-6">
+      {{ chart_card('admin-bookings-day', 'Bookings over time', url_for('api_v1.chart_bookings_by_day', days=days), 'line', 'Daily volume of bookings and cancellations across all examinations.') }}
+    </div>
+    <div class="col-12 col-lg-6">
+      {{ chart_card('admin-booking-status', 'Booking status', url_for('api_v1.chart_booking_status'), 'doughnut', 'Proportion of booked, completed, and cancelled reservations system-wide.') }}
+    </div>
+    <div class="col-12 col-lg-6">
+      {{ chart_card('admin-exam-completion', 'Examination completion', url_for('api_v1.chart_examination_completion'), 'bar', 'Booked, evaluated, and published counts for the most recent examinations.') }}
+    </div>
+    <div class="col-12 col-lg-6">
+      {{ chart_card('admin-examiner-workload', 'Examiner workload', url_for('api_v1.chart_examiner_workload'), 'bar', 'Slots offered, active student load, and evaluations awaiting submission per examiner.') }}
+    </div>
+    <div class="col-12 col-lg-6">
+      {{ chart_card('admin-results', 'Average results per examination', url_for('api_v1.chart_results'), 'bar', 'Mean performance percentage across examinations with published results.', y_max=100) }}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  {% include "charts/_scripts.html" %}
+{% endblock %}

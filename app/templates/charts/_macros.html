@@ -1,0 +1,54 @@
+{#
+FILE PURPOSE: Reusable chart card and days selector macros (Design Plan 5.2-5.4).
+#}
+
+{% macro chart_card(id, title, url, kind, description, heading_level=3, empty_text="No data yet.", y_max=None) %}
+<!-- chart card id={{ id }} url={{ url }} kind={{ kind }} -->
+<figure class="chart-card mb-4" id="card-{{ id }}">
+  <figcaption class="mb-2">
+    <h{{ heading_level }} class="h5 fw-bold mb-1">{{ title }}</h{{ heading_level }}>
+    <p class="text-muted small mb-2">{{ description }}</p>
+  </figcaption>
+
+  <div class="chart-box position-relative">
+    <div id="chart-{{ id }}-state" class="chart-state" role="status" aria-live="polite">
+      <span class="chart-state-text">Loading chart...</span>
+      <button type="button" class="btn btn-outline-secondary btn-sm mt-2 chart-retry-btn d-none">Retry</button>
+    </div>
+
+    <canvas id="chart-{{ id }}"
+            role="img"
+            aria-label="{{ title }}: {{ description }}"
+            aria-describedby="chart-{{ id }}-table"
+            data-chart-url="{{ url }}"
+            data-chart-type="{{ kind }}"
+            data-chart-title="{{ title }}"
+            data-empty-text="{{ empty_text }}"
+            {% if y_max %}data-y-max="{{ y_max }}"{% endif %}
+            class="d-none"></canvas>
+  </div>
+
+  <noscript>
+    <div class="alert alert-info small mt-2 mb-0">
+      This chart needs JavaScript. The data is available as JSON at {{ url }}.
+    </div>
+  </noscript>
+
+  <details class="mt-2 small text-muted">
+    <summary class="fw-semibold">View data as table</summary>
+    <div id="chart-{{ id }}-table" class="chart-data-table table-responsive"></div>
+  </details>
+</figure>
+{% endmacro %}
+
+{% macro chart_days_selector(current, endpoint) %}
+<div class="btn-group btn-group-sm" role="group" aria-label="Time window selector">
+  {% for d in [7, 30, 90, 180] %}
+    <a href="{{ url_for(endpoint, days=d) }}"
+       class="btn {% if current == d %}btn-primary active{% else %}btn-outline-primary{% endif %}"
+       {% if current == d %}aria-current="true"{% endif %}>
+      {{ d }} days
+    </a>
+  {% endfor %}
+</div>
+{% endmacro %}

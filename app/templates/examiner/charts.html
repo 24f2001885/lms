@@ -1,0 +1,33 @@
+{% extends "examiner/base_examiner.html" %}
+{% from "charts/_macros.html" import chart_card, chart_days_selector %}
+
+{% block page_title %}My charts{% endblock %}
+
+{% block page_actions %}
+  {{ chart_days_selector(days, 'examiner.charts') }}
+{% endblock %}
+
+{% block content %}
+<!-- examiner charts days={{ days }} -->
+<div class="container-fluid px-0">
+  <div class="row g-4">
+    <div class="col-12 col-lg-6">
+      {{ chart_card('examiner-exam-completion', 'Students evaluated per examination', url_for('api_v1.chart_examination_completion'), 'bar', 'Booked students and evaluated submissions across your assigned examinations only.') }}
+    </div>
+    <div class="col-12 col-lg-6">
+      {{ chart_card('examiner-participants-slot', 'Participants per upcoming slot', url_for('api_v1.chart_participants_by_slot'), 'stacked-bar', 'Booked reservations and available seat capacity for your upcoming slots.') }}
+    </div>
+    <div class="col-12 col-lg-6">
+      {{ chart_card('examiner-bookings-day', 'Bookings over time', url_for('api_v1.chart_bookings_by_day', days=days), 'line', 'Daily bookings and cancellations recorded for your slots over the selected period.') }}
+    </div>
+    <div class="col-12 col-lg-6">
+      {{ chart_card('examiner-results', 'Average result per examination', url_for('api_v1.chart_results'), 'bar', 'Average score percentage calculated over published evaluations in your examination slots.', y_max=100) }}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  {% include "charts/_scripts.html" %}
+{% endblock %}

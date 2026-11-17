@@ -82,6 +82,7 @@ def _apply_api_headers(response):
 
 from app.blueprints.api_v1 import (  # noqa: E402
     bookings,  # noqa: E402,F401
+    charts,  # noqa: E402,F401
     docs,  # noqa: E402,F401
     examinations,  # noqa: E402,F401
     people,  # noqa: E402,F401

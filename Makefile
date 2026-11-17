@@ -62,6 +62,9 @@ test-integration:
 test-api:
 	pytest -m api -v
 
+test-charts:
+	pytest -m charts -v
+
 test-e2e:
 	pytest tests/e2e -q -m e2e
 

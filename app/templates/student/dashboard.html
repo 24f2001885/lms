@@ -9,6 +9,7 @@ OFFLINE DOCKER TEST CASES:
 - Empty states render for a new student; sections fill after booking and publishing.
 -->
 {% extends "student/base_student.html" %}
+{% from "charts/_macros.html" import chart_card %}
 {% block page_title %}Dashboard{% endblock %}
 
 {% block student_content %}
@@ -102,5 +103,24 @@ OFFLINE DOCKER TEST CASES:
     </div>
   </div>
 </div>
-<!-- <div id="charts-widget"></div> -->
+<!-- P8 Charts Widget -->
+<div id="charts-widget" class="mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h5 fw-bold mb-0">Overview charts</h2>
+    <a href="{{ url_for('student.charts') }}" class="btn btn-outline-primary btn-sm">All charts &rarr;</a>
+  </div>
+  <div class="row g-3">
+    <div class="col-12 col-md-6">
+      {{ chart_card('student-booking-status', 'Booking history', url_for('api_v1.chart_booking_status'), 'doughnut', 'Distribution of your booked, completed, and cancelled exam slots.', empty_text="No data yet. Book a slot to see your history.") }}
+    </div>
+    <div class="col-12 col-md-6">
+      {{ chart_card('student-results', 'Results', url_for('api_v1.chart_results'), 'bar', 'Your published percentage scores across completed examinations.', empty_text="No data yet. Complete an examination to see your scores.", y_max=100) }}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  {% include "charts/_scripts.html" %}
 {% endblock %}

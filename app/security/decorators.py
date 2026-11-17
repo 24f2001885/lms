@@ -24,9 +24,7 @@ def login_required(f):
         user = getattr(g, "user", None)
         if user is None:
             if _is_api():
-                return error_response(
-                    "unauthenticated", "Authentication is required.", status=401
-                )
+                return error_response("unauthenticated", "Authentication is required.", status=401)
             flash("Please log in to continue.", "warning")
             return redirect(url_for("auth.login"))
 
@@ -47,7 +45,7 @@ def login_required(f):
                     "You must change your temporary password before continuing.",
                     status=403,
                 )
-            if request.endpoint != "auth.change_password":
+            if request.endpoint not in ("auth.change_password", "auth.logout"):
                 return redirect(url_for("auth.change_password"))
 
         if user.role == "examiner" and user.approval_status != "approved":
@@ -57,7 +55,7 @@ def login_required(f):
                     "Your examiner account is pending administrator approval.",
                     status=403,
                 )
-            if request.endpoint != "auth.pending_approval":
+            if request.endpoint not in ("auth.pending_approval", "auth.logout"):
                 logger.info("Redirecting unapproved examiner user_id=%s to pending page", user.id)
                 return redirect(url_for("auth.pending_approval"))
 
@@ -124,7 +122,7 @@ def role_required(*roles: str):
                         "You must change your temporary password before continuing.",
                         status=403,
                     )
-                if request.endpoint != "auth.change_password":
+                if request.endpoint not in ("auth.change_password", "auth.logout"):
                     return redirect(url_for("auth.change_password"))
 
             if user.role == "examiner" and user.approval_status != "approved":
@@ -134,7 +132,7 @@ def role_required(*roles: str):
                         "Your examiner account is pending administrator approval.",
                         status=403,
                     )
-                if request.endpoint != "auth.pending_approval":
+                if request.endpoint not in ("auth.pending_approval", "auth.logout"):
                     logger.info(
                         "Redirecting unapproved examiner user_id=%s to pending page", user.id
                     )

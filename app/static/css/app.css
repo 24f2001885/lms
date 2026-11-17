@@ -215,3 +215,59 @@ body {
 .exam-card:hover {
   box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 }
+
+/* P8 Charts Styles */
+.chart-card {
+  background: #ffffff;
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.chart-box {
+  position: relative;
+  height: 280px;
+  width: 100%;
+}
+
+@media (max-width: 575.98px) {
+  .chart-box {
+    height: 220px;
+  }
+}
+
+.chart-state {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: var(--bs-secondary);
+  font-size: 0.95rem;
+  text-align: center;
+  padding: 1rem;
+}
+
+.chart-card details summary {
+  cursor: pointer;
+  padding: 0.25rem 0;
+  outline: none;
+}
+
+.chart-card details summary:focus-visible {
+  outline: 3px solid var(--bs-primary);
+  outline-offset: 2px;
+}
+
+.chart-data-table {
+  max-height: 240px;
+  overflow: auto;
+  margin-top: 0.75rem;
+}
+
+.chart-data-table table {
+  font-size: 0.85rem;
+  margin-bottom: 0;
+}

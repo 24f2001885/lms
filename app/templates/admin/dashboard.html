@@ -1,4 +1,5 @@
 {% extends "admin/base_admin.html" %}
+{% from "charts/_macros.html" import chart_card %}
 {% block title %}Dashboard{% endblock %}
 {% block page_title %}Dashboard{% endblock %}
 
@@ -95,5 +96,24 @@
     </table>
   </div>
 </div>
-<!-- P8 Charts Widget Placeholder: <div id="charts-widget"></div> -->
+<!-- P8 Charts Widget -->
+<div id="charts-widget" class="mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h5 fw-bold mb-0">Overview charts</h2>
+    <a href="{{ url_for('admin.charts') }}" class="btn btn-outline-primary btn-sm">All charts &rarr;</a>
+  </div>
+  <div class="row g-3">
+    <div class="col-12 col-md-6">
+      {{ chart_card('admin-bookings-day', 'Bookings over time', url_for('api_v1.chart_bookings_by_day', days=30), 'line', 'Daily volume of bookings and cancellations across all examinations.') }}
+    </div>
+    <div class="col-12 col-md-6">
+      {{ chart_card('admin-exam-completion', 'Examination completion', url_for('api_v1.chart_examination_completion'), 'bar', 'Booked, evaluated, and published counts for recent examinations.') }}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  {% include "charts/_scripts.html" %}
 {% endblock %}

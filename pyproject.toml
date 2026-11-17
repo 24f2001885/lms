@@ -60,6 +60,7 @@ pythonpath = ["."]
 addopts = "-ra -q --strict-markers"
 markers = [
     "api: JSON API integration and contract tests",
+    "charts: Visualization and chart data/endpoint tests",
     "concurrency: Concurrent booking and race-condition tests",
     "e2e: End-to-end integration tests using Playwright browser automation",
     "slow: Tests with higher execution time (e.g., concurrency checks)",

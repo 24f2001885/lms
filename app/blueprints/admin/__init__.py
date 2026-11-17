@@ -10,6 +10,7 @@ admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 from app.blueprints.admin import (  # noqa: E402, F401
     booking_actions,
     bookings,
+    charts,
     courses,
     dashboard,
     evaluations,

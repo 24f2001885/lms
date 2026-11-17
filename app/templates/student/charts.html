@@ -1,0 +1,30 @@
+{% extends "student/base_student.html" %}
+{% from "charts/_macros.html" import chart_card, chart_days_selector %}
+
+{% block page_title %}My progress{% endblock %}
+
+{% block page_actions %}
+  {{ chart_days_selector(days, 'student.charts') }}
+{% endblock %}
+
+{% block content %}
+<!-- student charts days={{ days }} -->
+<div class="container-fluid px-0">
+  <div class="row g-4">
+    <div class="col-12 col-lg-6">
+      {{ chart_card('student-booking-status', 'Booking history', url_for('api_v1.chart_booking_status'), 'doughnut', 'Distribution of your booked, completed, and cancelled exam slots.', empty_text="No data yet. Book a slot to see your history.") }}
+    </div>
+    <div class="col-12 col-lg-6">
+      {{ chart_card('student-bookings-day', 'Booking trend', url_for('api_v1.chart_bookings_by_day', days=days), 'line', 'Your personal booking activity over the selected time window.', empty_text="No data yet. Book a slot to see your history.") }}
+    </div>
+    <div class="col-12 col-lg-6">
+      {{ chart_card('student-results', 'Results', url_for('api_v1.chart_results'), 'bar', 'Your published percentage scores across completed examinations.', empty_text="No data yet. Complete an examination to see your scores.", y_max=100) }}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  {% include "charts/_scripts.html" %}
+{% endblock %}

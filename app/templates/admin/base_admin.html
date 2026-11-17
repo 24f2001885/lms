@@ -28,6 +28,7 @@
     <div class="text-white-50 small fw-bold text-uppercase px-2 mb-2">Management</div>
     <nav class="nav flex-column" aria-label="Admin Navigation">
       <a class="nav-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}" {% if request.endpoint == 'admin.dashboard' %}aria-current="page"{% endif %} href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+      <a class="nav-link {% if request.endpoint == 'admin.charts' %}active{% endif %}" {% if request.endpoint == 'admin.charts' %}aria-current="page"{% endif %} href="{{ url_for('admin.charts') }}">Charts</a>
       <a class="nav-link {% if 'course' in request.endpoint %}active{% endif %}" {% if 'course' in request.endpoint %}aria-current="page"{% endif %} href="{{ url_for('admin.courses') }}">Courses</a>
       <a class="nav-link {% if 'examination' in request.endpoint or 'rubric' in request.endpoint %}active{% endif %}" {% if 'examination' in request.endpoint %}aria-current="page"{% endif %} href="{{ url_for('admin.examinations') }}">Examinations</a>
       <a class="nav-link {% if 'examiner' in request.endpoint and 'slot' not in request.endpoint %}active{% endif %}" {% if 'examiner' in request.endpoint %}aria-current="page"{% endif %} href="{{ url_for('admin.examiners') }}">Examiners</a>
