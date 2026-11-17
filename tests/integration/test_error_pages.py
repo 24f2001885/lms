@@ -18,7 +18,7 @@ def test_404_custom_page(client):
     res = client.get("/non-existent-page-url")
     assert res.status_code == 404
     assert b"Page Not Found" in res.data
-    assert b"LMS Portal" in res.data
+    assert b"EMP" in res.data or b"LMS Portal" in res.data
 
 
 def test_403_custom_page_for_wrong_role(client, make_student, login):

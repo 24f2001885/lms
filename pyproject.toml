@@ -59,10 +59,12 @@ testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-ra -q --strict-markers"
 markers = [
+    "a11y: Accessibility and WCAG compliance tests",
     "api: JSON API integration and contract tests",
     "charts: Visualization and chart data/endpoint tests",
     "concurrency: Concurrent booking and race-condition tests",
     "e2e: End-to-end integration tests using Playwright browser automation",
+    "responsive: Responsive layout and viewport tests",
     "slow: Tests with higher execution time (e.g., concurrency checks)",
     "tier3: Tertiary scope tests (online tests, proctoring, payments - Gate B only)",
     "validation: Form and API input validation tests",

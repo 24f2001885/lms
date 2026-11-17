@@ -1,44 +1,39 @@
-<!--
-FILE PURPOSE: Student layout with a top navbar (Design Plan section 2). Extends base.html by overriding the site_nav block.
-PROMPT FOR LLM IMPLEMENTATION:
-1. Extend base.html. Override site_nav with a Bootstrap navbar: brand "EMP", links Dashboard, Examinations, My bookings, Results, Profile, and a Logout POST form with csrf. Active link via request.endpoint with aria-current="page". Collapses to a hamburger below lg.
-2. Reuse the default layout block (flash messages and content). Provide blocks page_title and page_actions in a header row.
-DEBUGGING:
-<!-- DEBUG: student nav endpoint={{ request.endpoint }} -->
-OFFLINE DOCKER TEST CASES:
-- Nav shows exactly Dashboard, Examinations, My bookings, Results, Profile, Logout.
--->
 {% extends "base.html" %}
+
 {% block site_nav %}
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-  <div class="container-fluid">
-    <a class="navbar-brand fw-bold" href="{{ url_for('student.dashboard') }}">EMP</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#studentNav">
+{% set ep = request.endpoint or '' %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary" aria-label="Student">
+  <div class="container page-container">
+    <a class="navbar-brand fw-bold" href="{{ url_for('student.dashboard') }}">EMP Student</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
-    <div class="collapse navbar-collapse" id="studentNav">
-      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+    <div class="collapse navbar-collapse" id="mainNav">
+      <ul class="navbar-nav me-auto">
         <li class="nav-item">
-          <a class="nav-link {% if request.endpoint == 'student.dashboard' %}active{% endif %}" {% if request.endpoint == 'student.dashboard' %}aria-current="page"{% endif %} href="{{ url_for('student.dashboard') }}">Dashboard</a>
+          <a class="nav-link{% if ep == 'student.dashboard' %} active{% endif %}" href="{{ url_for('student.dashboard') }}"{% if ep == 'student.dashboard' %} aria-current="page"{% endif %}>Dashboard</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link {% if 'student.examinations' in request.endpoint %}active{% endif %}" {% if 'student.examinations' in request.endpoint %}aria-current="page"{% endif %} href="{{ url_for('student.examinations_list') }}">Examinations</a>
+          <a class="nav-link{% if 'examination' in ep %} active{% endif %}" href="{{ url_for('student.examinations') }}"{% if 'examination' in ep %} aria-current="page"{% endif %}>Examinations</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link {% if 'student.my_bookings' in request.endpoint %}active{% endif %}" {% if 'student.my_bookings' in request.endpoint %}aria-current="page"{% endif %} href="{{ url_for('student.my_bookings_list') }}">My bookings</a>
+          <a class="nav-link{% if 'booking' in ep or 'schedule' in ep or 'history' in ep %} active{% endif %}" href="{{ url_for('student.bookings') }}"{% if 'booking' in ep %} aria-current="page"{% endif %}>My bookings</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link {% if 'student.results' in request.endpoint %}active{% endif %}" {% if 'student.results' in request.endpoint %}aria-current="page"{% endif %} href="{{ url_for('student.results_list') }}">Results</a>
+          <a class="nav-link{% if 'result' in ep %} active{% endif %}" href="{{ url_for('student.results') }}"{% if 'result' in ep %} aria-current="page"{% endif %}>Results</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link{% if ep == 'student.charts' %} active{% endif %}" href="{{ url_for('student.charts') }}"{% if ep == 'student.charts' %} aria-current="page"{% endif %}>Charts</a>
         </li>
       </ul>
-      <ul class="navbar-nav ms-auto">
+      <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
         <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('auth.profile') }}">Profile</a>
+          <a class="nav-link{% if ep == 'auth.profile' %} active{% endif %}" href="{{ url_for('auth.profile') }}"{% if ep == 'auth.profile' %} aria-current="page"{% endif %}>Profile ({{ current_user.full_name }})</a>
         </li>
         <li class="nav-item">
-          <form action="{{ url_for('auth.logout') }}" method="POST" class="d-inline">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-            <button type="submit" class="btn btn-link nav-link">Logout</button>
+          <form method="post" action="{{ url_for('auth.logout') }}" class="d-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is callable else csrf_token }}">
+            <button type="submit" class="btn btn-link nav-link text-light" data-submit-once="true">Log out</button>
           </form>
         </li>
       </ul>
@@ -48,11 +43,9 @@ OFFLINE DOCKER TEST CASES:
 {% endblock %}
 
 {% block content %}
-<div class="container py-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0">{% block page_title %}{% endblock %}</h1>
-    <div>{% block page_actions %}{% endblock %}</div>
-  </div>
-  {% block student_content %}{% endblock %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <h1 class="h2 mb-0">{% block page_title %}Student{% endblock %}</h1>
+  <div class="btn-group-xs-stack">{% block page_actions %}{% endblock %}</div>
 </div>
+{% block student_content %}{% endblock %}
 {% endblock %}

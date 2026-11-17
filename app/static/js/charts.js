@@ -1,226 +1,228 @@
 /*
- * charts.js - Progressive enhancement for Chart.js canvases with loading,
- * empty, error states, and accessible HTML table fallbacks.
- */
+FILE PURPOSE: Progressive enhancement that turns every canvas[data-chart-url] into
+a Chart.js chart, with loading, empty and error states, an accessible data table,
+and responsive small-screen legend/axis options (P8 & P10 Section 8).
+*/
 (function () {
   "use strict";
 
-  const PALETTE = ["#1F4E79", "#FD7E14", "#198754", "#6F42C1", "#6C757D", "#DC3545"];
-  const DASHES = [[], [6, 6], [2, 2], [6, 2, 2, 2], [10, 4]];
+  var PALETTE = ["#1F4E79", "#FD7E14", "#198754", "#6F42C1", "#6C757D", "#DC3545"];
+  var DASH_PATTERNS = [[], [6, 4], [2, 3], [8, 3, 2, 3], [4, 4], [10, 4]];
+  var instances = {};
 
-  function updateState(card, canvas, state, message, showRetry) {
+  function setState(canvas, card, stateEl, retryBtn, state, message) {
     canvas.setAttribute("data-chart-state", state);
-    const stateEl = card.querySelector(".chart-state");
-    const textEl = card.querySelector(".chart-state-text");
-    const retryBtn = card.querySelector(".chart-retry-btn");
-
-    if (state === "ready") {
-      if (stateEl) stateEl.classList.add("d-none");
-      canvas.classList.remove("d-none");
-    } else {
-      if (stateEl) stateEl.classList.remove("d-none");
-      canvas.classList.add("d-none");
-      if (textEl && message) textEl.textContent = message;
-      if (retryBtn) retryBtn.classList.toggle("d-none", !showRetry);
+    if (stateEl) {
+      stateEl.textContent = message || "";
+      stateEl.style.display = message ? "block" : "none";
+    }
+    if (retryBtn) {
+      retryBtn.classList.toggle("d-none", state !== "error");
     }
   }
 
-  function renderTable(container, title, labels, series) {
-    if (!container) return;
-    container.textContent = "";
+  function isAllEmpty(payload) {
+    if (!payload || !Array.isArray(payload.labels) || payload.labels.length === 0) {
+      return true;
+    }
+    if (!Array.isArray(payload.series) || payload.series.length === 0) {
+      return true;
+    }
+    return payload.series.every(function (s) {
+      return !Array.isArray(s.data) || s.data.every(function (v) { return Number(v) === 0; });
+    });
+  }
 
-    const table = document.createElement("table");
-    table.className = "table table-sm table-bordered table-striped";
+  function buildDataTable(canvas, card, payload) {
+    var tableHost = document.getElementById(canvas.id + "-table");
+    if (!tableHost) return;
+    while (tableHost.firstChild) tableHost.removeChild(tableHost.firstChild);
 
-    const caption = document.createElement("caption");
-    caption.textContent = title;
-    table.appendChild(caption);
+    var tbl = document.createElement("table");
+    tbl.className = "table table-sm table-static chart-data-table mb-0";
 
-    const thead = document.createElement("thead");
-    const trHead = document.createElement("tr");
+    var cap = document.createElement("caption");
+    cap.className = "visually-hidden";
+    cap.textContent = canvas.getAttribute("aria-label") || "Chart data";
+    tbl.appendChild(cap);
 
-    const thLabel = document.createElement("th");
-    thLabel.setAttribute("scope", "col");
-    thLabel.textContent = "Label";
-    trHead.appendChild(thLabel);
+    var thead = document.createElement("thead");
+    var hr = document.createElement("tr");
+    var th0 = document.createElement("th");
+    th0.setAttribute("scope", "col");
+    th0.textContent = "Category";
+    hr.appendChild(th0);
 
-    series.forEach(function (s) {
-      const th = document.createElement("th");
+    payload.series.forEach(function (s) {
+      var th = document.createElement("th");
       th.setAttribute("scope", "col");
       th.textContent = s.name;
-      trHead.appendChild(th);
+      hr.appendChild(th);
     });
-    thead.appendChild(trHead);
-    table.appendChild(thead);
+    thead.appendChild(hr);
+    tbl.appendChild(thead);
 
-    const tbody = document.createElement("tbody");
-    labels.forEach(function (label, idx) {
-      const tr = document.createElement("tr");
-      const thRow = document.createElement("th");
-      thRow.setAttribute("scope", "row");
-      thRow.textContent = label;
-      tr.appendChild(thRow);
-
-      series.forEach(function (s) {
-        const td = document.createElement("td");
-        td.textContent = s.data && s.data[idx] !== undefined ? s.data[idx] : "";
+    var tbody = document.createElement("tbody");
+    payload.labels.forEach(function (lbl, idx) {
+      var tr = document.createElement("tr");
+      var rowTh = document.createElement("th");
+      rowTh.setAttribute("scope", "row");
+      rowTh.textContent = String(lbl);
+      tr.appendChild(rowTh);
+      payload.series.forEach(function (s) {
+        var td = document.createElement("td");
+        td.textContent = String(s.data[idx] !== undefined ? s.data[idx] : 0);
         tr.appendChild(td);
       });
       tbody.appendChild(tr);
     });
-    table.appendChild(tbody);
-    container.appendChild(table);
+    tbl.appendChild(tbody);
+    tableHost.appendChild(tbl);
   }
 
-  function initChart(canvas) {
-    const card = canvas.closest(".chart-card") || canvas.parentElement.parentElement;
-    const url = canvas.dataset.chartUrl;
-    const chartType = canvas.dataset.chartType || "bar";
-    const chartTitle = canvas.dataset.chartTitle || "Chart";
-    const emptyText = canvas.dataset.emptyText || "No data yet.";
-    const isPercent = canvas.dataset.yMax === "100";
-    const tableContainer = document.getElementById(canvas.id + "-table");
-    const retryBtn = card.querySelector(".chart-retry-btn");
+  function renderChart(canvas, card, payload) {
+    var rawKind = canvas.getAttribute("data-chart-type") || "bar";
+    var chartType = rawKind === "stacked-bar" ? "bar" : rawKind;
+    var isStacked = rawKind === "stacked-bar";
+    var isPercent = canvas.getAttribute("data-y-max") === "100";
+    var reducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var isSmall = window.innerWidth < 576;
 
-    if (retryBtn && !retryBtn._bound) {
-      retryBtn._bound = true;
-      retryBtn.addEventListener("click", function () {
-        loadData();
-      });
+    canvas.setAttribute("data-animated", reducedMotion ? "false" : "true");
+
+    var datasets = payload.series.map(function (s, idx) {
+      var color = PALETTE[idx % PALETTE.length];
+      if (chartType === "doughnut") {
+        return {
+          label: s.name,
+          data: s.data,
+          backgroundColor: payload.labels.map(function (_, i) { return PALETTE[i % PALETTE.length]; }),
+          borderWidth: 2
+        };
+      }
+      return {
+        label: s.name,
+        data: s.data,
+        backgroundColor: color,
+        borderColor: color,
+        borderWidth: (idx % 3) + 1,
+        borderDash: chartType === "line" ? DASH_PATTERNS[idx % DASH_PATTERNS.length] : undefined,
+        tension: chartType === "line" ? 0.2 : 0
+      };
+    });
+
+    var scales = chartType === "doughnut" ? {} : {
+      x: {
+        stacked: isStacked,
+        ticks: {
+          autoSkip: true,
+          maxRotation: isSmall ? 45 : 45,
+          minRotation: 0
+        }
+      },
+      y: {
+        stacked: isStacked,
+        beginAtZero: true,
+        max: isPercent ? 100 : undefined,
+        ticks: {
+          precision: isPercent ? 1 : 0,
+          callback: function (value) {
+            return isPercent ? value + "%" : value;
+          }
+        }
+      }
+    };
+
+    if (instances[canvas.id]) {
+      instances[canvas.id].destroy();
     }
 
-    function loadData() {
-      if (canvas._chartInstance) {
-        canvas._chartInstance.destroy();
-        canvas._chartInstance = null;
+    instances[canvas.id] = new window.Chart(canvas, {
+      type: chartType,
+      data: {
+        labels: payload.labels,
+        datasets: datasets
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: reducedMotion ? false : undefined,
+        plugins: {
+          legend: {
+            display: chartType === "doughnut" || payload.series.length > 1,
+            position: (chartType === "doughnut" || isSmall) ? "bottom" : "top",
+            labels: {
+              font: { size: isSmall ? 11 : 12 }
+            }
+          }
+        },
+        scales: scales
       }
+    });
+  }
 
-      updateState(card, canvas, "loading", "Loading chart...", false);
+  function loadCanvas(canvas) {
+    var card = canvas.closest(".chart-card") || canvas.parentNode;
+    var stateEl = card ? card.querySelector(".chart-state") : null;
+    var retryBtn = card ? card.querySelector("[data-chart-retry]") : null;
+    var url = canvas.getAttribute("data-chart-url");
 
-      if (typeof window.Chart === "undefined") {
-        console.error("Chart.js vendor library is missing.");
-        updateState(card, canvas, "error", "Charts are unavailable because the Chart.js file is missing.", false);
-        return;
-      }
+    if (typeof window.Chart === "undefined") {
+      console.error("[charts] Chart.js global missing");
+      setState(canvas, card, stateEl, retryBtn, "error", "Charts are unavailable because the Chart.js file is missing.");
+      return;
+    }
 
-      fetch(url, {
-        credentials: "same-origin",
-        headers: { Accept: "application/json" }
+    setState(canvas, card, stateEl, retryBtn, "loading", "Loading chart...");
+
+    fetch(url, {
+      credentials: "same-origin",
+      headers: { "Accept": "application/json" }
+    })
+      .then(function (resp) {
+        if (resp.status === 401) {
+          throw new Error("Please sign in again.");
+        }
+        if (resp.status === 403) {
+          throw new Error("You do not have access to this chart.");
+        }
+        if (!resp.ok) {
+          throw new Error("The chart could not be loaded.");
+        }
+        return resp.json();
       })
-        .then(function (res) {
-          if (res.status === 401) {
-            updateState(card, canvas, "error", "Please sign in again.", false);
-            throw new Error("401");
-          }
-          if (res.status === 403) {
-            updateState(card, canvas, "error", "You do not have access to this chart.", false);
-            throw new Error("403");
-          }
-          if (!res.ok) {
-            updateState(card, canvas, "error", "The chart could not be loaded.", true);
-            throw new Error("HTTP " + res.status);
-          }
-          return res.json();
-        })
-        .then(function (data) {
-          const labels = data.labels || [];
-          const series = data.series || [];
-
-          let allZero = true;
-          series.forEach(function (s) {
-            (s.data || []).forEach(function (val) {
-              if (val !== 0) allZero = false;
-            });
-          });
-
-          if (labels.length === 0 || allZero) {
-            updateState(card, canvas, "empty", emptyText, false);
-            return;
-          }
-
-          renderTable(tableContainer, chartTitle, labels, series);
-
-          const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-          canvas.setAttribute("data-animated", prefersReduced ? "false" : "true");
-
-          const datasets = [];
-          if (chartType === "doughnut") {
-            const doughnutData = (series[0] && series[0].data) || [];
-            datasets.push({
-              data: doughnutData,
-              backgroundColor: PALETTE.slice(0, labels.length)
-            });
-          } else {
-            series.forEach(function (s, sIdx) {
-              const color = PALETTE[sIdx % PALETTE.length];
-              const ds = {
-                label: s.name,
-                data: s.data,
-                backgroundColor: color,
-                borderColor: color,
-                borderWidth: chartType === "line" ? 2 : 1 + (sIdx % 2),
-                borderDash: chartType === "line" ? DASHES[sIdx % DASHES.length] : []
-              };
-              if (chartType === "line") {
-                ds.tension = 0.2;
-                ds.fill = false;
-                ds.pointRadius = 3;
-              }
-              datasets.push(ds);
-            });
-          }
-
-          const scales = {};
-          if (chartType !== "doughnut") {
-            scales.x = { stacked: chartType === "stacked-bar" };
-            scales.y = {
-              stacked: chartType === "stacked-bar",
-              beginAtZero: true,
-              ticks: {
-                precision: isPercent ? undefined : 0,
-                callback: function (val) {
-                  return isPercent ? val + "%" : val;
-                }
-              }
-            };
-            if (isPercent) {
-              scales.y.min = 0;
-              scales.y.max = 100;
-            }
-          }
-
-          const config = {
-            type: chartType === "stacked-bar" ? "bar" : chartType,
-            data: { labels: labels, datasets: datasets },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              animation: prefersReduced ? false : undefined,
-              plugins: {
-                legend: {
-                  display: chartType === "doughnut" || series.length > 1,
-                  position: chartType === "doughnut" ? "bottom" : "top"
-                }
-              },
-              scales: scales
-            }
-          };
-
-          canvas._chartInstance = new window.Chart(canvas, config);
-          updateState(card, canvas, "ready", null, false);
-        })
-        .catch(function (err) {
-          if (err.message !== "401" && err.message !== "403") {
-            updateState(card, canvas, "error", "The chart could not be loaded.", true);
-          }
-        });
-    }
-
-    loadData();
+      .then(function (payload) {
+        if (!payload || !Array.isArray(payload.labels) || !Array.isArray(payload.series)) {
+          throw new Error("The chart could not be loaded.");
+        }
+        buildDataTable(canvas, card, payload);
+        if (isAllEmpty(payload)) {
+          var emptyTxt = canvas.getAttribute("data-empty-text") || "No data yet.";
+          setState(canvas, card, stateEl, retryBtn, "empty", emptyTxt);
+          return;
+        }
+        renderChart(canvas, card, payload);
+        setState(canvas, card, stateEl, retryBtn, "ready", "");
+      })
+      .catch(function (err) {
+        var msg = (err && err.message && (err.message.indexOf("Please sign in") === 0 || err.message.indexOf("You do not") === 0))
+          ? err.message
+          : "The chart could not be loaded.";
+        setState(canvas, card, stateEl, retryBtn, "error", msg);
+      });
   }
 
   document.addEventListener("DOMContentLoaded", function () {
-    const canvases = document.querySelectorAll("canvas[data-chart-url]");
-    canvases.forEach(initChart);
+    var canvases = document.querySelectorAll("canvas[data-chart-url]");
+    Array.prototype.forEach.call(canvases, function (canvas) {
+      var card = canvas.closest(".chart-card") || canvas.parentNode;
+      var retryBtn = card ? card.querySelector("[data-chart-retry]") : null;
+      if (retryBtn) {
+        retryBtn.addEventListener("click", function () {
+          loadCanvas(canvas);
+        });
+      }
+      loadCanvas(canvas);
+    });
   });
 })();

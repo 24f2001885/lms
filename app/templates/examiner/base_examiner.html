@@ -1,60 +1,56 @@
 {% extends "base.html" %}
 
-{% block extra_css %}
-<style>
-  .examiner-subnav .nav-link.active {
-    font-weight: 600;
-    border-bottom: 2px solid var(--bs-primary);
-    color: var(--bs-primary);
-  }
-</style>
+{% block site_nav %}
+{% set ep = request.endpoint or '' %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary" aria-label="Examiner">
+  <div class="container page-container">
+    <a class="navbar-brand fw-bold" href="{{ url_for('examiner.dashboard') }}">EMP Examiner</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="mainNav">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item">
+          <a class="nav-link{% if ep == 'examiner.dashboard' %} active{% endif %}" href="{{ url_for('examiner.dashboard') }}"{% if ep == 'examiner.dashboard' %} aria-current="page"{% endif %}>Dashboard</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link{% if 'examination' in ep %} active{% endif %}" href="{{ url_for('examiner.examinations_list') }}"{% if 'examination' in ep %} aria-current="page"{% endif %}>Examinations</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link{% if 'slot' in ep %} active{% endif %}" href="{{ url_for('examiner.slots_list') }}"{% if 'slot' in ep %} aria-current="page"{% endif %}>Slots</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link{% if 'evaluation' in ep %} active{% endif %}" href="{{ url_for('examiner.evaluations_pending') }}"{% if 'evaluation' in ep %} aria-current="page"{% endif %}>
+            Evaluations
+            {% if pending_count is defined and pending_count > 0 %}
+              <span class="badge text-bg-warning ms-1">{{ pending_count }} pending</span>
+            {% endif %}
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link{% if ep == 'examiner.charts' %} active{% endif %}" href="{{ url_for('examiner.charts') }}"{% if ep == 'examiner.charts' %} aria-current="page"{% endif %}>Charts</a>
+        </li>
+      </ul>
+      <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
+        <li class="nav-item">
+          <a class="nav-link{% if ep == 'auth.profile' %} active{% endif %}" href="{{ url_for('auth.profile') }}"{% if ep == 'auth.profile' %} aria-current="page"{% endif %}>Profile ({{ current_user.full_name }})</a>
+        </li>
+        <li class="nav-item">
+          <form method="post" action="{{ url_for('auth.logout') }}" class="d-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is callable else csrf_token }}">
+            <button type="submit" class="btn btn-link nav-link text-light" data-submit-once="true">Log out</button>
+          </form>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
 {% endblock %}
 
-{% block site_nav %}
-<header>
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
-    <div class="container">
-      <a class="navbar-brand fw-bold tracking-wide" href="{{ url_for('examiner.dashboard') }}">
-        LMS Examiner Portal
-      </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#examinerNav"
-              aria-controls="examinerNav" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="examinerNav">
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'examiner.dashboard' %}active{% endif %}" href="{{ url_for('examiner.dashboard') }}">Dashboard</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link {% if 'examination' in request.endpoint %}active{% endif %}" href="{{ url_for('examiner.examinations_list') }}">Examinations</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link {% if 'slot' in request.endpoint %}active{% endif %}" href="{{ url_for('examiner.slots_list') }}">Slots</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link {% if 'evaluat' in request.endpoint %}active{% endif %}" href="{{ url_for('examiner.evaluations_pending') }}">Evaluations</a>
-          </li>
-        </ul>
-        <ul class="navbar-nav ms-auto align-items-lg-center">
-          {% if current_user %}
-            <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('auth.profile') }}">Profile</a>
-            </li>
-            <li class="nav-item ms-lg-2 py-1 py-lg-0 text-white-50 small">
-              <span class="text-white fw-semibold">{{ current_user.full_name }}</span>
-              <span class="badge bg-secondary ms-1">Examiner</span>
-            </li>
-            <li class="nav-item ms-lg-3">
-              <form action="{{ url_for('auth.logout') }}" method="POST" class="d-inline">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="btn btn-outline-light btn-sm">Log out</button>
-              </form>
-            </li>
-          {% endif %}
-        </ul>
-      </div>
-    </div>
-  </nav>
-</header>
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <h1 class="h2 mb-0">{% block page_title %}Examiner{% endblock %}</h1>
+  <div class="btn-group-xs-stack">{% block page_actions %}{% endblock %}</div>
+</div>
+{% block examiner_content %}{% endblock %}
 {% endblock %}

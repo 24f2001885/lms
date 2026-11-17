@@ -74,3 +74,50 @@ EMP implements a strict dual-layer validation architecture where frontend JavaSc
 1. **Password Length Limit:** `PASSWORD_MAX = 128` (denial-of-service protection against bcrypt/hash amplification).
 2. **Control Character Rejection:** `SafeText` rejects ASCII/Unicode control characters in all free-text fields.
 3. **Automatic Whitespace Trimming:** Free-text inputs are stripped of leading/trailing whitespace before validation.
+
+---
+
+## 5. Responsive Layout and Accessibility (Milestone P10)
+
+EMP provides WCAG 2.1 AA accessible design and fully responsive mobile-first layouts across viewports:
+
+- **Breakpoints (Bootstrap 5 Grid):**
+  - `<576px (xs)`: Single column, hamburger / offcanvas navigation drawer, stacked card tables (`table-stack`), full-width action buttons (`btn-xs-block`).
+  - `576px – 767px (sm)`: Single column with larger touch targets (>=44px), two-column card grid.
+  - `768px – 991px (md)`: Two-column layouts, horizontal table scroll wrappers (`table-responsive`), collapsible navigation drawer.
+  - `992px – 1199px (lg)`: Static 240px sidebar for Admin, full horizontal navbar for Examiner/Student.
+  - `>=1200px (xl)`: Content capped inside `.page-container` (max-width 1200px, centered).
+
+### How to Add a Data Table with `table-stack`
+Wrap your table in `.table-responsive` and apply the accessible ARIA stack classes:
+```html
+<div class="table-responsive">
+  <table class="table table-hover align-middle table-stack" role="table">
+    <caption class="visually-hidden">Human-readable description</caption>
+    <thead role="rowgroup">
+      <tr role="row">
+        <th scope="col" role="columnheader">Field Name</th>
+        <th scope="col" role="columnheader">Actions</th>
+      </tr>
+    </thead>
+    <tbody role="rowgroup">
+      <tr role="row">
+        <td role="cell" data-label="Field Name">Value</td>
+        <td role="cell" data-label="Actions" class="td-actions">...</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+```
+
+### Running the Accessibility Audit
+Audit all role pages and viewports offline:
+```bash
+# Run automated static WCAG 2.1 AA & responsive checks
+make a11y
+
+# Or run via pytest marker
+make test-ui
+```
+For detailed audit criteria and WCAG checklists, see [accessibility_responsive_checklist.md](docs/accessibility_responsive_checklist.md).
+

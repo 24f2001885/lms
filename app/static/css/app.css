@@ -1,294 +1,212 @@
 /*
-FILE PURPOSE: Brand overrides for Bootstrap 5 using CSS variables (Design Plan section 7). No other CSS framework is allowed.
-PROMPT FOR LLM IMPLEMENTATION:
-1. On :root set --bs-primary and --bs-primary-rgb to #1F4E79; link colour #1F4E79 with hover #173B5C; body background #F5F7FA; body text #212529; success #198754, warning #FFC107, danger #DC3545, info #0DCAF0, secondary #6C757D (use the matching --bs-*-rgb variables where Bootstrap needs them).
-2. Override .btn-primary so background, border and hover/active states use the primary and primary-hover colours; keep a visible 3px focus ring (outline) on all interactive elements for keyboard users.
-3. Define the custom badge class .badge-full (background #FD7E14, dark text for contrast) used later for full slots. Do NOT define .badge-refunded (Tier 3).
-4. Typography: system font stack system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; monospace stack ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; base 16px, table text 0.9rem.
-5. Style the skip-to-content link so it is visually hidden until focused, then appears at the top-left.
-6. Provide small utility classes: .auth-card (max-width 420px, margin auto), .page-container (max-width 1200px).
-7. Keep the file under 120 lines; no @import of remote resources, no web fonts.
-DEBUGGING:
-Add temporarily: body { outline: 2px solid magenta; } to check the file is loaded, then remove.
-OFFLINE DOCKER TEST CASES:
-- The file contains no "http://" or "https://" strings.
-- Text/background colour pairs used by .btn-primary and .badge-full meet 4.5:1 contrast (manual check with a contrast tool).
+FILE PURPOSE: Brand overrides for Bootstrap 5 using CSS variables and WCAG 2.1 AA
+verified contrast tokens (Design Plan section 7 & P10 section 7).
 */
-/*
-app/static/css/app.css - Custom Bootstrap 5 Brand Overrides for LMS.
-Design Plan Section 7: Modern accessible typography and color system.
-*/
-
 :root {
-  --bs-primary: #1F4E79;
+  --bs-primary: #1F4E79; /* #FFFFFF on #1F4E79 = 8.44:1 */
   --bs-primary-rgb: 31, 78, 121;
-  --bs-body-bg: #F5F7FA;
-  --bs-body-color: #212529;
-  --bs-link-color: #1F4E79;
-  --bs-link-hover-color: #173B5C;
+  --bs-secondary: #6C757D; /* #FFFFFF on #6C757D = 4.69:1 */
+  --bs-success: #198754; /* #FFFFFF on #198754 = 4.53:1 */
+  --bs-warning: #FFC107; /* #212529 on #FFC107 = 10.95:1 */
+  --bs-danger: #DC3545; /* #FFFFFF on #DC3545 = 4.53:1 */
+  --bs-info: #0DCAF0; /* #212529 on #0DCAF0 = 7.88:1 */
+  --emp-bg: #F5F7FA;
+  --emp-surface: #FFFFFF;
+  --emp-text: #212529; /* #212529 on #F5F7FA = 14.95:1, on #FFFFFF = 16.10:1 */
+  --emp-muted: #5C636A; /* #5C636A on #F5F7FA = 5.68:1, on #FFFFFF = 6.09:1 */
+  --emp-sidebar: #14283B; /* #E6EDF3 on #14283B = 12.74:1, #AFC0D0 on #14283B = 7.91:1 */
 }
 
 body {
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  min-height: 100vh;
+  font-size: 16px;
+  background-color: var(--emp-bg);
+  color: var(--emp-text);
 }
 
-/* Accessible skip-link */
-.skip-link {
-  position: absolute;
-  top: -40px;
-  left: 0;
-  background: #1F4E79;
+code, pre, .monospace {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+/* Links inside main content are underlined by default (not colour alone) */
+a {
+  color: #1F4E79; /* #1F4E79 on #F5F7FA = 7.84:1 */
+}
+a:hover {
+  color: #173B5C; /* #173B5C on #F5F7FA = 10.42:1 */
+}
+main a:not(.btn):not(.nav-link):not(.page-link) {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+main a:not(.btn):not(.nav-link):not(.page-link):hover {
+  text-decoration-thickness: 2px;
+}
+
+/* Muted text & placeholders: #5C636A (5.68:1 on #F5F7FA, 6.09:1 on #FFFFFF) */
+.text-muted,
+.form-text,
+small,
+.deadline-note,
+.char-counter {
+  color: #5C636A !important;
+}
+.form-control::placeholder {
+  color: #5C636A;
+  opacity: 1;
+}
+
+/* Form control & checkbox borders: #6C757D (4.69:1 on #FFFFFF, 4.37:1 on #F5F7FA >= 3.0 non-text) */
+.form-control,
+.form-select,
+.form-check-input {
+  border-color: #6C757D;
+}
+
+/* Primary button: #FFFFFF on #1F4E79 = 8.44:1, hover #173B5C = 11.22:1 */
+.btn-primary {
+  background-color: #1F4E79;
+  border-color: #1F4E79;
   color: #FFFFFF;
-  padding: 8px 16px;
-  z-index: 10000;
-  text-decoration: none;
-  font-weight: 600;
-  border-radius: 0 0 4px 0;
-  transition: top 0.2s ease;
 }
-.skip-link:focus {
-  top: 0;
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+  background-color: #173B5C;
+  border-color: #173B5C;
+  color: #FFFFFF;
 }
 
-/* Authentication card styling */
-.auth-card {
-  border-radius: 8px;
-}
-
-/* Custom Orange Badge for Full Slots (Design Plan Section 6) */
+/* Badges with verified contrast */
 .badge-full {
-  background-color: #FD7E14 !important;
+  background-color: #FD7E14; /* #212529 on #FD7E14 = 6.00:1 */
   color: #212529 !important;
 }
-
-/* Accessibility focus rings */
-button:focus-visible,
-a:focus-visible,
-input:focus-visible {
-  outline: 3px solid #1F4E79;
-  outline-offset: 2px;
-}
-
-/*
-app/static/css/app.css - Custom Bootstrap 5 Brand Overrides for LMS.
-Design Plan Section 7: Modern accessible typography and administrative shell styling.
-*/
-
-:root {
-  --bs-primary: #1F4E79;
-  --bs-primary-rgb: 31, 78, 121;
-  --bs-body-bg: #F5F7FA;
-  --bs-body-color: #212529;
-  --bs-link-color: #1F4E79;
-  --bs-link-hover-color: #173B5C;
-}
-
-body {
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  min-height: 100vh;
-}
-
-/* Accessible skip-link */
-.skip-link {
-  position: absolute;
-  top: -40px;
-  left: 0;
-  background: #1F4E79;
-  color: #FFFFFF;
-  padding: 8px 16px;
-  z-index: 10000;
-  text-decoration: none;
-  font-weight: 600;
-  border-radius: 0 0 4px 0;
-  transition: top 0.2s ease;
-}
-.skip-link:focus {
-  top: 0;
-}
-
-.auth-card {
-  border-radius: 8px;
-}
-
-/* Custom Badges (Design Plan Section 6) */
-.badge-full {
-  background-color: #FD7E14 !important;
+.text-bg-info {
+  background-color: #0DCAF0 !important; /* #212529 on #0DCAF0 = 7.88:1 */
   color: #212529 !important;
 }
-
+.text-bg-warning {
+  background-color: #FFC107 !important; /* #212529 on #FFC107 = 10.95:1 */
+  color: #212529 !important;
+}
 .badge-outline-warning {
-  color: #997404 !important;
-  border: 1px solid #FFC107 !important;
-  background-color: #FFF3CD !important;
+  border: 1px solid #7A5C00; /* #7A5C00 on #FFFFFF = 6.25:1 */
+  color: #7A5C00 !important;
+  background-color: transparent;
+}
+.badge-refunded {
+  background-color: #6F42C1; /* #FFFFFF on #6F42C1 = 6.53:1 */
+  color: #FFFFFF;
 }
 
-/* Admin Shell Layout */
-.admin-shell {
-  display: flex;
-  flex: 1 1 auto;
-  min-height: calc(100vh - 110px);
+/* Validation & status text on light surfaces */
+.invalid-feedback,
+form .text-danger {
+  color: #B02A37 !important; /* #B02A37 on #F5F7FA = 6.05:1 */
+}
+.text-success-emphasis,
+.rubric-ready-text {
+  color: #146C43 !important; /* #146C43 on #FFFFFF = 6.45:1 */
 }
 
-.admin-sidebar {
-  width: 240px;
-  background-color: #14283B;
-  flex-shrink: 0;
-  padding: 1rem;
+.auth-card {
+  max-width: 420px;
+  width: 100%;
+  margin-inline: auto;
 }
 
-.admin-sidebar a.nav-link {
-  color: #CBD5E1;
-  padding: 0.6rem 0.85rem;
-  border-radius: 4px;
-  margin-bottom: 2px;
+.page-container {
+  max-width: 1200px;
+}
+
+.table {
   font-size: 0.9rem;
 }
 
-.admin-sidebar a.nav-link:hover {
-  color: #FFFFFF;
-  background-color: rgba(255, 255, 255, 0.08);
-}
-
-.admin-sidebar a.nav-link.active {
-  color: #FFFFFF;
-  background-color: rgba(255, 255, 255, 0.12);
-  border-left: 4px solid var(--bs-primary);
-  font-weight: 600;
-}
-
-.admin-content {
-  flex: 1 1 auto;
-  min-width: 0;
-  padding: 1.5rem 2rem;
-}
-
-/* Stat Cards & Components */
 .stat-card {
-  background-color: #FFFFFF;
-  border-radius: 6px;
-  padding: 1.25rem;
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.04);
+  background: var(--emp-surface);
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid #6C757D;
 }
 
 .timeline-switch {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 0.75rem 0;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .table-filter-bar {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: center;
+  gap: 0.75rem;
+  align-items: flex-end;
 }
 
-/* Responsive sidebar collapse below 992px */
-@media (max-width: 991.98px) {
-  .admin-shell {
-    flex-direction: column;
-  }
-  .admin-sidebar {
-    width: 100%;
-    min-height: auto;
-  }
-  .admin-content {
-    padding: 1rem;
-  }
+.slot-meter {
+  height: 6px;
+  border-radius: 3px;
+}
+
+.score-input {
+  max-width: 110px;
+  text-align: right;
 }
 
 .slot-row-full {
-  color: var(--bs-secondary);
+  color: #5C636A;
 }
 
 .deadline-note {
-  font-size: 0.875rem;
-  color: var(--bs-secondary);
+  font-size: 0.85rem;
 }
 
 .exam-card {
-  transition: box-shadow 0.2s ease;
+  transition: box-shadow 0.15s ease-in-out;
 }
-
 .exam-card:hover {
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.08);
 }
 
-/* P8 Charts Styles */
+/* Charts (P8) */
 .chart-card {
-  background: #ffffff;
-  border: 1px solid #dee2e6;
-  border-radius: 0.375rem;
-  padding: 1.25rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  background: var(--emp-surface);
+  border: 1px solid #6C757D;
+  border-radius: 0.5rem;
+  padding: 1rem;
 }
-
 .chart-box {
   position: relative;
   height: 280px;
   width: 100%;
 }
-
-@media (max-width: 575.98px) {
-  .chart-box {
-    height: 220px;
-  }
-}
-
 .chart-state {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  color: var(--bs-secondary);
-  font-size: 0.95rem;
   text-align: center;
-  padding: 1rem;
+  color: #5C636A;
+  padding: 1rem 0;
 }
-
-.chart-card details summary {
-  cursor: pointer;
-  padding: 0.25rem 0;
-  outline: none;
-}
-
-.chart-card details summary:focus-visible {
-  outline: 3px solid var(--bs-primary);
-  outline-offset: 2px;
-}
-
 .chart-data-table {
   max-height: 240px;
   overflow: auto;
-  margin-top: 0.75rem;
-}
-
-.chart-data-table table {
   font-size: 0.85rem;
-  margin-bottom: 0;
 }
 
 /* Validation (P9) */
 .char-counter {
   font-size: 0.8rem;
-  color: #6C757D;
   font-variant-numeric: tabular-nums;
 }
-
 .error-summary {
   border-left: 4px solid #DC3545;
   padding: 0.75rem 1rem;
 }
-
 .is-invalid + .invalid-feedback,
 .invalid-feedback[role="alert"] {
   display: block;
 }
-
 .btn[aria-busy="true"] {
   opacity: 0.75;
   cursor: progress;

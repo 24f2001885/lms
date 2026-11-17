@@ -1,58 +1,56 @@
 {% extends "base.html" %}
 
 {% block site_nav %}
-<header>
-  <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #14283B;">
-    <div class="container-fluid px-3">
-      <a class="navbar-brand fw-bold text-white tracking-wide" href="{{ url_for('admin.dashboard') }}">
-        LMS Admin Console
-      </a>
-      <div class="d-flex align-items-center ms-auto">
-        <span class="text-white-50 small me-3 d-none d-sm-inline">
-          Signed in as <strong class="text-white">{{ current_user.full_name }}</strong>
-        </span>
-        <form action="{{ url_for('auth.logout') }}" method="POST" class="d-inline">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button type="submit" class="btn btn-outline-light btn-sm">Log out</button>
-        </form>
-      </div>
-    </div>
-  </nav>
-</header>
+<div class="admin-topbar py-2 px-3 d-flex align-items-center justify-content-between border-bottom border-secondary">
+  <div class="d-flex align-items-center gap-2">
+    <button class="btn btn-outline-light btn-sm d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#adminSidebar" aria-controls="adminSidebar" aria-label="Open navigation menu">
+      Menu
+    </button>
+    <a class="navbar-brand fw-bold text-light text-decoration-none" href="{{ url_for('admin.dashboard') }}">EMP Admin</a>
+  </div>
+  <div class="d-flex align-items-center gap-3">
+    <span class="small">{{ current_user.full_name }}</span>
+    <a class="text-light small text-decoration-none" href="{{ url_for('auth.profile') }}">Profile</a>
+    <form method="post" action="{{ url_for('auth.logout') }}" class="d-inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is callable else csrf_token }}">
+      <button type="submit" class="btn btn-outline-light btn-sm" data-submit-once="true">Log out</button>
+    </form>
+  </div>
+</div>
 {% endblock %}
 
 {% block layout %}
 <div class="admin-shell">
-  <!-- Sidebar -->
-  <aside class="admin-sidebar shadow-sm">
-    <div class="text-white-50 small fw-bold text-uppercase px-2 mb-2">Management</div>
-    <nav class="nav flex-column" aria-label="Admin Navigation">
-      <a class="nav-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}" {% if request.endpoint == 'admin.dashboard' %}aria-current="page"{% endif %} href="{{ url_for('admin.dashboard') }}">Dashboard</a>
-      <a class="nav-link {% if request.endpoint == 'admin.charts' %}active{% endif %}" {% if request.endpoint == 'admin.charts' %}aria-current="page"{% endif %} href="{{ url_for('admin.charts') }}">Charts</a>
-      <a class="nav-link {% if 'course' in request.endpoint %}active{% endif %}" {% if 'course' in request.endpoint %}aria-current="page"{% endif %} href="{{ url_for('admin.courses') }}">Courses</a>
-      <a class="nav-link {% if 'examination' in request.endpoint or 'rubric' in request.endpoint %}active{% endif %}" {% if 'examination' in request.endpoint %}aria-current="page"{% endif %} href="{{ url_for('admin.examinations') }}">Examinations</a>
-      <a class="nav-link {% if 'examiner' in request.endpoint and 'slot' not in request.endpoint %}active{% endif %}" {% if 'examiner' in request.endpoint %}aria-current="page"{% endif %} href="{{ url_for('admin.examiners') }}">Examiners</a>
-      <a class="nav-link {% if 'student' in request.endpoint %}active{% endif %}" {% if 'student' in request.endpoint %}aria-current="page"{% endif %} href="{{ url_for('admin.students') }}">Students</a>
-    </nav>
-
-    <div class="text-white-50 small fw-bold text-uppercase px-2 mt-4 mb-2">Operations</div>
-    <nav class="nav flex-column">
-      <a class="nav-link {% if 'slot' in request.endpoint %}active{% endif %}" {% if 'slot' in request.endpoint %}aria-current="page"{% endif %} href="{{ url_for('admin.slots') }}">Slots</a>
-      <a class="nav-link {% if 'booking' in request.endpoint %}active{% endif %}" {% if 'booking' in request.endpoint %}aria-current="page"{% endif %} href="{{ url_for('admin.bookings') }}">Bookings</a>
-      <a class="nav-link {% if 'evaluation' in request.endpoint %}active{% endif %}" {% if 'evaluation' in request.endpoint %}aria-current="page"{% endif %} href="{{ url_for('admin.evaluations_list') }}">Evaluations</a>
-      <a class="nav-link {% if request.endpoint == 'admin.search' %}active{% endif %}" {% if request.endpoint == 'admin.search' %}aria-current="page"{% endif %} href="{{ url_for('admin.search') }}">Search</a>
-      <a class="nav-link {% if request.endpoint == 'admin.history' %}active{% endif %}" {% if request.endpoint == 'admin.history' %}aria-current="page"{% endif %} href="{{ url_for('admin.history') }}">History</a>
-    </nav>
+  <aside class="admin-sidebar offcanvas-lg offcanvas-start" id="adminSidebar" tabindex="-1" aria-labelledby="adminSidebarTitle">
+    <div class="offcanvas-header d-lg-none border-bottom border-secondary">
+      <h2 class="offcanvas-title fs-5 text-light mb-0" id="adminSidebarTitle">Navigation</h2>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#adminSidebar" aria-label="Close navigation menu"></button>
+    </div>
+    <div class="offcanvas-body p-0">
+      <nav aria-label="Admin" class="w-100 py-2">
+        {% set ep = request.endpoint or '' %}
+        <a class="nav-link{% if ep == 'admin.dashboard' %} active{% endif %}" href="{{ url_for('admin.dashboard') }}"{% if ep == 'admin.dashboard' %} aria-current="page"{% endif %}>Dashboard</a>
+        <a class="nav-link{% if ep == 'admin.charts' %} active{% endif %}" href="{{ url_for('admin.charts') }}"{% if ep == 'admin.charts' %} aria-current="page"{% endif %}>Charts</a>
+        <a class="nav-link{% if 'course' in ep %} active{% endif %}" href="{{ url_for('admin.courses_list') }}"{% if 'course' in ep %} aria-current="page"{% endif %}>Courses</a>
+        <a class="nav-link{% if 'examination' in ep or 'rubric' in ep %} active{% endif %}" href="{{ url_for('admin.examinations_list') }}"{% if 'examination' in ep or 'rubric' in ep %} aria-current="page"{% endif %}>Examinations</a>
+        <a class="nav-link{% if 'examiner' in ep and 'slot' not in ep %} active{% endif %}" href="{{ url_for('admin.examiners_list') }}"{% if 'examiner' in ep and 'slot' not in ep %} aria-current="page"{% endif %}>Examiners</a>
+        <a class="nav-link{% if 'student' in ep %} active{% endif %}" href="{{ url_for('admin.students_list') }}"{% if 'student' in ep %} aria-current="page"{% endif %}>Students</a>
+        <a class="nav-link{% if 'slot' in ep %} active{% endif %}" href="{{ url_for('admin.slots_list') }}"{% if 'slot' in ep %} aria-current="page"{% endif %}>Slots</a>
+        <a class="nav-link{% if 'booking' in ep or 'reschedule' in ep %} active{% endif %}" href="{{ url_for('admin.bookings_list') }}"{% if 'booking' in ep or 'reschedule' in ep %} aria-current="page"{% endif %}>Bookings</a>
+        <a class="nav-link{% if 'evaluation' in ep %} active{% endif %}" href="{{ url_for('admin.evaluations_list') }}"{% if 'evaluation' in ep %} aria-current="page"{% endif %}>Evaluations</a>
+        <a class="nav-link{% if ep == 'admin.search' %} active{% endif %}" href="{{ url_for('admin.search') }}"{% if ep == 'admin.search' %} aria-current="page"{% endif %}>Search</a>
+        <a class="nav-link{% if ep == 'admin.history' %} active{% endif %}" href="{{ url_for('admin.history') }}"{% if ep == 'admin.history' %} aria-current="page"{% endif %}>History</a>
+      </nav>
+    </div>
   </aside>
 
-  <!-- Admin Main Content -->
-  <main id="main-content" class="admin-content">
-    {% include "_flash.html" %}
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h1 class="h3 fw-bold text-primary mb-0">{% block page_title %}{% endblock %}</h1>
-      <div>{% block page_actions %}{% endblock %}</div>
+  <main id="main-content" class="admin-content page-container" tabindex="-1">
+    {% include "_flash.html" ignore missing %}
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+      <h1 class="h2 mb-0">{% block page_title %}Admin{% endblock %}</h1>
+      <div class="btn-group-xs-stack">{% block page_actions %}{% endblock %}</div>
     </div>
-    {% block content %}{% block admin_content %}{% endblock %}{% endblock %}
+    {% block content %}{% endblock %}
   </main>
 </div>
 {% endblock %}

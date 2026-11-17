@@ -13,3 +13,10 @@ from app.blueprints.student import (  # noqa: E402, F401
     examinations,
     results,
 )
+
+# Endpoint aliases for template navigation consistency
+student_bp.add_url_rule(
+    "/examinations", endpoint="examinations", view_func=examinations.examinations_list
+)
+student_bp.add_url_rule("/bookings", endpoint="bookings", view_func=bookings.my_bookings_list)
+student_bp.add_url_rule("/results", endpoint="results", view_func=results.results_list)

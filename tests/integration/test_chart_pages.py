@@ -267,7 +267,9 @@ def test_admin_sidebar_has_eleven_links_with_charts_under_dashboard(client, make
     client.post("/logout")
 
     # Match sidebar
-    sidebar_match = re.search(r'<aside class="admin-sidebar[^"]*">(.*?)</aside>', html, re.DOTALL)
+    sidebar_match = re.search(
+        r'<aside[^>]*class="admin-sidebar[^"]*"[^>]*>(.*?)</aside>', html, re.DOTALL
+    )
     assert sidebar_match is not None
     sidebar_html = sidebar_match.group(1)
 
