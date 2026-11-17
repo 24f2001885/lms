@@ -121,3 +121,16 @@ make test-ui
 ```
 For detailed audit criteria and WCAG checklists, see [accessibility_responsive_checklist.md](docs/accessibility_responsive_checklist.md).
 
+---
+
+## 6. Security & Session Hardening (Milestone P11)
+
+EMP implements Flask-Login session management and defense-in-depth security hardening:
+
+- **Session Tokens & Invalidation (R-21):** Session identity tokens follow `<id>:<fingerprint>`, where the fingerprint is derived from HMAC-SHA256 of the user's password hash. Changing a password or setting a temporary password instantly invalidates all older sessions.
+- **Session Lifetimes:** 30-minute idle timeout (rolling cookie) with an absolute 8-hour maximum lifetime (`SESSION_ABSOLUTE_LIFETIME_MINUTES=480`).
+- **Brute Force Protection:** In-process sliding-window rate limiter enforcing 5 failures per 15 minutes per email + IP (`LOGIN_RATE_LIMIT_FAILURES=5`, `LOGIN_RATE_LIMIT_WINDOW_MINUTES=15`), plus a looser limit of 20 failures per IP (`LOGIN_RATE_LIMIT_IP_FAILURES=20`). Note: The rate limiter runs in-process memory and resets on service restart.
+- **Security Headers & CSP:** Enforces strict local Content-Security-Policy (`default-src 'self'`), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: same-origin`, and `Cache-Control: no-store` on authenticated pages.
+- **Security Audit:** Run the automated security verification suite with `make security` or `make test-security`.
+
+

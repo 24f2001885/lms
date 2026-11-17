@@ -37,6 +37,19 @@ class BaseConfig:
         os.environ.get("PERMANENT_SESSION_LIFETIME_MINUTES", "30")
     )
     PERMANENT_SESSION_LIFETIME = timedelta(minutes=PERMANENT_SESSION_LIFETIME_MINUTES)
+    SESSION_ABSOLUTE_LIFETIME_MINUTES = int(
+        os.environ.get("SESSION_ABSOLUTE_LIFETIME_MINUTES", "480")
+    )
+    SESSION_PROTECTION = os.environ.get("SESSION_PROTECTION", "strong").lower()
+    SESSION_COOKIE_NAME = os.environ.get("SESSION_COOKIE_NAME", "session")
+
+    # rate limiting and security headers (P11)
+    LOGIN_RATE_LIMIT_FAILURES = int(os.environ.get("LOGIN_RATE_LIMIT_FAILURES", "5"))
+    LOGIN_RATE_LIMIT_WINDOW_MINUTES = int(os.environ.get("LOGIN_RATE_LIMIT_WINDOW_MINUTES", "15"))
+    LOGIN_RATE_LIMIT_IP_FAILURES = int(os.environ.get("LOGIN_RATE_LIMIT_IP_FAILURES", "20"))
+    SECURITY_HEADERS_ENABLED = os.environ.get("SECURITY_HEADERS_ENABLED", "true").lower() == "true"
+    CSP_REPORT_ONLY = os.environ.get("CSP_REPORT_ONLY", "false").lower() == "true"
+    WTF_CSRF_TIME_LIMIT = None
 
     # logs
     LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
@@ -59,12 +72,20 @@ class TestConfig(BaseConfig):
 
     WTF_CSRF_ENABLED = False
 
-    SECRET_KEY = "test-offline-secret-key-12345"
+    SECRET_KEY = "test-offline-secret-key-12345"  # noqa: S105
+    SECURITY_HEADERS_ENABLED = True
+    SESSION_COOKIE_SECURE = False
+    SESSION_COOKIE_NAME = "session"
+
+    LOGIN_RATE_LIMIT_FAILURES = 5
+    LOGIN_RATE_LIMIT_WINDOW_MINUTES = 15
+    LOGIN_RATE_LIMIT_IP_FAILURES = 20
+    SESSION_ABSOLUTE_LIFETIME_MINUTES = 480
 
     # Test Administrator defaults
     ADMIN_EMAIL = "admin@test.local"
     ADMIN_FULL_NAME = "Test Admin"
-    ADMIN_INITIAL_PASSWORD = "Admin#TestPass123"
+    ADMIN_INITIAL_PASSWORD = "Admin#TestPass123"  # noqa: S105
 
     # SQLite test database (overridden dynamically by pytest fixtures in conftest.py)
     SQLALCHEMY_DATABASE_URI = (
@@ -77,12 +98,18 @@ class TestConfig(BaseConfig):
 class ProdConfig(BaseConfig):
     DEBUG = False
     TESTING = False
+    SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_NAME = "__Host-emp-session"
 
     def __init__(self):
-        if not self.SECRET_KEY or self.SECRET_KEY == "dev-only-change-me":
+        if not self.SECRET_KEY or self.SECRET_KEY == "dev-only-change-me":  # noqa: S105
             raise RuntimeError(
                 "CRITICAL SECURITY ERROR: SECRET_KEY must be set to a secure, "
                 "random string in production environments."
+            )
+        if self.SESSION_PROTECTION not in ("strong", "basic"):
+            raise ValueError(
+                f"Invalid SESSION_PROTECTION: {self.SESSION_PROTECTION}. Must be 'strong' or 'basic'."
             )
 
 

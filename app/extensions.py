@@ -1,6 +1,9 @@
 import sqlite3
 
-from flask import Flask
+from flask import Flask, current_app, session
+from flask_login import LoginManager
+from flask_login.config import SESSION_KEYS
+from flask_login.signals import session_protected
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import CSRFProtect
 from sqlalchemy import DateTime, MetaData, event, func
@@ -27,6 +30,39 @@ class Base(DeclarativeBase):
 db = SQLAlchemy(model_class=Base)
 
 csrf = CSRFProtect()
+
+
+class EmpLoginManager(LoginManager):
+    """Custom LoginManager fixing Flask-Login strong protection when permanent=True."""
+
+    def _session_protection_failed(self):
+        sess = session._get_current_object()
+        ident = self._session_identifier_generator()
+
+        app = current_app._get_current_object()
+        mode = app.config.get("SESSION_PROTECTION", self.session_protection)
+
+        if not mode or mode not in ["basic", "strong"]:
+            return False
+
+        if sess and ident != sess.get("_id", None):
+            if mode == "basic":
+                if sess.get("_fresh") is not False:
+                    sess["_fresh"] = False
+                session_protected.send(app)
+                return False
+            elif mode == "strong":
+                for k in SESSION_KEYS:
+                    sess.pop(k, None)
+
+                sess["_remember"] = "clear"
+                session_protected.send(app)
+                return True
+
+        return False
+
+
+login_manager = EmpLoginManager()
 
 
 # Reusable Timestamp Mixin
@@ -99,3 +135,7 @@ def init_extensions(app: Flask) -> None:
     """Initialize core extensions and hooks on the Flask application."""
     register_sqlite_pragmas()
     db.init_app(app)
+    login_manager.login_view = "auth.login"
+    login_manager.session_protection = app.config.get("SESSION_PROTECTION", "strong")
+    login_manager.login_message = None
+    login_manager.init_app(app)

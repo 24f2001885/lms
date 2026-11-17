@@ -75,6 +75,8 @@ ERROR_HTTP_STATUS: dict[str, int] = {
     "evaluation_locked": 409,
     # 415 Unsupported Media Type
     "unsupported_media_type": 415,
+    # 429 Too Many Requests
+    "too_many_requests": 429,
     # 422 Unprocessable Entity (validation / invalid values)
     "validation_error": 422,
     "slot_in_past": 422,
@@ -220,6 +222,42 @@ def register_error_handlers(app) -> None:
                 status=415,
             )
         return exc
+
+    @app.errorhandler(429)
+    def handle_429(exc):
+        from flask import make_response
+
+        retry_after = getattr(exc, "retry_after", None)
+        if retry_after is None and hasattr(exc, "response") and exc.response:
+            retry_after = exc.response.headers.get("Retry-After")
+        if (
+            retry_after is None
+            and hasattr(exc, "description")
+            and isinstance(exc.description, dict)
+        ):
+            retry_after = exc.description.get("retry_after")
+        if retry_after is None:
+            retry_after = 60
+
+        try:
+            retry_after = int(retry_after)
+        except (ValueError, TypeError):
+            retry_after = 60
+
+        minutes = (retry_after + 59) // 60
+        msg = f"Too many failed attempts. Try again in {minutes} minute(s)."
+
+        if _is_api_request():
+            resp = error_response("too_many_requests", msg, status=429)
+            resp.headers["Retry-After"] = str(retry_after)
+            return resp
+
+        resp = make_response(
+            render_template("errors/429.html", retry_after=retry_after, minutes=minutes),
+            429,
+        )
+        resp.headers["Retry-After"] = str(retry_after)
+        return resp
 
     @app.errorhandler(500)
     def handle_500(exc):

@@ -384,7 +384,7 @@ def cancel_slot(slot_id: int, actor_id: int, reason: str, now: datetime | None =
     slot.status = "cancelled"
     slot.booked_count = 0
     db.session.flush()
-    assert slot.booked_count == 0
+    assert slot.booked_count == 0  # noqa: S101
 
     audit_service.log_action(
         actor_id=actor_id,

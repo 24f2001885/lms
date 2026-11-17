@@ -1,7 +1,7 @@
 import os
 from decimal import Decimal
 
-from flask import Flask
+from flask import Flask, g
 
 from app.commands import register_cli
 from app.config import get_config
@@ -9,6 +9,7 @@ from app.errors import register_error_handlers
 from app.extensions import csrf, init_extensions
 from app.logging_config import register_request_logging, setup_logging
 from app.security.auth_helpers import get_current_user, load_current_user, role_dashboard_url
+from app.security.headers import register_security_headers
 from app.services.windows import format_local
 
 
@@ -45,6 +46,9 @@ def create_app(config_name: str | None = None, test_config: dict | None = None) 
     # 8. Request authentication hook
     @flask_app.before_request
     def _authenticate_request():
+        if "_login_user" in g:
+            del g._login_user
+        g.user = None
         load_current_user()
 
     # 9. Context processor injecting current_user, helpers and validation_config into templates
@@ -87,6 +91,9 @@ def create_app(config_name: str | None = None, test_config: dict | None = None) 
     flask_app.register_blueprint(examiner_bp)
     flask_app.register_blueprint(student_bp)
     flask_app.register_blueprint(api_bp, url_prefix="/api/v1")
+
+    # 12. Register security headers (P11)
+    register_security_headers(flask_app)
 
     flask_app.json.sort_keys = False
 

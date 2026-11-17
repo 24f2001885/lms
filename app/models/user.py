@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Optional
 
+from flask_login import UserMixin
 from sqlalchemy import Boolean, CheckConstraint, DateTime, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -15,7 +16,7 @@ ROLES = ("admin", "examiner", "student")
 APPROVAL_STATUSES = ("pending", "approved", "rejected")
 
 
-class User(db.Model, TimestampMixin):
+class User(UserMixin, db.Model, TimestampMixin):
     """
     User account representing an Administrator, Examiner, or Student.
     """
@@ -128,6 +129,17 @@ class User(db.Model, TimestampMixin):
     def is_student(self) -> bool:
         """Return True if user has the 'student' role."""
         return self.role == "student"
+
+    @property
+    def is_authenticated(self) -> bool:
+        """Always return True for loaded User instances so inactive users reach account-inactive."""
+        return True
+
+    def get_id(self) -> str:
+        """Return '<id>:<fingerprint>' using session_tokens.make_token."""
+        from app.security.session_tokens import make_token
+
+        return make_token(self)
 
     def __repr__(self) -> str:
         # Never expose password_hash in string representations or logs

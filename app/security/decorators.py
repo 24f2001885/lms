@@ -5,7 +5,8 @@ FILE PURPOSE: Role-based access control decorators supporting both HTML redirect
 import logging
 from functools import wraps
 
-from flask import abort, flash, g, redirect, request, url_for
+from flask import abort, flash, redirect, request, url_for
+from flask_login import current_user
 
 from app.errors import error_response
 
@@ -21,24 +22,26 @@ def login_required(f):
 
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        user = getattr(g, "user", None)
-        if user is None:
+        if not current_user.is_authenticated:
             if _is_api():
                 return error_response("unauthenticated", "Authentication is required.", status=401)
             flash("Please log in to continue.", "warning")
             return redirect(url_for("auth.login"))
 
-        if not user.is_active:
+        if not current_user.is_active:
             if _is_api():
                 return error_response(
                     "account_inactive", "Your account has been deactivated.", status=403
                 )
-            logger.warning(
-                "Access denied: inactive account user_id=%s path=%s", user.id, request.path
-            )
-            return redirect(url_for("auth.account_inactive"))
+            if request.endpoint not in ("auth.account_inactive", "auth.logout"):
+                logger.warning(
+                    "Access denied: inactive account user_id=%s path=%s",
+                    current_user.id,
+                    request.path,
+                )
+                return redirect(url_for("auth.account_inactive"))
 
-        if user.must_change_password:
+        if current_user.must_change_password:
             if _is_api():
                 return error_response(
                     "password_change_required",
@@ -48,7 +51,7 @@ def login_required(f):
             if request.endpoint not in ("auth.change_password", "auth.logout"):
                 return redirect(url_for("auth.change_password"))
 
-        if user.role == "examiner" and user.approval_status != "approved":
+        if current_user.role == "examiner" and current_user.approval_status != "approved":
             if _is_api():
                 return error_response(
                     "not_approved",
@@ -56,7 +59,9 @@ def login_required(f):
                     status=403,
                 )
             if request.endpoint not in ("auth.pending_approval", "auth.logout"):
-                logger.info("Redirecting unapproved examiner user_id=%s to pending page", user.id)
+                logger.info(
+                    "Redirecting unapproved examiner user_id=%s to pending page", current_user.id
+                )
                 return redirect(url_for("auth.pending_approval"))
 
         return f(*args, **kwargs)
@@ -79,8 +84,7 @@ def role_required(*roles: str):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            user = getattr(g, "user", None)
-            if user is None:
+            if not current_user.is_authenticated:
                 if _is_api():
                     return error_response(
                         "unauthenticated", "Authentication is required.", status=401
@@ -88,18 +92,20 @@ def role_required(*roles: str):
                 flash("Please log in to continue.", "warning")
                 return redirect(url_for("auth.login"))
 
-            if not user.is_active:
+            if not current_user.is_active:
                 if _is_api():
                     return error_response(
                         "account_inactive", "Your account has been deactivated.", status=403
                     )
                 logger.warning(
-                    "Access denied: inactive account user_id=%s path=%s", user.id, request.path
+                    "Access denied: inactive account user_id=%s path=%s",
+                    current_user.id,
+                    request.path,
                 )
                 return redirect(url_for("auth.account_inactive"))
 
             # TDR 6: Role check comes BEFORE password change and examiner approval!
-            if user.role not in roles:
+            if current_user.role not in roles:
                 if _is_api():
                     return error_response(
                         "forbidden",
@@ -108,14 +114,14 @@ def role_required(*roles: str):
                     )
                 logger.warning(
                     "Access denied (403): user_id=%s role=%s attempted to access %s (allowed: %s)",
-                    user.id,
-                    user.role,
+                    current_user.id,
+                    current_user.role,
                     request.path,
                     roles,
                 )
                 abort(403)
 
-            if user.must_change_password:
+            if current_user.must_change_password:
                 if _is_api():
                     return error_response(
                         "password_change_required",
@@ -125,7 +131,7 @@ def role_required(*roles: str):
                 if request.endpoint not in ("auth.change_password", "auth.logout"):
                     return redirect(url_for("auth.change_password"))
 
-            if user.role == "examiner" and user.approval_status != "approved":
+            if current_user.role == "examiner" and current_user.approval_status != "approved":
                 if _is_api():
                     return error_response(
                         "not_approved",
@@ -134,7 +140,8 @@ def role_required(*roles: str):
                     )
                 if request.endpoint not in ("auth.pending_approval", "auth.logout"):
                     logger.info(
-                        "Redirecting unapproved examiner user_id=%s to pending page", user.id
+                        "Redirecting unapproved examiner user_id=%s to pending page",
+                        current_user.id,
                     )
                     return redirect(url_for("auth.pending_approval"))
 
