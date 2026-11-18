@@ -3,6 +3,9 @@
 
 {% block title %}Slot #{{ slot.id }}{% endblock %}
 {% block page_title %}Slot #{{ slot.id }} {{ b.badge('slot', slot.status) }}{% endblock %}
+{% block page_actions %}
+  <a href="{{ url_for('admin.slots_list') }}" class="btn btn-outline-secondary btn-sm">&larr; Back to slots</a>
+{% endblock %}
 
 {% block content %}
 <div class="row g-4">

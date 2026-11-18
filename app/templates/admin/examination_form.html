@@ -3,6 +3,9 @@
 
 {% block title %}{{ 'Edit examination' if exam else 'New examination' }}{% endblock %}
 {% block page_title %}{{ 'Edit: ' ~ exam.name if exam else 'New examination' }}{% endblock %}
+{% block page_actions %}
+  <a href="{{ url_for('admin.examinations_list') }}" class="btn btn-outline-secondary btn-sm">&larr; Back to examinations</a>
+{% endblock %}
 
 {% block content %}
 <div class="card border-0 shadow-sm p-4 col-12 col-lg-10">

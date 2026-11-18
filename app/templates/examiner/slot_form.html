@@ -2,6 +2,9 @@
 
 {% block title %}{% if action == 'create' %}Create New Slot{% else %}Edit Slot{% endif %}{% endblock %}
 {% block page_title %}{% if action == 'create' %}Create New Slot{% else %}Edit Slot{% endif %}{% endblock %}
+{% block page_actions %}
+  <a href="{{ url_for('examiner.slots_list') }}" class="btn btn-outline-secondary btn-sm">&larr; Back to slots</a>
+{% endblock %}
 
 {% block examiner_content %}
 <div class="row justify-content-center">

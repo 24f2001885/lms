@@ -3,6 +3,9 @@
 
 {% block title %}Booking #{{ booking.id }}{% endblock %}
 {% block page_title %}Booking #{{ booking.id }} {{ b.badge('booking', booking.status) }}{% endblock %}
+{% block page_actions %}
+  <a href="{{ url_for('admin.bookings_list') }}" class="btn btn-outline-secondary btn-sm">&larr; Back to bookings</a>
+{% endblock %}
 
 {% block content %}
 <div class="row g-4">

@@ -7,6 +7,7 @@
 {% endblock %}
 
 {% block page_actions %}
+  <a href="{{ url_for('examiner.evaluations_pending') }}" class="btn btn-outline-secondary btn-sm me-2">&larr; Back to pending</a>
   {% if evaluation %}
     <span class="badge bg-{% if evaluation.status == 'published' %}success{% elif evaluation.status == 'submitted' %}primary{% else %}warning text-dark{% endif %} fs-6">{{ evaluation.status | upper }}</span>
   {% else %}

@@ -2,6 +2,9 @@
 
 {% block title %}Change Slot Examiner{% endblock %}
 {% block page_title %}Change Slot Examiner: Slot #{{ slot.id }}{% endblock %}
+{% block page_actions %}
+  <a href="{{ url_for('admin.slot_detail', slot_id=slot.id) }}" class="btn btn-outline-secondary btn-sm">&larr; Back to slot</a>
+{% endblock %}
 
 {% block content %}
 <div class="row">

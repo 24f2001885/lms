@@ -9,6 +9,7 @@
 {% endblock %}
 
 {% block page_actions %}
+  <a href="{{ url_for('examiner.examinations_list') }}" class="btn btn-outline-secondary btn-sm me-2">&larr; Back to examinations</a>
   {% if slot_state.can_create %}
     <a href="{{ url_for('examiner.slot_create') }}" class="btn btn-primary btn-sm">+ Create Slot</a>
   {% else %}

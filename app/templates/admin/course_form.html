@@ -3,6 +3,9 @@
 
 {% block title %}{{ 'Edit course' if course else 'New course' }}{% endblock %}
 {% block page_title %}{{ 'Edit course: ' ~ course.code if course else 'New course' }}{% endblock %}
+{% block page_actions %}
+  <a href="{{ url_for('admin.courses_list') }}" class="btn btn-outline-secondary btn-sm">&larr; Back to courses</a>
+{% endblock %}
 
 {% block content %}
 <div class="card border-0 shadow-sm p-4 col-12 col-lg-8">

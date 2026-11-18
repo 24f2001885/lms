@@ -4,6 +4,9 @@
 
 {% block title %}{{ user.full_name }}{% endblock %}
 {% block page_title %}{{ user.full_name }} {{ b.badge('account', user.approval_status) }}{% endblock %}
+{% block page_actions %}
+  <a href="{{ url_for('admin.examiners_list') }}" class="btn btn-outline-secondary btn-sm">&larr; Back to examiners</a>
+{% endblock %}
 
 {% block content %}
 <div class="row g-4">

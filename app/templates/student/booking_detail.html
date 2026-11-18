@@ -9,6 +9,9 @@ OFFLINE DOCKER TEST CASES:
 -->
 {% extends "student/base_student.html" %}
 {% block page_title %}Booking Details{% endblock %}
+{% block page_actions %}
+  <a href="{{ url_for('student.bookings') }}" class="btn btn-outline-secondary btn-sm">&larr; Back to bookings</a>
+{% endblock %}
 
 {% block student_content %}
 <div class="row">

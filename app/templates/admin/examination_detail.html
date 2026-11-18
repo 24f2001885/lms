@@ -5,6 +5,7 @@
 {% block title %}{{ exam.name }}{% endblock %}
 {% block page_title %}{{ exam.name }} {{ b.badge('examination', exam.status) }}{% endblock %}
 {% block page_actions %}
+  <a href="{{ url_for('admin.examinations_list') }}" class="btn btn-outline-secondary btn-sm me-2">&larr; Back to examinations</a>
   {% if not exam.is_deleted %}
     <a href="{{ url_for('admin.edit_examination', exam_id=exam.id) }}" class="btn btn-outline-secondary btn-sm">Edit</a>
     {{ m.confirm_action('del-exam-' ~ exam.id, 'Delete', 'Delete Examination', 'Soft-delete this examination?', url_for('admin.delete_examination', exam_id=exam.id), confirm_form) }}

@@ -1,5 +1,8 @@
 {% extends "admin/base_admin.html" %}
 {% block page_title %}Reschedule booking #{{ booking.id }}{% endblock %}
+{% block page_actions %}
+  <a href="{{ url_for('admin.booking_detail', booking_id=booking.id) }}" class="btn btn-outline-secondary btn-sm">&larr; Back to booking</a>
+{% endblock %}
 
 {% block content %}
 <!-- DEBUG: reschedule booking {{ booking.id }} targets {{ form.new_slot_id.choices|length }} -->

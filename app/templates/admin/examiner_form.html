@@ -3,6 +3,9 @@
 
 {% block title %}Add examiner{% endblock %}
 {% block page_title %}Add examiner{% endblock %}
+{% block page_actions %}
+  <a href="{{ url_for('admin.examiners_list') }}" class="btn btn-outline-secondary btn-sm">&larr; Back to examiners</a>
+{% endblock %}
 
 {% block content %}
 <div class="row">
