@@ -351,6 +351,14 @@ aside#adminSidebar {
   height: auto;
 }
 
+/* 13b. Registration: Examiner details conditional display */
+#examiner-fields {
+  display: none;
+}
+form:has(input[name="role"][value="examiner"]:checked) #examiner-fields {
+  display: block;
+}
+
 /* 14. Print */
 @media print {
   header,

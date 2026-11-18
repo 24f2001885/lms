@@ -330,3 +330,12 @@ aside#adminSidebar {
   font-weight: 700 !important;
   color: #FFFFFF !important;
 }
+
+/* Registration: Examiner information shown only when Examiner role is chosen */
+#examiner-fields {
+  display: none;
+}
+form:has(input[name="role"][value="examiner"]:checked) #examiner-fields {
+  display: block;
+}
+

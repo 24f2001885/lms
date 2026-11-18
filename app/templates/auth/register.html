@@ -33,7 +33,7 @@ OFFLINE DOCKER TEST CASES:
           {{ f.render_field(form.password, help_text="At least 8 characters with a letter and a number.", placeholder="••••••••") }}
           {{ f.render_field(form.confirm_password, placeholder="••••••••") }}
 
-          <div class="border rounded p-3 mb-3 bg-light">
+          <div class="border rounded p-3 mb-3 bg-light" id="examiner-fields">
             <h2 class="h6 fw-bold text-secondary mb-2">Examiner Information (Optional)</h2>
             <p class="small text-muted mb-3">Required only when registering as an Examiner. Examiner accounts require administrator approval.</p>
             {{ f.render_field(form.department, placeholder="e.g. Computer Science") }}
@@ -53,4 +53,8 @@ OFFLINE DOCKER TEST CASES:
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/register.js') }}" defer></script>
 {% endblock %}
