@@ -196,29 +196,39 @@ pre, code {
   position: sticky;
   top: 0;
   z-index: 1030;
-  background-color: #14283B; /* #E6EDF3 on #14283B = 12.74:1 */
+  background-color: #14283B !important; /* #E6EDF3 on #14283B = 12.74:1 */
   color: #E6EDF3;
 }
-.admin-sidebar {
-  background-color: #14283B;
-  color: #E6EDF3;
+.admin-sidebar,
+.admin-sidebar.offcanvas-lg,
+aside#adminSidebar {
+  background-color: #14283B !important;
+  color: #E6EDF3 !important;
+}
+.admin-sidebar .offcanvas-body {
+  background-color: #14283B !important;
 }
 .admin-sidebar .nav-link,
 .admin-sidebar a {
-  color: #E6EDF3; /* 12.74:1 on #14283B */
+  color: #E6EDF3 !important; /* 12.74:1 on #14283B */
   padding: 0.75rem 1rem;
   min-height: 44px;
   display: flex;
   align-items: center;
   text-decoration: none;
 }
+.admin-sidebar .nav-link:hover,
+.admin-sidebar a:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #FFFFFF !important;
+}
 .admin-sidebar .nav-link.active,
 .admin-sidebar a.active,
 .admin-sidebar a[aria-current="page"] {
-  border-left: 4px solid #FFC107; /* #FFC107 on #14283B = 9.21:1 */
-  background-color: rgba(255, 255, 255, 0.08);
-  font-weight: 700;
-  color: #FFFFFF;
+  border-left: 4px solid #FFC107 !important; /* #FFC107 on #14283B = 9.21:1 */
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  font-weight: 700 !important;
+  color: #FFFFFF !important;
 }
 .admin-content {
   min-width: 0;
@@ -247,7 +257,10 @@ pre, code {
     align-items: stretch;
     min-height: calc(100vh - 56px);
   }
-  .admin-sidebar {
+  .admin-sidebar,
+  .admin-sidebar.offcanvas-lg,
+  aside#adminSidebar {
+    background-color: #14283B !important;
     width: 240px;
     flex: 0 0 240px;
     position: sticky;
