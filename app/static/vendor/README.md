@@ -15,6 +15,10 @@ This directory contains vendored third-party frontend libraries for offline oper
    - `chartjs/chart.umd.min.js` (MIT License)
    - UMD minified build from Chart.js v4.4.7 official release.
 
+4. **Scorecard Fonts (Optional)**
+   - `fonts/DejaVuSans.ttf` and `fonts/DejaVuSans-Bold.ttf` (Bitstream Vera / DejaVu Fonts License)
+   - Accented Latin character support for ReportLab PDF scorecards. Without them, the scorecard safely falls back to standard built-in Helvetica.
+
 ## Verification Command
 
 Run the following Python command to verify presence of all required offline assets:

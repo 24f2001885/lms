@@ -687,3 +687,88 @@ def login_attempts(client):
         return responses
 
     return _attempts
+
+
+# --- Phase 12 Additions ---
+@pytest.fixture
+def mail_outbox(app):
+    """Capture outgoing emails using Flask-Mail's record_messages context."""
+    from app.extensions import mail
+
+    with mail.record_messages() as outbox:
+        yield outbox
+
+
+@pytest.fixture
+def sync_mail(app):
+    """Configure synchronous email dispatch and disable send suppression."""
+    orig_suppress = app.config.get("MAIL_SUPPRESS_SEND")
+    orig_async = app.config.get("MAIL_ASYNC")
+
+    app.config["MAIL_SUPPRESS_SEND"] = False
+    app.config["MAIL_ASYNC"] = False
+    yield
+    app.config["MAIL_SUPPRESS_SEND"] = orig_suppress
+    app.config["MAIL_ASYNC"] = orig_async
+
+
+@pytest.fixture
+def smtp_failure(monkeypatch):
+    """Simulate SMTP server failure by making mail.send raise an exception."""
+    from app.extensions import mail
+
+    def _fail(exc=None):
+        error = exc or ConnectionRefusedError("Simulated SMTP server down")
+
+        def _raising_send(msg):
+            raise error
+
+        monkeypatch.setattr(mail, "send", _raising_send)
+
+    return _fail
+
+
+@pytest.fixture
+def read_pdf_text():
+    """Helper to extract text from PDF bytes using pypdf."""
+
+    def _extract(pdf_bytes: bytes) -> str:
+        import io
+
+        from pypdf import PdfReader
+
+        reader = PdfReader(io.BytesIO(pdf_bytes))
+        text = ""
+        for page in reader.pages:
+            text += page.extract_text() or ""
+        return text
+
+    return _extract
+
+
+@pytest.fixture
+def make_published_result(
+    db_session,
+    make_student,
+    make_ready_examination,
+    make_booking_with_slot,
+    make_published_evaluation,
+):
+    """Helper to create a student with a fully published evaluation and scores."""
+
+    def _create(student=None, exam=None):
+        if student is None:
+            student = make_student()
+        if exam is None:
+            exam, examiner = make_ready_examination()
+        else:
+            examiner = (
+                exam.assigned_examiners[0].examiner
+                if exam.assigned_examiners
+                else User.query.filter_by(role="examiner").first()
+            )
+        booking, slot = make_booking_with_slot(examination=exam, examiner=examiner, student=student)
+        evaluation = make_published_evaluation(booking=booking, examiner=examiner, total=85)
+        return student, exam, booking, evaluation
+
+    return _create

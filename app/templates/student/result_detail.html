@@ -4,7 +4,7 @@ PROMPT FOR LLM IMPLEMENTATION:
 1. Extend base_student.html; header with examination, date, examiner name; a large "Total: X of N" figure; per-criterion table (Criterion, Score, Maximum, Comment); a "Feedback" section with the remarks (empty text hidden); back link to Results.
 2. Reserve a Jinja block named result_actions (empty) where P12 adds the scorecard download button.
 DEBUGGING:
-<!-- DEBUG: result booking {{ booking.id }} total {{ detail.total }} -->
+<!-- DEBUG: result booking {{ detail.booking.id }} total {{ detail.total }} -->
 OFFLINE DOCKER TEST CASES:
 - Per-criterion scores sum to the displayed total; remarks are escaped.
 -->
@@ -58,7 +58,9 @@ OFFLINE DOCKER TEST CASES:
 
     <div class="d-flex justify-content-between">
       <a href="{{ url_for('student.results_list') }}" class="btn btn-secondary">Back to Results</a>
-      {% block result_actions %}{% endblock %}
+      {% block result_actions %}
+        <a href="{{ url_for('student.download_scorecard', id=detail.booking.id) }}" class="btn btn-primary">Download scorecard (PDF)</a>
+      {% endblock %}
     </div>
   </div>
 </div>

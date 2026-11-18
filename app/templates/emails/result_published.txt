@@ -1,0 +1,5 @@
+Hello {{ student_name }},
+
+Your result for {{ examination_name }} ({{ exam_date }}) has been published. Sign in to see your marks, feedback and scorecard:
+
+{{ link }}

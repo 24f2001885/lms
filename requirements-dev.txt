@@ -5,6 +5,9 @@
 #local smtp
 aiosmtpd==1.4.6
 
+#pdf parser
+pypdf==4.0.1
+
 #py formatter 
 black==24.10.0
 

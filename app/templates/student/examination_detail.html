@@ -5,7 +5,7 @@ PROMPT FOR LLM IMPLEMENTATION:
 2. Slots table: Date/time, Examiner, Seats left (with .slot-meter), Status badge, Action (book_button macro; full slots use the .slot-row-full class). Include one book_modal per bookable slot after the table.
 3. When the student already has an active booking show an info alert linking to the booking and disable every Book button with "You already booked this examination".
 DEBUGGING:
-<!-- DEBUG: exam {{ exam.id }} slots {{ slots|length }} own booking {{ own_booking.id if own_booking else None }} -->
+<!-- DEBUG: exam {{ examination.id if examination is defined else (exam.id if exam is defined else '') }} slots {{ slots|length if slots is defined else 0 }} own booking {{ own_booking.id if own_booking else None }} -->
 OFFLINE DOCKER TEST CASES:
 - Full slots show a Full badge and a disabled button; a closed window disables all buttons with the reason.
 -->

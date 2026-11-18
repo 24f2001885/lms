@@ -4,7 +4,7 @@ PROMPT FOR LLM IMPLEMENTATION:
 1. Macro book_modal(slot, exam, form): a Bootstrap modal with unique id "book-slot-" ~ slot.id, title "Confirm booking", a summary list (examination name, date and time via localdt, examiner name, seats left), a note showing the cancellation deadline, a POST form to url_for student.book with form.hidden_tag() for CSRF, a primary "Confirm booking" button and a Cancel button.
 2. Companion macro book_button(slot, enabled, reason): when enabled a button opening the modal, otherwise a disabled button with aria-disabled="true" followed by a visible reason line (class deadline-note).
 DEBUGGING:
-<!-- DEBUG: book modal slot {{ slot.id }} enabled {{ enabled }} -->
+<!-- DEBUG: book modal slot {{ slot.id if slot is defined else '' }} enabled {{ enabled if enabled is defined else '' }} -->
 OFFLINE DOCKER TEST CASES:
 - The modal form posts to /student/slots/<id>/book and contains a csrf_token input.
 - A disabled button is followed by its reason text.

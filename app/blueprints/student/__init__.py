@@ -12,6 +12,7 @@ from app.blueprints.student import (  # noqa: E402, F401
     dashboard,
     examinations,
     results,
+    scorecard,
 )
 
 # Endpoint aliases for template navigation consistency

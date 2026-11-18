@@ -166,6 +166,7 @@ def book_slot(student_id: int, slot_id: int, now: datetime | None = None) -> Boo
             details={"slot_id": slot_id, "examination_id": exam.id},
         )
         db.session.commit()
+        hooks.emit(hooks.EVENT_BOOKING_CREATED, booking_id=booking.id, student_id=student_id)
     except IntegrityError as exc:
         db.session.rollback()
         msg = str(exc.orig).lower() if exc.orig else ""
@@ -204,6 +205,9 @@ def cancel_booking(student_id: int, booking_id: int, now: datetime | None = None
         details={"by": "student", "slot_id": slot.id},
     )
     db.session.commit()
+    hooks.emit(
+        hooks.EVENT_BOOKING_CANCELLED, booking_id=booking.id, student_id=student_id, by="student"
+    )
 
     hooks.run_post_cancel(
         HookContext(
@@ -279,6 +283,13 @@ def reschedule_booking(
         created_at=now_time,
     )
     db.session.commit()
+    hooks.emit(
+        hooks.EVENT_BOOKING_RESCHEDULED,
+        booking_id=booking.id,
+        student_id=booking.student_id,
+        from_slot_id=old_slot.id,
+        to_slot_id=target_slot.id,
+    )
     db.session.refresh(old_slot)
     db.session.refresh(target_slot)
     return booking
@@ -319,6 +330,12 @@ def admin_cancel_booking(
         created_at=now_time,
     )
     db.session.commit()
+    hooks.emit(
+        hooks.EVENT_BOOKING_CANCELLED,
+        booking_id=booking.id,
+        student_id=booking.student_id,
+        by="admin",
+    )
 
     hooks.run_post_cancel(
         HookContext(
@@ -401,6 +418,12 @@ def cancel_slot(slot_id: int, actor_id: int, reason: str, now: datetime | None =
     db.session.commit()
 
     for ctx in cancelled_contexts:
+        hooks.emit(
+            hooks.EVENT_BOOKING_CANCELLED,
+            booking_id=ctx.booking_id,
+            student_id=ctx.student_id,
+            by="slot",
+        )
         hooks.run_post_cancel(ctx)
 
     return len(active_bookings)

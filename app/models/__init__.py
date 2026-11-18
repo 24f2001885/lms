@@ -1,6 +1,7 @@
 from app.models.audit_log import AuditLog
 from app.models.booking import Booking
 from app.models.course import Course
+from app.models.email_log import EmailLog
 from app.models.evaluation import Evaluation, EvaluationScore
 from app.models.examination import Examination
 from app.models.examination_examiner import ExaminationExaminer
@@ -26,6 +27,8 @@ ALL_TABLE_NAMES = (
     "users",
 )
 
+TIER2_TABLE_NAMES = ("email_logs",)
+
 __all__ = [
     "User",
     "ExaminerProfile",
@@ -39,5 +42,7 @@ __all__ = [
     "Evaluation",
     "EvaluationScore",
     "AuditLog",
+    "EmailLog",
     "ALL_TABLE_NAMES",
+    "TIER2_TABLE_NAMES",
 ]

@@ -57,6 +57,11 @@ def main(app=None):
     demo_password = os.environ.get("DEMO_PASSWORD", "Demo#12345")
 
     with app.app_context():
+        orig_suppress = app.config.get("MAIL_SUPPRESS_SEND")
+        orig_async = app.config.get("MAIL_ASYNC")
+        app.config["MAIL_SUPPRESS_SEND"] = True
+        app.config["MAIL_ASYNC"] = False
+
         db.create_all()
         admin = User.query.filter_by(role="admin").first()
         if not admin:
@@ -75,6 +80,8 @@ def main(app=None):
 
         if Course.query.filter_by(code="DEMO101").first():
             print("Demo data already present.")
+            app.config["MAIL_SUPPRESS_SEND"] = orig_suppress
+            app.config["MAIL_ASYNC"] = orig_async
             return
 
         base_now = windows.now_utc()
@@ -393,12 +400,19 @@ def main(app=None):
             print("    - Viva - Data Structures (booking_open)")
             print("    - Practical - Databases (slot_creation)")
             print("    - Project demo - Web (completed, 4 published results)")
+            from app.models.email_log import EmailLog
+
+            email_count = EmailLog.query.count()
+            print(f"  Email logs created: {email_count}")
             print("  Login URL: http://127.0.0.1:5000/login")
 
         except Exception as exc:
             db.session.rollback()
             print(f"ERROR: Demo seed failed: {exc}", file=sys.stderr)
             sys.exit(1)
+        finally:
+            app.config["MAIL_SUPPRESS_SEND"] = orig_suppress
+            app.config["MAIL_ASYNC"] = orig_async
 
 
 if __name__ == "__main__":

@@ -1,0 +1,11 @@
+Hello {{ student_name }},
+
+Your booking is confirmed.
+
+Examination: {{ examination_name }} ({{ course_code }})
+Date and time: {{ slot_start }} to {{ slot_end }} {{ tz }}
+Examiner: {{ examiner_name }}
+Booking number: {{ booking_id }}
+Cancel until: {{ cancel_deadline }} {{ tz }}
+
+View your bookings: {{ link }}

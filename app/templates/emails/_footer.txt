@@ -1,0 +1,2 @@
+This is an automated message from {{ institution }}. Please do not reply to it.
+If you did not expect this email, contact your administrator.

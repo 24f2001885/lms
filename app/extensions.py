@@ -4,6 +4,7 @@ from flask import Flask, current_app, session
 from flask_login import LoginManager
 from flask_login.config import SESSION_KEYS
 from flask_login.signals import session_protected
+from flask_mail import Mail
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import CSRFProtect
 from sqlalchemy import DateTime, MetaData, event, func
@@ -30,6 +31,8 @@ class Base(DeclarativeBase):
 db = SQLAlchemy(model_class=Base)
 
 csrf = CSRFProtect()
+
+mail = Mail()
 
 
 class EmpLoginManager(LoginManager):
@@ -139,3 +142,4 @@ def init_extensions(app: Flask) -> None:
     login_manager.session_protection = app.config.get("SESSION_PROTECTION", "strong")
     login_manager.login_message = None
     login_manager.init_app(app)
+    mail.init_app(app)

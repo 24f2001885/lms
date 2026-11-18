@@ -51,6 +51,21 @@ class BaseConfig:
     CSP_REPORT_ONLY = os.environ.get("CSP_REPORT_ONLY", "false").lower() == "true"
     WTF_CSRF_TIME_LIMIT = None
 
+    # Email and Scorecard settings (P12)
+    MAIL_SERVER = os.environ.get("MAIL_SERVER", "localhost")
+    MAIL_PORT = int(os.environ.get("MAIL_PORT", "1025"))
+    MAIL_USE_TLS = os.environ.get("MAIL_USE_TLS", "false").lower() == "true"
+    MAIL_USERNAME = os.environ.get("MAIL_USERNAME", "")
+    MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD", "")  # noqa: S105
+    MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER", "emp@example.edu")
+    MAIL_SUPPRESS_SEND = os.environ.get("MAIL_SUPPRESS_SEND", "false").lower() == "true"
+    MAIL_ASYNC = os.environ.get("MAIL_ASYNC", "true").lower() == "true"
+    MAIL_MAX_ATTEMPTS = int(os.environ.get("MAIL_MAX_ATTEMPTS", "3"))
+    EMAIL_LOG_RETENTION_DAYS = int(os.environ.get("EMAIL_LOG_RETENTION_DAYS", "90"))
+    APP_BASE_URL = os.environ.get("APP_BASE_URL", "http://127.0.0.1:5000")
+    INSTITUTION_NAME = os.environ.get("INSTITUTION_NAME", "Examination Management Portal")
+    SCORECARD_DETERMINISTIC = os.environ.get("SCORECARD_DETERMINISTIC", "false").lower() == "true"
+
     # logs
     LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
     LOG_FILE = os.environ.get("LOG_FILE", "logs/lms.log")
@@ -64,6 +79,7 @@ class BaseConfig:
 class DevConfig(BaseConfig):
     DEBUG = True
     TESTING = False
+    MAIL_SUPPRESS_SEND = True
 
 
 class TestConfig(BaseConfig):
@@ -81,6 +97,10 @@ class TestConfig(BaseConfig):
     LOGIN_RATE_LIMIT_WINDOW_MINUTES = 15
     LOGIN_RATE_LIMIT_IP_FAILURES = 20
     SESSION_ABSOLUTE_LIFETIME_MINUTES = 480
+
+    MAIL_SUPPRESS_SEND = True
+    MAIL_ASYNC = False
+    SCORECARD_DETERMINISTIC = True
 
     # Test Administrator defaults
     ADMIN_EMAIL = "admin@test.local"
@@ -100,6 +120,7 @@ class ProdConfig(BaseConfig):
     TESTING = False
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_NAME = "__Host-emp-session"
+    MAIL_SUPPRESS_SEND = os.environ.get("MAIL_SUPPRESS_SEND", "false").lower() == "true"
 
     def __init__(self):
         if not self.SECRET_KEY or self.SECRET_KEY == "dev-only-change-me":  # noqa: S105
@@ -110,6 +131,10 @@ class ProdConfig(BaseConfig):
         if self.SESSION_PROTECTION not in ("strong", "basic"):
             raise ValueError(
                 f"Invalid SESSION_PROTECTION: {self.SESSION_PROTECTION}. Must be 'strong' or 'basic'."
+            )
+        if not self.MAIL_SUPPRESS_SEND and not self.MAIL_SERVER:
+            raise ValueError(
+                "MAIL_SERVER must not be empty when MAIL_SUPPRESS_SEND is false in production."
             )
 
 

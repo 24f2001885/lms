@@ -2,7 +2,7 @@
 PYTHON ?= python3
 FLASK  ?= flask
 
-.PHONY: help run init-db lint format test test-unit test-integration test-e2e test-core test-tier3 gate-check tier3-branch docker-up docker-test docker-down vendor-wheels clean a11y test-ui security test-security
+.PHONY: help run init-db lint format test test-unit test-integration test-e2e test-core test-tier3 gate-check tier3-branch docker-up docker-test docker-down vendor-wheels clean a11y test-ui security test-security mail-sink test-mail test-scorecard report-facts submission gate-b
 
 # Default target: display self-documenting help menu
 help:
@@ -79,6 +79,24 @@ security:
 
 test-security:
 	pytest -m security -v
+
+mail-sink:
+	$(PYTHON) -m aiosmtpd -n -l localhost:1025
+
+test-mail:
+	pytest -m mail -v
+
+test-scorecard:
+	pytest -m scorecard -v
+
+report-facts:
+	$(PYTHON) scripts/report_facts.py
+
+submission:
+	bash scripts/build_submission.sh
+
+gate-b:
+	bash scripts/verify_gate_b.sh
 
 test-e2e:
 	pytest tests/e2e -q -m e2e

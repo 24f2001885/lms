@@ -1,0 +1,168 @@
+erDiagram
+    audit_logs {
+        INTEGER id PK
+        INTEGER actor_id FK
+        VARCHAR action
+        VARCHAR entity_type
+        INTEGER entity_id
+        TEXT details
+        VARCHAR ip_address
+        DATETIME created_at
+    }
+    bookings {
+        INTEGER id PK
+        INTEGER student_id FK
+        INTEGER slot_id FK
+        INTEGER examination_id FK
+        VARCHAR status
+        DATETIME booked_at
+        DATETIME cancelled_at
+        INTEGER cancelled_by FK
+        INTEGER rescheduled_from_slot_id FK
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    courses {
+        INTEGER id PK
+        VARCHAR code UK
+        VARCHAR name
+        VARCHAR description
+        VARCHAR status
+        INTEGER created_by FK
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    email_logs {
+        INTEGER id PK
+        TEXT to_email
+        TEXT template
+        TEXT status
+        TEXT error_message
+        TEXT related_entity_type
+        INTEGER related_entity_id
+        DATETIME created_at
+        DATETIME sent_at
+        TEXT subject
+        TEXT body_text
+        INTEGER attempts
+        DATETIME last_attempt_at
+    }
+    evaluation_scores {
+        INTEGER id PK
+        INTEGER evaluation_id FK
+        INTEGER rubric_id FK
+        NUMERIC score
+        VARCHAR comment
+    }
+    evaluations {
+        INTEGER id PK
+        INTEGER booking_id FK,UK
+        INTEGER examiner_id FK
+        NUMERIC total_marks
+        TEXT remarks
+        VARCHAR status
+        DATETIME submitted_at
+        DATETIME published_at
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    examination_examiners {
+        INTEGER id PK
+        INTEGER examination_id FK
+        INTEGER examiner_id FK
+        INTEGER assigned_by FK
+        DATETIME assigned_at
+    }
+    examination_rubrics {
+        INTEGER id PK
+        INTEGER examination_id FK
+        VARCHAR criterion_name
+        VARCHAR description
+        NUMERIC weightage
+        NUMERIC max_score
+        INTEGER position
+    }
+    examination_slots {
+        INTEGER id PK
+        INTEGER examination_id FK
+        INTEGER examiner_id FK
+        DATETIME start_at
+        DATETIME end_at
+        INTEGER max_capacity
+        INTEGER booked_count
+        VARCHAR status
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    examinations {
+        INTEGER id PK
+        INTEGER course_id FK
+        VARCHAR name
+        VARCHAR description
+        VARCHAR exam_type
+        INTEGER duration_minutes
+        INTEGER max_marks
+        DATETIME slot_creation_start
+        DATETIME slot_creation_end
+        DATETIME booking_start
+        DATETIME booking_end
+        DATETIME cancellation_deadline
+        BOOLEAN slot_creation_open
+        BOOLEAN booking_open
+        VARCHAR status
+        BOOLEAN is_deleted
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    examiner_profiles {
+        INTEGER id PK
+        INTEGER user_id FK,UK
+        VARCHAR contact_phone
+        VARCHAR department
+        VARCHAR designation
+        VARCHAR status
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    student_profiles {
+        INTEGER id PK
+        INTEGER user_id FK,UK
+        VARCHAR roll_number UK
+        VARCHAR contact_phone
+        VARCHAR program
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users {
+        INTEGER id PK
+        VARCHAR email UK
+        VARCHAR password_hash
+        VARCHAR full_name
+        VARCHAR role
+        VARCHAR approval_status
+        BOOLEAN is_active
+        BOOLEAN must_change_password
+        DATETIME last_login_at
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    bookings ||--o{ evaluations : "booking_id"
+    courses ||--o{ examinations : "course_id"
+    evaluations ||--o{ evaluation_scores : "evaluation_id"
+    examination_rubrics ||--o{ evaluation_scores : "rubric_id"
+    examination_slots ||--o{ bookings : "rescheduled_from_slot_id"
+    examination_slots ||--o{ bookings : "slot_id"
+    examinations ||--o{ bookings : "examination_id"
+    examinations ||--o{ examination_examiners : "examination_id"
+    examinations ||--o{ examination_rubrics : "examination_id"
+    examinations ||--o{ examination_slots : "examination_id"
+    users ||--o{ audit_logs : "actor_id"
+    users ||--o{ bookings : "cancelled_by"
+    users ||--o{ bookings : "student_id"
+    users ||--o{ courses : "created_by"
+    users ||--o{ evaluations : "examiner_id"
+    users ||--o{ examination_examiners : "assigned_by"
+    users ||--o{ examination_examiners : "examiner_id"
+    users ||--o{ examination_slots : "examiner_id"
+    users ||--o{ examiner_profiles : "user_id"
+    users ||--o{ student_profiles : "user_id"
