@@ -295,7 +295,20 @@ form .text-danger {
   cursor: progress;
 }
 
-/* Admin Sidebar Layout & Contrast */
+/* Admin Header & Sidebar Layout & Contrast */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+  width: 100%;
+}
+.admin-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+  background-color: #14283B !important;
+  color: #E6EDF3 !important;
+}
 .admin-sidebar,
 .admin-sidebar.offcanvas-lg,
 aside#adminSidebar {
