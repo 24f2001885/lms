@@ -1,4 +1,4 @@
-<!--
+{#
 FILE PURPOSE: STU-04 booking confirmation modal macro.
 PROMPT FOR LLM IMPLEMENTATION:
 1. Macro book_modal(slot, exam, form): a Bootstrap modal with unique id "book-slot-" ~ slot.id, title "Confirm booking", a summary list (examination name, date and time via localdt, examiner name, seats left), a note showing the cancellation deadline, a POST form to url_for student.book with form.hidden_tag() for CSRF, a primary "Confirm booking" button and a Cancel button.
@@ -8,7 +8,7 @@ DEBUGGING:
 OFFLINE DOCKER TEST CASES:
 - The modal form posts to /student/slots/<id>/book and contains a csrf_token input.
 - A disabled button is followed by its reason text.
--->
+#}
 {% macro book_modal(slot, exam, form) %}
 <div class="modal fade" id="book-slot-{{ slot.id }}" tabindex="-1" role="dialog" aria-labelledby="bookModalLabel{{ slot.id }}" aria-hidden="true">
   <div class="modal-dialog">

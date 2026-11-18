@@ -1,4 +1,4 @@
-<!--
+{#
 FILE PURPOSE: STU-05 my bookings.
 PROMPT FOR LLM IMPLEMENTATION:
 1. Extend base_student.html; page_title "My bookings"; status filter pills (All, Booked, Completed, Cancelled). Table: Examination, Date/time, Examiner, Status badge, Booked on, Actions (Details link; Cancel button inside the confirm_action modal while allowed, else the "Cancellation closed on ..." text). Pager and empty state with a link to Examinations.
@@ -6,7 +6,7 @@ DEBUGGING:
 <!-- DEBUG: bookings {{ page.total }} -->
 OFFLINE DOCKER TEST CASES:
 - Cancelled rows have no Cancel button; booked rows before the deadline do.
--->
+#}
 {% extends "student/base_student.html" %}
 {% block page_title %}My Bookings{% endblock %}
 

@@ -1,4 +1,4 @@
-<!--
+{#
 FILE PURPOSE: STU-06 booking detail and cancel.
 PROMPT FOR LLM IMPLEMENTATION:
 1. Extend base_student.html; summary (examination, course, slot start/end, examiner, status badge, booked on, cancelled on if any), deadline note, Cancel button (confirm modal) when allowed, link back to My bookings; when the result is published a link to the result detail.
@@ -6,7 +6,7 @@ DEBUGGING:
 <!-- DEBUG: booking {{ booking.id }} status {{ booking.status }} -->
 OFFLINE DOCKER TEST CASES:
 - Only the owner can open the page (404 for others); the result link appears only when published.
--->
+#}
 {% extends "student/base_student.html" %}
 {% block page_title %}Booking Details{% endblock %}
 {% block page_actions %}

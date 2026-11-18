@@ -1,4 +1,4 @@
-<!--
+{#
 FILE PURPOSE: STU-08 booking and examination history.
 PROMPT FOR LLM IMPLEMENTATION:
 1. Extend base_student.html; page_title "History". Section "Booking history": table of every booking with status badge, booked and cancelled dates. Section "Examination history": one row per examination with final status and "Result published" yes/no. Pager and empty states.
@@ -6,7 +6,7 @@ DEBUGGING:
 <!-- DEBUG: history rows {{ page.total }} -->
 OFFLINE DOCKER TEST CASES:
 - Cancelled bookings are listed; the examination summary shows one row per examination.
--->
+#}
 {% extends "student/base_student.html" %}
 {% block page_title %}History{% endblock %}
 

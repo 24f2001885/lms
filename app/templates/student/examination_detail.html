@@ -1,4 +1,4 @@
-<!--
+{#
 FILE PURPOSE: STU-03 examination detail with slots and booking buttons.
 PROMPT FOR LLM IMPLEMENTATION:
 1. Extend base_student.html; header (name, course, type, duration, maximum marks), a booking-window panel with the open/closed badge and reason line, and the cancellation deadline text.
@@ -8,7 +8,7 @@ DEBUGGING:
 <!-- DEBUG: exam {{ examination.id if examination is defined else (exam.id if exam is defined else '') }} slots {{ slots|length if slots is defined else 0 }} own booking {{ own_booking.id if own_booking else None }} -->
 OFFLINE DOCKER TEST CASES:
 - Full slots show a Full badge and a disabled button; a closed window disables all buttons with the reason.
--->
+#}
 {% extends "student/base_student.html" %}
 {% import "macros/booking_modal.html" as bm %}
 {% block page_title %}{{ examination.name }}{% endblock %}

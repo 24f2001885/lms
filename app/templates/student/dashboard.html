@@ -1,4 +1,4 @@
-<!--
+{#
 FILE PURPOSE: STU-01 dashboard.
 PROMPT FOR LLM IMPLEMENTATION:
 1. Extend base_student.html; page_title "Dashboard". Five sections as cards: Available examinations (name, type, booking window, View slots link), Available slots (examination, date/time, examiner, seats left, View link), Upcoming (next booked slots with date and examiner), Booked slots (count and list with status badge and link), Published results (examination, total / maximum, View link). Each has an empty state sentence.
@@ -7,7 +7,7 @@ DEBUGGING:
 <!-- DEBUG: dashboard data keys {{ data.keys() }} -->
 OFFLINE DOCKER TEST CASES:
 - Empty states render for a new student; sections fill after booking and publishing.
--->
+#}
 {% extends "student/base_student.html" %}
 {% from "charts/_macros.html" import chart_card %}
 {% block page_title %}Dashboard{% endblock %}

@@ -1,4 +1,4 @@
-<!--
+{#
 FILE PURPOSE: STU-02 browse and search examinations.
 PROMPT FOR LLM IMPLEMENTATION:
 1. Extend base_student.html; page_title "Examinations". GET filter bar: search q, course select, type select, Filter button.
@@ -7,7 +7,7 @@ DEBUGGING:
 <!-- DEBUG: examinations {{ page.total }} -->
 OFFLINE DOCKER TEST CASES:
 - Filters persist in the pager links; the booked badge appears only on examinations the student booked.
--->
+#}
 {% extends "student/base_student.html" %}
 {% import "macros/pagination.html" as p %}
 {% block page_title %}Examinations{% endblock %}

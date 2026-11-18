@@ -1,4 +1,4 @@
-<!--
+{#
 FILE PURPOSE: STU-07 upcoming schedule.
 PROMPT FOR LLM IMPLEMENTATION:
 1. Extend base_student.html; page_title "My schedule"; chronological list grouped by date (heading per local date), each entry with time range, examination, examiner and a Details link. Empty state "You have no upcoming examinations."
@@ -6,7 +6,7 @@ DEBUGGING:
 <!-- DEBUG: schedule entries {{ items|length }} -->
 OFFLINE DOCKER TEST CASES:
 - Past and cancelled bookings never appear.
--->
+#}
 {% extends "student/base_student.html" %}
 {% block page_title %}My Schedule{% endblock %}
 

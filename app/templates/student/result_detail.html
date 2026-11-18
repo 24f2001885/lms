@@ -1,4 +1,4 @@
-<!--
+{#
 FILE PURPOSE: STU-10 result detail with feedback (scorecard download link is added in P12).
 PROMPT FOR LLM IMPLEMENTATION:
 1. Extend base_student.html; header with examination, date, examiner name; a large "Total: X of N" figure; per-criterion table (Criterion, Score, Maximum, Comment); a "Feedback" section with the remarks (empty text hidden); back link to Results.
@@ -7,7 +7,7 @@ DEBUGGING:
 <!-- DEBUG: result booking {{ detail.booking.id }} total {{ detail.total }} -->
 OFFLINE DOCKER TEST CASES:
 - Per-criterion scores sum to the displayed total; remarks are escaped.
--->
+#}
 {% extends "student/base_student.html" %}
 {% block page_title %}Result Scorecard{% endblock %}
 {% block page_actions %}

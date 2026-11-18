@@ -1,4 +1,4 @@
-<!--
+{#
 FILE PURPOSE: STU-09 results list.
 PROMPT FOR LLM IMPLEMENTATION:
 1. Extend base_student.html; page_title "Results"; table: Examination, Date, Total / maximum, Published on, View link. Pager; empty state "No results have been published yet."
@@ -6,7 +6,7 @@ DEBUGGING:
 <!-- DEBUG: results {{ page.total }} -->
 OFFLINE DOCKER TEST CASES:
 - Only published results appear.
--->
+#}
 {% extends "student/base_student.html" %}
 {% block page_title %}Results{% endblock %}
 
