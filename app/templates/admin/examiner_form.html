@@ -5,20 +5,24 @@
 {% block page_title %}Add examiner{% endblock %}
 
 {% block content %}
-<div class="card border-0 shadow-sm p-4 col-lg-8">
-  <form method="POST" action="{{ url_for('admin.new_examiner') }}">
-    {{ form.hidden_tag() }}
-    {{ f.render_field(form.full_name, placeholder="Full name") }}
-    {{ f.render_field(form.email, placeholder="examiner@example.edu") }}
-    {{ f.render_field(form.contact_phone, placeholder="+91 98765 43210") }}
-    {{ f.render_field(form.department, placeholder="e.g. Computer Science") }}
-    {{ f.render_field(form.designation, placeholder="e.g. Associate Professor") }}
-    {{ f.render_field(form.temporary_password, help_text="The examiner will be forced to change this upon initial login.") }}
+<div class="row">
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-sm p-4">
+      <form method="POST" action="{{ url_for('admin.new_examiner') }}">
+        {{ form.hidden_tag() }}
+        {{ f.render_field(form.full_name, placeholder="Full name") }}
+        {{ f.render_field(form.email, placeholder="examiner@example.edu") }}
+        {{ f.render_field(form.contact_phone, placeholder="+91 98765 43210") }}
+        {{ f.render_field(form.department, placeholder="e.g. Computer Science") }}
+        {{ f.render_field(form.designation, placeholder="e.g. Associate Professor") }}
+        {{ f.render_field(form.temporary_password, help_text="The examiner will be forced to change this upon initial login.") }}
 
-    <div class="d-flex gap-2 mt-4 pt-3 border-top">
-      <button type="submit" class="btn btn-primary">Save examiner</button>
-      <a href="{{ url_for('admin.examiners') }}" class="btn btn-outline-secondary">Cancel</a>
+        <div class="form-actions mt-4 pt-3 border-top">
+          <button type="submit" class="btn btn-primary">Save examiner</button>
+          <a href="{{ url_for('admin.examiners') }}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+      </form>
     </div>
-  </form>
+  </div>
 </div>
 {% endblock %}

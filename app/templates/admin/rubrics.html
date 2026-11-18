@@ -40,15 +40,15 @@
 <!-- Table of Criteria -->
 <div class="card border-0 shadow-sm mb-4">
   <div class="table-responsive">
-    <table class="table table-hover align-middle mb-0">
+    <table class="table table-hover align-middle mb-0" aria-label="Rubric criteria">
       <thead class="table-light">
         <tr>
-          <th>Order</th>
-          <th>Criterion</th>
-          <th>Description</th>
-          <th>Weightage (%)</th>
-          <th>Max Score</th>
-          {% if not locked %}<th>Actions</th>{% endif %}
+          <th scope="col">Order</th>
+          <th scope="col">Criterion</th>
+          <th scope="col">Description</th>
+          <th scope="col">Weightage (%)</th>
+          <th scope="col">Max Score</th>
+          {% if not locked %}<th scope="col">Actions</th>{% endif %}
         </tr>
       </thead>
       <tbody>
@@ -75,18 +75,24 @@
 
 {% if not locked %}
 <!-- Add Criterion Form -->
-<div class="card border-0 shadow-sm p-4 col-lg-8">
-  <h2 class="h6 fw-bold text-primary mb-3">Add Rubric Criterion</h2>
-  <form method="POST" action="{{ url_for('admin.add_rubric', exam_id=exam.id) }}">
-    {{ form.hidden_tag() }}
-    {{ f.render_field(form.criterion_name, placeholder="e.g. Technical Depth") }}
-    {{ f.render_field(form.description, placeholder="Scoring expectations...") }}
-    <div class="row g-3">
-      <div class="col-md-6">{{ f.render_field(form.weightage, placeholder="e.g. 25.00") }}</div>
-      <div class="col-md-6">{{ f.render_field(form.max_score, placeholder="e.g. 25.00") }}</div>
+<div class="row">
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-sm p-4">
+      <h2 class="h6 fw-bold text-primary mb-3">Add Rubric Criterion</h2>
+      <form method="POST" action="{{ url_for('admin.add_rubric', exam_id=exam.id) }}">
+        {{ form.hidden_tag() }}
+        {{ f.render_field(form.criterion_name, placeholder="e.g. Technical Depth") }}
+        {{ f.render_field(form.description, placeholder="Scoring expectations...") }}
+        <div class="row g-3">
+          <div class="col-md-6">{{ f.render_field(form.weightage, placeholder="e.g. 25.00") }}</div>
+          <div class="col-md-6">{{ f.render_field(form.max_score, placeholder="e.g. 25.00") }}</div>
+        </div>
+        <div class="form-actions mt-3">
+          <button type="submit" class="btn btn-primary">Add Criterion</button>
+        </div>
+      </form>
     </div>
-    <button type="submit" class="btn btn-primary mt-2">Add Criterion</button>
-  </form>
+  </div>
 </div>
 {% endif %}
 {% endblock %}

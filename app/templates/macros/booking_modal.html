@@ -10,7 +10,7 @@ OFFLINE DOCKER TEST CASES:
 - A disabled button is followed by its reason text.
 -->
 {% macro book_modal(slot, exam, form) %}
-<div class="modal fade" id="book-slot-{{ slot.id }}" tabindex="-1" aria-labelledby="bookModalLabel{{ slot.id }}" aria-hidden="true">
+<div class="modal fade" id="book-slot-{{ slot.id }}" tabindex="-1" role="dialog" aria-labelledby="bookModalLabel{{ slot.id }}" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">

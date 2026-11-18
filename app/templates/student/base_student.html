@@ -2,38 +2,46 @@
 
 {% block site_nav %}
 {% set ep = request.endpoint or '' %}
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary" aria-label="Student">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm" aria-label="Student">
   <div class="container page-container">
-    <a class="navbar-brand fw-bold" href="{{ url_for('student.dashboard') }}">EMP Student</a>
+    <a class="navbar-brand fw-bold fs-4 d-flex align-items-center gap-2" href="{{ url_for('student.dashboard') }}">
+      <span>EMP Student</span>
+    </a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="mainNav">
-      <ul class="navbar-nav me-auto">
+      <ul class="navbar-nav me-auto py-2 py-lg-0">
         <li class="nav-item">
-          <a class="nav-link{% if ep == 'student.dashboard' %} active{% endif %}" href="{{ url_for('student.dashboard') }}"{% if ep == 'student.dashboard' %} aria-current="page"{% endif %}>Dashboard</a>
+          <a class="nav-link fw-medium{% if ep == 'student.dashboard' %} active{% endif %}" href="{{ url_for('student.dashboard') }}"{% if ep == 'student.dashboard' %} aria-current="page"{% endif %}>Dashboard</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link{% if 'examination' in ep %} active{% endif %}" href="{{ url_for('student.examinations') }}"{% if 'examination' in ep %} aria-current="page"{% endif %}>Examinations</a>
+          <a class="nav-link fw-medium{% if 'examination' in ep %} active{% endif %}" href="{{ url_for('student.examinations') }}"{% if 'examination' in ep %} aria-current="page"{% endif %}>Examinations</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link{% if 'booking' in ep or 'schedule' in ep or 'history' in ep %} active{% endif %}" href="{{ url_for('student.bookings') }}"{% if 'booking' in ep %} aria-current="page"{% endif %}>My bookings</a>
+          <a class="nav-link fw-medium{% if 'booking' in ep or 'schedule' in ep or 'history' in ep %} active{% endif %}" href="{{ url_for('student.bookings') }}"{% if 'booking' in ep %} aria-current="page"{% endif %}>My bookings</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link{% if 'result' in ep %} active{% endif %}" href="{{ url_for('student.results') }}"{% if 'result' in ep %} aria-current="page"{% endif %}>Results</a>
+          <a class="nav-link fw-medium{% if 'result' in ep %} active{% endif %}" href="{{ url_for('student.results') }}"{% if 'result' in ep %} aria-current="page"{% endif %}>Results</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link{% if ep == 'student.charts' %} active{% endif %}" href="{{ url_for('student.charts') }}"{% if ep == 'student.charts' %} aria-current="page"{% endif %}>Charts</a>
+          <a class="nav-link fw-medium{% if ep == 'student.charts' %} active{% endif %}" href="{{ url_for('student.charts') }}"{% if ep == 'student.charts' %} aria-current="page"{% endif %}>Charts</a>
         </li>
       </ul>
-      <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
+      <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2 py-2 py-lg-0">
         <li class="nav-item">
-          <a class="nav-link{% if ep == 'auth.profile' %} active{% endif %}" href="{{ url_for('auth.profile') }}"{% if ep == 'auth.profile' %} aria-current="page"{% endif %}>Profile ({{ current_user.full_name }})</a>
+          <span class="nav-user-pill me-lg-1">
+            <span class="badge text-bg-warning text-dark text-uppercase" style="font-size: 0.65rem;">Student</span>
+            {{ current_user.full_name }}
+          </span>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link text-light fw-medium{% if ep == 'auth.profile' %} active{% endif %}" href="{{ url_for('auth.profile') }}"{% if ep == 'auth.profile' %} aria-current="page"{% endif %}>Profile</a>
         </li>
         <li class="nav-item">
           <form method="post" action="{{ url_for('auth.logout') }}" class="d-inline">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is callable else csrf_token }}">
-            <button type="submit" class="btn btn-link nav-link text-light" data-submit-once="true">Log out</button>
+            <button type="submit" class="btn btn-outline-light btn-sm ms-lg-1" data-submit-once="true">Log out</button>
           </form>
         </li>
       </ul>
@@ -43,8 +51,8 @@
 {% endblock %}
 
 {% block content %}
-<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-  <h1 class="h2 mb-0">{% block page_title %}Student{% endblock %}</h1>
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2 border-bottom pb-3">
+  <h1 class="h3 fw-bold text-primary mb-0">{% block page_title %}Student{% endblock %}</h1>
   <div class="btn-group-xs-stack">{% block page_actions %}{% endblock %}</div>
 </div>
 {% block student_content %}{% endblock %}

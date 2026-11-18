@@ -1,60 +1,58 @@
 {% extends "examiner/base_examiner.html" %}
 
-{% block content %}
-<div class="container py-4">
-  <div class="row justify-content-center">
-    <div class="col-md-8">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h2 class="card-title mb-4">{% if action == 'create' %}Create New Slot{% else %}Edit Slot{% endif %}</h2>
-          
-          <form method="POST">
-            {{ form.hidden_tag() }}
-            
-            <div class="mb-3">
-              {{ form.examination_id.label(class="form-label") }}
-              {% if action == 'edit' %}
-                {{ form.examination_id(class="form-select", disabled=True) }}
-                <input type="hidden" name="examination_id" value="{{ slot.examination_id }}">
-              {% else %}
-                {{ form.examination_id(class="form-select") }}
-              {% endif %}
-              {% for error in form.examination_id.errors %}
-                <div class="text-danger small">{{ error }}</div>
-              {% endfor %}
-            </div>
+{% block title %}{% if action == 'create' %}Create New Slot{% else %}Edit Slot{% endif %}{% endblock %}
+{% block page_title %}{% if action == 'create' %}Create New Slot{% else %}Edit Slot{% endif %}{% endblock %}
 
-            <div class="mb-3">
-              {{ form.start_at.label(class="form-label") }}
-              {{ form.start_at(class="form-control", type="datetime-local") }}
-              {% for error in form.start_at.errors %}
-                <div class="text-danger small">{{ error }}</div>
-              {% endfor %}
-            </div>
-
-            <div class="mb-3">
-              {{ form.end_at.label(class="form-label") }}
-              {{ form.end_at(class="form-control", type="datetime-local") }}
-              {% for error in form.end_at.errors %}
-                <div class="text-danger small">{{ error }}</div>
-              {% endfor %}
-            </div>
-
-            <div class="mb-3">
-              {{ form.max_capacity.label(class="form-label") }}
-              {{ form.max_capacity(class="form-control", type="number", min="1", max="500") }}
-              {% for error in form.max_capacity.errors %}
-                <div class="text-danger small">{{ error }}</div>
-              {% endfor %}
-            </div>
-
-            <div class="d-flex justify-content-between">
-              <a href="{{ url_for('examiner.slots_list') }}" class="btn btn-secondary">Cancel</a>
-              <button type="submit" class="btn btn-primary">Save Slot</button>
-            </div>
-          </form>
+{% block examiner_content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-md-9 col-lg-8">
+    <div class="card border-0 shadow-sm p-4">
+      <form method="POST">
+        {{ form.hidden_tag() }}
+        
+        <div class="mb-3">
+          {{ form.examination_id.label(class="form-label") }}
+          {% if action == 'edit' %}
+            {{ form.examination_id(class="form-select", disabled=True) }}
+            <input type="hidden" name="examination_id" value="{{ slot.examination_id }}">
+          {% else %}
+            {{ form.examination_id(class="form-select") }}
+          {% endif %}
+          {% for error in form.examination_id.errors %}
+            <div class="invalid-feedback d-block">{{ error }}</div>
+          {% endfor %}
         </div>
-      </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-12 col-md-6">
+            {{ form.start_at.label(class="form-label") }}
+            {{ form.start_at(class="form-control", type="datetime-local") }}
+            {% for error in form.start_at.errors %}
+              <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+          </div>
+          <div class="col-12 col-md-6">
+            {{ form.end_at.label(class="form-label") }}
+            {{ form.end_at(class="form-control", type="datetime-local") }}
+            {% for error in form.end_at.errors %}
+              <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="mb-4">
+          {{ form.max_capacity.label(class="form-label") }}
+          {{ form.max_capacity(class="form-control", type="number", min="1", max="500") }}
+          {% for error in form.max_capacity.errors %}
+            <div class="invalid-feedback d-block">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary px-4">Save Slot</button>
+          <a href="{{ url_for('examiner.slots_list') }}" class="btn btn-outline-secondary px-4">Cancel</a>
+        </div>
+      </form>
     </div>
   </div>
 </div>

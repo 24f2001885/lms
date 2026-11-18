@@ -89,12 +89,13 @@
     <div class="card border-0 shadow-sm p-3 h-100">
       <h2 class="h6 fw-bold text-primary mb-3">Assigned Faculty Examiners</h2>
       <div class="table-responsive mb-3">
-        <table class="table table-sm align-middle mb-0">
+        <table class="table table-sm align-middle mb-0" aria-label="Assigned examiners">
+          <caption class="visually-hidden">List of examiners assigned to this examination</caption>
           <tbody>
             {% for link in exam.examiner_links %}
               <tr>
                 <td><strong>{{ link.examiner.full_name }}</strong><div class="small text-muted">{{ link.examiner.email }}</div></td>
-                <td>
+                <td class="text-end">
                   <form method="POST" action="{{ url_for('admin.remove_examiner', exam_id=exam.id, examiner_id=link.examiner_id) }}" class="d-inline">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn btn-outline-danger btn-sm py-0">Remove</button>
@@ -112,8 +113,9 @@
       {% if assign_form.examiner_id.choices %}
         <form method="POST" action="{{ url_for('admin.assign_examiner', exam_id=exam.id) }}" class="d-flex gap-2 border-top pt-3">
           {{ assign_form.hidden_tag() }}
-          {{ assign_form.examiner_id(class="form-select form-select-sm") }}
-          <button type="submit" class="btn btn-primary btn-sm">Assign</button>
+          <label for="examiner_id" class="visually-hidden">Assign Examiner</label>
+          {{ assign_form.examiner_id(class="form-select form-select-sm", id="examiner_id", aria_label="Assign Examiner") }}
+          <button type="submit" class="btn btn-primary btn-sm text-nowrap">Assign</button>
         </form>
       {% endif %}
     </div>

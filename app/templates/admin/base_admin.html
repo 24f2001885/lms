@@ -1,16 +1,21 @@
 {% extends "base.html" %}
 
 {% block site_nav %}
-<div class="admin-topbar py-2 px-3 d-flex align-items-center justify-content-between border-bottom border-secondary">
+<div class="admin-topbar py-2 px-3 px-lg-4 d-flex align-items-center justify-content-between border-bottom border-secondary" style="min-height: 56px;">
   <div class="d-flex align-items-center gap-2">
     <button class="btn btn-outline-light btn-sm d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#adminSidebar" aria-controls="adminSidebar" aria-label="Open navigation menu">
       Menu
     </button>
-    <a class="navbar-brand fw-bold text-light text-decoration-none" href="{{ url_for('admin.dashboard') }}">EMP Admin</a>
+    <a class="navbar-brand fw-bold text-light text-decoration-none fs-5 d-flex align-items-center gap-2" href="{{ url_for('admin.dashboard') }}">
+      <span>EMP Admin</span>
+    </a>
   </div>
   <div class="d-flex align-items-center gap-3">
-    <span class="small">{{ current_user.full_name }}</span>
-    <a class="text-light small text-decoration-none" href="{{ url_for('auth.profile') }}">Profile</a>
+    <span class="nav-user-pill d-none d-sm-inline-flex">
+      <span class="badge text-bg-warning text-dark text-uppercase" style="font-size: 0.65rem;">Admin</span>
+      {{ current_user.full_name }}
+    </span>
+    <a class="btn btn-sm btn-outline-light" href="{{ url_for('auth.profile') }}">Profile</a>
     <form method="post" action="{{ url_for('auth.logout') }}" class="d-inline">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is callable else csrf_token }}">
       <button type="submit" class="btn btn-outline-light btn-sm" data-submit-once="true">Log out</button>
@@ -27,7 +32,7 @@
       <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#adminSidebar" aria-label="Close navigation menu"></button>
     </div>
     <div class="offcanvas-body p-0">
-      <nav aria-label="Admin" class="w-100 py-2">
+      <nav aria-label="Admin" class="w-100 py-3">
         {% set ep = request.endpoint or '' %}
         <a class="nav-link{% if ep == 'admin.dashboard' %} active{% endif %}" href="{{ url_for('admin.dashboard') }}"{% if ep == 'admin.dashboard' %} aria-current="page"{% endif %}>Dashboard</a>
         <a class="nav-link{% if ep == 'admin.charts' %} active{% endif %}" href="{{ url_for('admin.charts') }}"{% if ep == 'admin.charts' %} aria-current="page"{% endif %}>Charts</a>
@@ -44,10 +49,10 @@
     </div>
   </aside>
 
-  <main id="main-content" class="admin-content page-container" tabindex="-1">
+  <main id="main-content" class="admin-content page-container py-4" tabindex="-1">
     {% include "_flash.html" ignore missing %}
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-      <h1 class="h2 mb-0">{% block page_title %}Admin{% endblock %}</h1>
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2 border-bottom pb-3">
+      <h1 class="h3 fw-bold text-primary mb-0">{% block page_title %}Admin{% endblock %}</h1>
       <div class="btn-group-xs-stack">{% block page_actions %}{% endblock %}</div>
     </div>
     {% block content %}{% endblock %}

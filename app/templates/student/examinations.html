@@ -9,47 +9,53 @@ OFFLINE DOCKER TEST CASES:
 - Filters persist in the pager links; the booked badge appears only on examinations the student booked.
 -->
 {% extends "student/base_student.html" %}
+{% import "macros/pagination.html" as p %}
 {% block page_title %}Examinations{% endblock %}
 
 {% block student_content %}
-<form method="GET" action="{{ url_for('student.examinations_list') }}" class="row g-3 mb-4">
-  <div class="col-md-4">
-    <input type="text" name="q" class="form-control" placeholder="Search name or code..." value="{{ selected_q or '' }}"/>
-  </div>
-  <div class="col-md-3">
-    <select name="course_id" class="form-select">
-      <option value="">All Courses</option>
-      {% for c in courses %}
-        <option value="{{ c.id }}" {% if selected_course == c.id %}selected{% endif %}>{{ c.code }} - {{ c.name }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <div class="col-md-3">
-    <select name="exam_type" class="form-select">
-      <option value="">All Types</option>
-      <option value="viva" {% if selected_type == 'viva' %}selected{% endif %}>Viva</option>
-      <option value="lab" {% if selected_type == 'lab' %}selected{% endif %}>Lab</option>
-      <option value="written" {% if selected_type == 'written' %}selected{% endif %}>Written</option>
-      <option value="quiz" {% if selected_type == 'quiz' %}selected{% endif %}>Quiz</option>
-      <option value="project" {% if selected_type == 'project' %}selected{% endif %}>Project</option>
-    </select>
-  </div>
-  <div class="col-md-2">
-    <button type="submit" class="btn btn-primary w-100">Filter</button>
-  </div>
-</form>
+<div class="card border-0 shadow-sm p-3 mb-4">
+  <form method="GET" action="{{ url_for('student.examinations_list') }}" class="row g-2">
+    <div class="col-md-4">
+      <label for="exam-search-input" class="visually-hidden">Search examinations</label>
+      <input type="text" id="exam-search-input" name="q" class="form-control form-control-sm" placeholder="Search name or code..." value="{{ selected_q or '' }}" aria-label="Search name or code"/>
+    </div>
+    <div class="col-md-3">
+      <label for="exam-course-select" class="visually-hidden">Filter by Course</label>
+      <select id="exam-course-select" name="course_id" class="form-select form-select-sm" aria-label="Filter by Course">
+        <option value="">All Courses</option>
+        {% for c in courses %}
+          <option value="{{ c.id }}" {% if selected_course == c.id %}selected{% endif %}>{{ c.code }} - {{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label for="exam-type-select" class="visually-hidden">Filter by Exam Type</label>
+      <select id="exam-type-select" name="exam_type" class="form-select form-select-sm" aria-label="Filter by Exam Type">
+        <option value="">All Types</option>
+        <option value="viva" {% if selected_type == 'viva' %}selected{% endif %}>Viva</option>
+        <option value="lab" {% if selected_type == 'lab' %}selected{% endif %}>Lab</option>
+        <option value="written" {% if selected_type == 'written' %}selected{% endif %}>Written</option>
+        <option value="quiz" {% if selected_type == 'quiz' %}selected{% endif %}>Quiz</option>
+        <option value="project" {% if selected_type == 'project' %}selected{% endif %}>Project</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <button type="submit" class="btn btn-primary btn-sm w-100">Filter</button>
+    </div>
+  </form>
+</div>
 
 {% if pagination.items %}
   <div class="row row-cols-1 row-cols-md-2 g-4">
     {% for exam in pagination.items %}
       <div class="col">
-        <div class="card h-100 exam-card">
+        <div class="card border-0 shadow-sm h-100 exam-card">
           <div class="card-body">
             <div class="d-flex justify-content-between align-items-start mb-2">
-              <h5 class="card-title mb-0">{{ exam.name }}</h5>
+              <h5 class="card-title fw-bold mb-0">{{ exam.name }}</h5>
               <span class="badge bg-secondary">{{ exam.examination_type|capitalize }}</span>
             </div>
-            <h6 class="card-subtitle mb-2 text-muted">{{ exam.course.code if exam.course else '' }} • {{ exam.code }}</h6>
+            <h6 class="card-subtitle mb-2 text-muted small">{{ exam.course.code if exam.course else '' }} &bull; {{ exam.code }}</h6>
             <p class="card-text small mb-2">
               <strong>Duration:</strong> {{ exam.duration_minutes }} mins | <strong>Max Marks:</strong> {{ exam.max_marks }}
             </p>
@@ -60,15 +66,16 @@ OFFLINE DOCKER TEST CASES:
               <span class="badge bg-success mb-2">You are booked</span>
             {% endif %}
           </div>
-          <div class="card-footer bg-white d-flex justify-content-between align-items-center">
-            <span class="small text-muted">{{ exam.available_slots_count }} slots available</span>
+          <div class="card-footer bg-white border-top d-flex justify-content-between align-items-center">
+            <span class="small text-muted fw-medium">{{ exam.available_slots_count }} slots available</span>
             <a href="{{ url_for('student.examination_detail', exam_id=exam.id) }}" class="btn btn-outline-primary btn-sm">View slots</a>
           </div>
         </div>
       </div>
     {% endfor %}
   </div>
+  {{ p.pager(pagination, 'student.examinations_list') }}
 {% else %}
-  <div class="alert alert-info">No examinations match your search.</div>
+  <div class="alert alert-info" role="alert">No examinations match your search.</div>
 {% endif %}
 {% endblock %}

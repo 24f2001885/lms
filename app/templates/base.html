@@ -13,38 +13,43 @@
   <a class="skip-link" href="#main-content">Skip to main content</a>
   <header>
     {% block site_nav %}
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary" aria-label="Main">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm" aria-label="Main">
       <div class="container page-container">
-        <a class="navbar-brand fw-bold" href="{{ url_for('auth.index') }}">EMP</a>
+        <a class="navbar-brand fw-bold fs-4 d-flex align-items-center gap-2" href="{{ url_for('auth.index') }}">
+          <span>EMP</span>
+        </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="mainNav">
-          <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-3">
+          <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-3 py-2 py-lg-0">
             {% if current_user %}
               <li class="nav-item">
-                <span class="nav-link text-light small">{{ current_user.full_name }} ({{ current_user.role|capitalize }})</span>
+                <span class="nav-user-pill">
+                  {{ current_user.full_name }}
+                  <span class="badge text-bg-warning text-dark text-uppercase ms-1" style="font-size: 0.7rem;">{{ current_user.role }}</span>
+                </span>
               </li>
               {% if current_user.is_active and not (current_user.role == 'examiner' and current_user.approval_status != 'approved') %}
                 <li class="nav-item">
-                  <a class="nav-link text-light" href="{{ role_dashboard_url(current_user) }}">Dashboard</a>
+                  <a class="nav-link text-light fw-medium" href="{{ role_dashboard_url(current_user) }}">Dashboard</a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link text-light" href="{{ url_for('auth.profile') }}"{% if request.endpoint == 'auth.profile' %} aria-current="page"{% endif %}>Profile</a>
+                  <a class="nav-link text-light fw-medium" href="{{ url_for('auth.profile') }}"{% if request.endpoint == 'auth.profile' %} aria-current="page"{% endif %}>Profile</a>
                 </li>
               {% endif %}
               <li class="nav-item">
                 <form method="post" action="{{ url_for('auth.logout') }}" class="d-inline">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is callable else csrf_token }}">
-                  <button type="submit" class="btn btn-link nav-link text-light" data-submit-once="true">Log out</button>
+                  <button type="submit" class="btn btn-outline-light btn-sm ms-lg-1" data-submit-once="true">Log out</button>
                 </form>
               </li>
             {% else %}
               <li class="nav-item">
-                <a class="nav-link text-light" href="{{ url_for('auth.login') }}"{% if request.endpoint == 'auth.login' %} aria-current="page"{% endif %}>Log in</a>
+                <a class="nav-link text-light fw-medium" href="{{ url_for('auth.login') }}"{% if request.endpoint == 'auth.login' %} aria-current="page"{% endif %}>Log in</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link text-light" href="{{ url_for('auth.register') }}"{% if request.endpoint == 'auth.register' %} aria-current="page"{% endif %}>Register</a>
+                <a class="btn btn-outline-light btn-sm ms-lg-2" href="{{ url_for('auth.register') }}"{% if request.endpoint == 'auth.register' %} aria-current="page"{% endif %}>Register</a>
               </li>
             {% endif %}
           </ul>

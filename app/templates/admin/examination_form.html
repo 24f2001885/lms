@@ -5,7 +5,7 @@
 {% block page_title %}{{ 'Edit: ' ~ exam.name if exam else 'New examination' }}{% endblock %}
 
 {% block content %}
-<div class="card border-0 shadow-sm p-4 col-lg-9">
+<div class="card border-0 shadow-sm p-4 col-12 col-lg-10">
   <form method="POST" action="{{ url_for('admin.update_examination', exam_id=exam.id) if exam else url_for('admin.create_examination') }}">
     {{ form.hidden_tag() }}
 
@@ -36,15 +36,15 @@
       <div class="row g-3">
         <div class="col-md-6">
           <div class="mb-3">
-            <label class="form-label fw-semibold text-secondary small">{{ form.slot_creation_start.label.text }}</label>
-            <input type="datetime-local" name="slot_creation_start" class="form-control {% if form.slot_creation_start.errors %}is-invalid{% endif %}" value="{{ form.slot_creation_start.data or '' }}" required>
+            <label for="slot_creation_start" class="form-label">{{ form.slot_creation_start.label.text }} <span class="text-muted small">(required)</span></label>
+            <input type="datetime-local" id="slot_creation_start" name="slot_creation_start" class="form-control {% if form.slot_creation_start.errors %}is-invalid{% endif %}" value="{{ form.slot_creation_start.data or '' }}" required>
             {% for e in form.slot_creation_start.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
           </div>
         </div>
         <div class="col-md-6">
           <div class="mb-3">
-            <label class="form-label fw-semibold text-secondary small">{{ form.slot_creation_end.label.text }}</label>
-            <input type="datetime-local" name="slot_creation_end" class="form-control {% if form.slot_creation_end.errors %}is-invalid{% endif %}" value="{{ form.slot_creation_end.data or '' }}" required>
+            <label for="slot_creation_end" class="form-label">{{ form.slot_creation_end.label.text }} <span class="text-muted small">(required)</span></label>
+            <input type="datetime-local" id="slot_creation_end" name="slot_creation_end" class="form-control {% if form.slot_creation_end.errors %}is-invalid{% endif %}" value="{{ form.slot_creation_end.data or '' }}" required>
             {% for e in form.slot_creation_end.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
           </div>
         </div>
@@ -57,22 +57,22 @@
       <div class="row g-3">
         <div class="col-md-6">
           <div class="mb-3">
-            <label class="form-label fw-semibold text-secondary small">{{ form.booking_start.label.text }}</label>
-            <input type="datetime-local" name="booking_start" class="form-control {% if form.booking_start.errors %}is-invalid{% endif %}" value="{{ form.booking_start.data or '' }}" required>
+            <label for="booking_start" class="form-label">{{ form.booking_start.label.text }} <span class="text-muted small">(required)</span></label>
+            <input type="datetime-local" id="booking_start" name="booking_start" class="form-control {% if form.booking_start.errors %}is-invalid{% endif %}" value="{{ form.booking_start.data or '' }}" required>
             {% for e in form.booking_start.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
           </div>
         </div>
         <div class="col-md-6">
           <div class="mb-3">
-            <label class="form-label fw-semibold text-secondary small">{{ form.booking_end.label.text }}</label>
-            <input type="datetime-local" name="booking_end" class="form-control {% if form.booking_end.errors %}is-invalid{% endif %}" value="{{ form.booking_end.data or '' }}" required>
+            <label for="booking_end" class="form-label">{{ form.booking_end.label.text }} <span class="text-muted small">(required)</span></label>
+            <input type="datetime-local" id="booking_end" name="booking_end" class="form-control {% if form.booking_end.errors %}is-invalid{% endif %}" value="{{ form.booking_end.data or '' }}" required>
             {% for e in form.booking_end.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
           </div>
         </div>
         <div class="col-md-6">
           <div class="mb-3">
-            <label class="form-label fw-semibold text-secondary small">{{ form.cancellation_deadline.label.text }}</label>
-            <input type="datetime-local" name="cancellation_deadline" class="form-control {% if form.cancellation_deadline.errors %}is-invalid{% endif %}" value="{{ form.cancellation_deadline.data or '' }}">
+            <label for="cancellation_deadline" class="form-label">{{ form.cancellation_deadline.label.text }} <span class="text-muted small">(optional)</span></label>
+            <input type="datetime-local" id="cancellation_deadline" name="cancellation_deadline" class="form-control {% if form.cancellation_deadline.errors %}is-invalid{% endif %}" value="{{ form.cancellation_deadline.data or '' }}">
             <div class="form-text text-muted small">Defaults to booking end if left blank.</div>
             {% for e in form.cancellation_deadline.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
           </div>
@@ -80,9 +80,9 @@
       </div>
     </fieldset>
 
-    <div class="d-flex gap-2 pt-3 border-top">
-      <button type="submit" class="btn btn-primary">Save</button>
-      <a href="{{ url_for('admin.examinations') }}" class="btn btn-outline-secondary">Cancel</a>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary px-4">Save</button>
+      <a href="{{ url_for('admin.examinations') }}" class="btn btn-outline-secondary px-4">Cancel</a>
     </div>
   </form>
 </div>

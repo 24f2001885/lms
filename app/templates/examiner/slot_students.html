@@ -1,79 +1,81 @@
 {% extends "examiner/base_examiner.html" %}
 
-{% block content %}
-<div class="container py-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <h1>Booked Students</h1>
-      <p class="text-muted mb-0">{{ slot.examination.course.code }} - {{ slot.examination.name }} | {{ slot.start_at | localdt }} to {{ slot.end_at | localdt }}</p>
-    </div>
-    <div>
-      {% if slot.status in ('available', 'full') %}
-        <button type="button" class="btn btn-outline-danger me-2" data-bs-toggle="modal" data-bs-target="#cancelSlotModal">Cancel Slot</button>
-      {% endif %}
-      <a href="{{ url_for('examiner.slots_list') }}" class="btn btn-outline-secondary">Back to Slots</a>
-    </div>
-  </div>
+{% block title %}Booked Students - Slot #{{ slot.id }}{% endblock %}
+
+{% block page_title %}Booked Students{% endblock %}
+
+{% block page_actions %}
+  {% if slot.status in ('available', 'full') %}
+    <button type="button" class="btn btn-outline-danger btn-sm me-2" data-bs-toggle="modal" data-bs-target="#cancelSlotModal">Cancel Slot</button>
+  {% endif %}
+  <a href="{{ url_for('examiner.slots_list') }}" class="btn btn-outline-secondary btn-sm">Back to Slots</a>
+{% endblock %}
+
+{% block examiner_content %}
+  <p class="text-muted mt-n2 mb-4">{{ slot.examination.course.code }} &mdash; {{ slot.examination.name }} &bull; {{ slot.start_at | localdt }} to {{ slot.end_at | localdt }}</p>
 
   {% if bookings %}
-    <div class="table-responsive">
-      <table class="table table-hover align-middle">
-        <thead>
-          <tr>
-            <th>Student Name</th>
-            <th>Email</th>
-            <th>Roll Number</th>
-            <th>Booking Status</th>
-            <th>Evaluation Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for b in bookings %}
+    <div class="card border-0 shadow-sm">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" aria-label="Booked students">
+          <thead class="table-light">
             <tr>
-              <td><strong>{{ b.student.full_name }}</strong></td>
-              <td>{{ b.student.email }}</td>
-              <td>{{ b.student.student_profile.roll_number if b.student.student_profile else '-' }}</td>
-              <td><span class="badge bg-success">{{ b.status }}</span></td>
-              <td>
-                {% set eval = b.evaluation %}
-                {% if eval %}
-                  <span class="badge bg-{% if eval.status == 'published' %}success{% elif eval.status == 'submitted' %}primary{% else %}warning text-dark{% endif %}">{{ eval.status }}</span>
-                {% else %}
-                  <span class="badge bg-light text-dark">None</span>
-                {% endif %}
-              </td>
-              <td>
-                <a href="{{ url_for('examiner.evaluate_booking', booking_id=b.id) }}" class="btn btn-sm btn-primary">Evaluate</a>
-              </td>
+              <th scope="col">Student Name</th>
+              <th scope="col">Email</th>
+              <th scope="col">Roll Number</th>
+              <th scope="col">Booking Status</th>
+              <th scope="col">Evaluation Status</th>
+              <th scope="col">Action</th>
             </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {% for b in bookings %}
+              <tr>
+                <td><strong>{{ b.student.full_name }}</strong></td>
+                <td>{{ b.student.email }}</td>
+                <td>{{ b.student.student_profile.roll_number if b.student.student_profile else '-' }}</td>
+                <td><span class="badge bg-success">{{ b.status }}</span></td>
+                <td>
+                  {% set eval = b.evaluation %}
+                  {% if eval %}
+                    <span class="badge bg-{% if eval.status == 'published' %}success{% elif eval.status == 'submitted' %}primary{% else %}warning text-dark{% endif %}">{{ eval.status }}</span>
+                  {% else %}
+                    <span class="badge bg-light text-dark">None</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <a href="{{ url_for('examiner.evaluate_booking', booking_id=b.id) }}" class="btn btn-sm btn-primary">Evaluate</a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
     {% if cancelled_count > 0 %}
       <p class="text-muted small mt-2">{{ cancelled_count }} cancelled bookings not shown.</p>
     {% endif %}
   {% else %}
-    <div class="alert alert-info">No students have booked this slot yet.</div>
+    <div class="alert alert-info" role="alert">No students have booked this slot yet.</div>
     {% if cancelled_count > 0 %}
       <p class="text-muted small mt-2">{{ cancelled_count }} cancelled bookings not shown.</p>
     {% endif %}
   {% endif %}
+
   {% if slot.status in ('available', 'full') %}
-    <div class="modal fade" id="cancelSlotModal" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="cancelSlotModal" tabindex="-1" role="dialog" aria-labelledby="cancelSlotModalLabel" aria-hidden="true">
       <div class="modal-dialog">
         <form action="{{ url_for('examiner.cancel_slot_action', slot_id=slot.id) }}" method="POST" class="modal-content">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <div class="modal-header">
-            <h5 class="modal-title h6">Cancel Slot</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <h5 class="modal-title h6" id="cancelSlotModalLabel">Cancel Slot</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body text-start">
             <p class="small text-muted">Cancelling this slot will cancel all active student bookings for it.</p>
             <div class="mb-3">
-              <label class="form-label small fw-semibold">Cancellation Reason (3-200 characters)</label>
-              <textarea name="reason" class="form-control form-control-sm" rows="3" required minlength="3" maxlength="200" placeholder="Reason for cancellation..."></textarea>
+              <label for="cancel-slot-reason" class="form-label small fw-semibold">Cancellation Reason (3-200 characters)</label>
+              <textarea id="cancel-slot-reason" name="reason" class="form-control form-control-sm" rows="3" required minlength="3" maxlength="200" placeholder="Reason for cancellation..."></textarea>
             </div>
           </div>
           <div class="modal-footer">
@@ -84,5 +86,4 @@
       </div>
     </div>
   {% endif %}
-</div>
 {% endblock %}

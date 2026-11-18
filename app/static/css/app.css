@@ -126,9 +126,87 @@ form .text-danger {
 
 .stat-card {
   background: var(--emp-surface);
-  border-radius: 0.5rem;
-  padding: 1rem 1.25rem;
+  border-radius: 0.625rem;
+  padding: 1.25rem;
   border: 1px solid #6C757D;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  position: relative;
+  overflow: hidden;
+}
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: #1F4E79;
+}
+
+/* Surface cards & panels */
+.card,
+.surface-card {
+  background: var(--emp-surface);
+  border: 1px solid #6C757D;
+  border-radius: 0.625rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.card-header {
+  background-color: transparent;
+  border-bottom: 1px solid #DEE2E6;
+  padding: 1rem 1.25rem;
+  font-weight: 600;
+}
+.card-body {
+  padding: 1.25rem;
+}
+.card-footer {
+  background-color: transparent;
+  border-top: 1px solid #DEE2E6;
+  padding: 0.85rem 1.25rem;
+}
+
+/* Nav user pill */
+.nav-user-pill {
+  background-color: rgba(255, 255, 255, 0.12);
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #FFFFFF;
+}
+
+/* Modern Form Polish */
+.form-label {
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-bottom: 0.35rem;
+  color: #212529;
+}
+.form-control:focus,
+.form-select:focus {
+  border-color: #1F4E79;
+  box-shadow: 0 0 0 0.2rem rgba(31, 78, 121, 0.2);
+}
+
+/* Table card */
+.table thead th {
+  background-color: #F8F9FA;
+  font-weight: 600;
+  font-size: 0.825rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #495057;
+}
+
+/* Action button bar */
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #DEE2E6;
 }
 
 .timeline-switch {

@@ -1,30 +1,33 @@
 {% extends "examiner/base_examiner.html" %}
 
-{% block content %}
-<div class="container py-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Submitted Evaluations</h1>
-    <a href="{{ url_for('examiner.evaluations_pending') }}" class="btn btn-outline-secondary">Back to Pending</a>
-  </div>
+{% block title %}Submitted Evaluations{% endblock %}
+{% block page_title %}Submitted Evaluations{% endblock %}
+{% block page_actions %}
+  <a href="{{ url_for('examiner.evaluations_pending') }}" class="btn btn-outline-secondary btn-sm">Back to Pending</a>
+{% endblock %}
 
-  <div class="mb-3">
-    <a href="{{ url_for('examiner.evaluations_submitted') }}" class="btn btn-sm {% if not selected_status %}btn-dark{% else %}btn-outline-dark{% endif %}">All</a>
-    <a href="{{ url_for('examiner.evaluations_submitted', status='submitted') }}" class="btn btn-sm {% if selected_status == 'submitted' %}btn-dark{% else %}btn-outline-dark{% endif %}">Submitted</a>
-    <a href="{{ url_for('examiner.evaluations_submitted', status='published') }}" class="btn btn-sm {% if selected_status == 'published' %}btn-dark{% else %}btn-outline-dark{% endif %}">Published</a>
+{% block examiner_content %}
+<div class="mb-4">
+  <div class="btn-group" role="group">
+    <a href="{{ url_for('examiner.evaluations_submitted') }}" class="btn btn-sm {% if not selected_status %}btn-primary{% else %}btn-outline-secondary{% endif %}">All</a>
+    <a href="{{ url_for('examiner.evaluations_submitted', status='submitted') }}" class="btn btn-sm {% if selected_status == 'submitted' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Submitted</a>
+    <a href="{{ url_for('examiner.evaluations_submitted', status='published') }}" class="btn btn-sm {% if selected_status == 'published' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Published</a>
   </div>
+</div>
 
-  {% if pagination.items %}
+{% if pagination.items %}
+  <div class="card border-0 shadow-sm mb-4">
     <div class="table-responsive">
-      <table class="table table-hover align-middle">
-        <thead>
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
           <tr>
-            <th>Student</th>
-            <th>Examination</th>
-            <th>Total Marks</th>
-            <th>Status</th>
-            <th>Submitted At</th>
-            <th>Published At</th>
-            <th>Action</th>
+            <th scope="col">Student</th>
+            <th scope="col">Examination</th>
+            <th scope="col">Total Marks</th>
+            <th scope="col">Status</th>
+            <th scope="col">Submitted At</th>
+            <th scope="col">Published At</th>
+            <th scope="col" class="text-end">Action</th>
           </tr>
         </thead>
         <tbody>
@@ -32,11 +35,11 @@
             <tr>
               <td><strong>{{ ev.booking.student.full_name }}</strong></td>
               <td>{{ ev.booking.slot.examination.course.code }}</td>
-              <td>{{ ev.total_marks }} / {{ ev.booking.slot.examination.max_marks }}</td>
-              <td><span class="badge bg-{% if ev.status == 'published' %}success{% else %}primary{% endif %}">{{ ev.status }}</span></td>
-              <td>{{ ev.submitted_at | localdt if ev.submitted_at else '-' }}</td>
-              <td>{{ ev.published_at | localdt if ev.published_at else '-' }}</td>
-              <td>
+              <td><span class="fw-bold text-primary">{{ ev.total_marks }}</span> / {{ ev.booking.slot.examination.max_marks }}</td>
+              <td><span class="badge text-bg-{% if ev.status == 'published' %}success{% else %}primary{% endif %}">{{ ev.status }}</span></td>
+              <td class="small">{{ ev.submitted_at | localdt if ev.submitted_at else '-' }}</td>
+              <td class="small">{{ ev.published_at | localdt if ev.published_at else '-' }}</td>
+              <td class="text-end">
                 <a href="{{ url_for('examiner.evaluate_booking', booking_id=ev.booking_id) }}" class="btn btn-sm btn-outline-primary">
                   {% if ev.status == 'submitted' %}Edit{% else %}View{% endif %}
                 </a>
@@ -46,8 +49,8 @@
         </tbody>
       </table>
     </div>
-  {% else %}
-    <div class="alert alert-info">No submitted evaluations found.</div>
-  {% endif %}
-</div>
+  </div>
+{% else %}
+  <div class="alert alert-info">No submitted evaluations found.</div>
+{% endif %}
 {% endblock %}

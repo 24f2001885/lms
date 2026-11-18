@@ -11,67 +11,71 @@ OFFLINE DOCKER TEST CASES:
 {% block page_title %}Booking Details{% endblock %}
 
 {% block student_content %}
-<div class="card mb-4">
-  <div class="card-header bg-white d-flex justify-content-between align-items-center">
-    <h5 class="mb-0">{{ booking.examination.name }} ({{ booking.examination.code }})</h5>
-    <span class="badge {% if booking.status == 'booked' %}bg-primary{% elif booking.status == 'completed' %}bg-success{% else %}bg-secondary{% endif %}">
-      {{ booking.status|capitalize }}
-    </span>
-  </div>
-  <div class="card-body">
-    <div class="row mb-3">
-      <div class="col-md-6">
-        <p><strong>Course:</strong> {{ booking.examination.course.name if booking.examination.course else '' }}</p>
-        <p><strong>Slot Time:</strong> {{ booking.slot.start_at|localdt }} - {{ booking.slot.end_at|localdt }}</p>
-        <p><strong>Examiner:</strong> {{ booking.slot.examiner.name if booking.slot.examiner else 'Assigned Examiner' }}</p>
+<div class="row">
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center py-3 border-bottom">
+        <h2 class="h5 fw-bold mb-0">{{ booking.examination.name }} ({{ booking.examination.code }})</h2>
+        <span class="badge {% if booking.status == 'booked' %}bg-primary{% elif booking.status == 'completed' %}bg-success{% else %}bg-secondary{% endif %}">
+          {{ booking.status|capitalize }}
+        </span>
       </div>
-      <div class="col-md-6">
-        <p><strong>Booked On:</strong> {{ booking.booked_at|localdt }}</p>
-        {% if booking.cancelled_at %}
-          <p><strong>Cancelled On:</strong> {{ booking.cancelled_at|localdt }}</p>
-        {% endif %}
-        <p class="small text-muted deadline-note">
-          Cancellation Deadline: {{ booking.examination.booking_end|localdt }}
-        </p>
-      </div>
-    </div>
+      <div class="card-body">
+        <dl class="row mb-3 small">
+          <dt class="col-sm-4 text-muted">Course</dt>
+          <dd class="col-sm-8">{{ booking.examination.course.name if booking.examination.course else '-' }}</dd>
+          <dt class="col-sm-4 text-muted">Slot Time</dt>
+          <dd class="col-sm-8">{{ booking.slot.start_at|localdt }} &rarr; {{ booking.slot.end_at|localdt }}</dd>
+          <dt class="col-sm-4 text-muted">Examiner</dt>
+          <dd class="col-sm-8">{{ booking.slot.examiner.name if booking.slot.examiner else 'Assigned Examiner' }}</dd>
+          <dt class="col-sm-4 text-muted">Booked On</dt>
+          <dd class="col-sm-8">{{ booking.booked_at|localdt }}</dd>
+          {% if booking.cancelled_at %}
+            <dt class="col-sm-4 text-muted">Cancelled On</dt>
+            <dd class="col-sm-8">{{ booking.cancelled_at|localdt }}</dd>
+          {% endif %}
+          <dt class="col-sm-4 text-muted">Cancellation Deadline</dt>
+          <dd class="col-sm-8 text-secondary deadline-note">{{ booking.examination.booking_end|localdt }}</dd>
+        </dl>
 
-    {% if result_pub %}
-      <div class="alert alert-success">
-        Result published! <strong>Total: {{ result_pub.total }} / {{ result_pub.max_marks }}</strong>.
-        <a href="{{ url_for('student.result_detail', booking_id=booking.id) }}" class="alert-link">View scorecard</a>
-      </div>
-    {% endif %}
-
-    {% if timeline %}
-      <div class="mt-4 pt-3 border-top mb-4">
-        <h6 class="fw-bold mb-3">History</h6>
-        <ol class="list-group list-group-flush list-group-numbered small">
-          {% for ev in timeline %}
-            <li class="list-group-item px-0 py-2">
-              <span class="fw-semibold">{{ ev.label }}</span> &mdash; <span>{{ ev.at|localdt }}</span>
-              {% if ev.detail %}
-                <div class="text-muted mt-1">{{ ev.detail }}</div>
-              {% endif %}
-            </li>
-          {% endfor %}
-        </ol>
-      </div>
-    {% endif %}
-
-    <div class="d-flex justify-content-between align-items-center">
-      <a href="{{ url_for('student.my_bookings_list') }}" class="btn btn-secondary">Back to My Bookings</a>
-      <div>
         {% if result_pub %}
-          <a href="{{ url_for('student.download_scorecard', id=booking.id) }}" class="btn btn-primary me-2">Download scorecard (PDF)</a>
+          <div class="alert alert-success" role="alert">
+            Result published! <strong>Total: {{ result_pub.total }} / {{ result_pub.max_marks }}</strong>.
+            <a href="{{ url_for('student.result_detail', booking_id=booking.id) }}" class="alert-link ms-2">View scorecard</a>
+          </div>
         {% endif %}
-        {% if booking.status == 'booked' %}
-          <form action="{{ url_for('student.cancel_booking_action', booking_id=booking.id) }}" method="POST" class="d-inline">
-            {{ confirm_form.hidden_tag() if confirm_form else '' }}
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-            <button type="submit" class="btn btn-danger">Cancel Booking</button>
-          </form>
+
+        {% if timeline %}
+          <div class="mt-4 pt-3 border-top mb-4">
+            <h3 class="h6 fw-bold text-primary mb-3">History</h3>
+            <ol class="list-group list-group-flush list-group-numbered small">
+              {% for ev in timeline %}
+                <li class="list-group-item px-0 py-2">
+                  <span class="fw-semibold">{{ ev.label }}</span> &mdash; <span>{{ ev.at|localdt }}</span>
+                  {% if ev.detail %}
+                    <div class="text-muted mt-1">{{ ev.detail }}</div>
+                  {% endif %}
+                </li>
+              {% endfor %}
+            </ol>
+          </div>
         {% endif %}
+
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 pt-3 border-top">
+          <a href="{{ url_for('student.my_bookings_list') }}" class="btn btn-secondary btn-sm">Back to My Bookings</a>
+          <div class="d-flex flex-wrap gap-2">
+            {% if result_pub %}
+              <a href="{{ url_for('student.download_scorecard', id=booking.id) }}" class="btn btn-primary btn-sm">Download scorecard (PDF)</a>
+            {% endif %}
+            {% if booking.status == 'booked' %}
+              <form action="{{ url_for('student.cancel_booking_action', booking_id=booking.id) }}" method="POST" class="d-inline">
+                {{ confirm_form.hidden_tag() if confirm_form else '' }}
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <button type="submit" class="btn btn-danger btn-sm">Cancel Booking</button>
+              </form>
+            {% endif %}
+          </div>
+        </div>
       </div>
     </div>
   </div>

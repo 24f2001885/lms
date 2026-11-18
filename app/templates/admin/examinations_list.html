@@ -12,14 +12,17 @@
 {% block content %}
 <div class="card border-0 shadow-sm p-3 mb-3">
   <form method="GET" action="{{ url_for('admin.examinations') }}" class="table-filter-bar">
-    <input type="text" name="q" class="form-control form-control-sm" style="max-width: 180px;" placeholder="Search name..." value="{{ request.args.get('q', '') }}">
-    <select name="course_id" class="form-select form-select-sm" style="max-width: 160px;">
+    <label for="exam-search-q" class="visually-hidden">Search name</label>
+    <input type="text" id="exam-search-q" name="q" class="form-control form-control-sm" style="max-width: 180px;" placeholder="Search name..." value="{{ request.args.get('q', '') }}" aria-label="Search name">
+    <label for="exam-course-filter" class="visually-hidden">Filter by course</label>
+    <select id="exam-course-filter" name="course_id" class="form-select form-select-sm" style="max-width: 160px;" aria-label="Filter by course">
       <option value="">All Courses</option>
       {% for c in courses %}
         <option value="{{ c.id }}" {% if request.args.get('course_id')|int == c.id %}selected{% endif %}>{{ c.code }}</option>
       {% endfor %}
     </select>
-    <select name="status" class="form-select form-select-sm" style="max-width: 150px;">
+    <label for="exam-status-filter" class="visually-hidden">Filter by status</label>
+    <select id="exam-status-filter" name="status" class="form-select form-select-sm" style="max-width: 150px;" aria-label="Filter by status">
       <option value="">All Statuses</option>
       <option value="draft" {% if request.args.get('status') == 'draft' %}selected{% endif %}>Draft</option>
       <option value="slot_creation" {% if request.args.get('status') == 'slot_creation' %}selected{% endif %}>Slot Creation</option>
@@ -37,7 +40,7 @@
 
 <div class="card border-0 shadow-sm">
   <div class="table-responsive">
-    <table class="table table-hover align-middle mb-0">
+    <table class="table table-hover align-middle mb-0" aria-label="Examinations list">
       <thead class="table-light">
         <tr>
           <th scope="col">Name</th>

@@ -11,63 +11,67 @@ OFFLINE DOCKER TEST CASES:
 {% block page_title %}History{% endblock %}
 
 {% block student_content %}
-<h4 class="h5 mb-3">Booking History</h4>
+<h2 class="h5 fw-bold text-primary mb-3">Booking History</h2>
 {% if data.bookings_page.items %}
-  <div class="table-responsive mb-5">
-    <table class="table table-hover align-middle">
-      <thead>
-        <tr>
-          <th>Examination</th>
-          <th>Slot Time</th>
-          <th>Status</th>
-          <th>Booked Date</th>
-          <th>Cancelled Date</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for b in data.bookings_page.items %}
+  <div class="card border-0 shadow-sm mb-5">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
           <tr>
-            <td>{{ b.examination.name }}</td>
-            <td>{{ b.slot.start_at|localdt }}</td>
-            <td><span class="badge bg-secondary">{{ b.status|capitalize }}</span></td>
-            <td>{{ b.booked_at|localdt }}</td>
-            <td>{{ b.cancelled_at|localdt if b.cancelled_at else '-' }}</td>
+            <th scope="col">Examination</th>
+            <th scope="col">Slot Time</th>
+            <th scope="col">Status</th>
+            <th scope="col">Booked Date</th>
+            <th scope="col">Cancelled Date</th>
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {% for b in data.bookings_page.items %}
+            <tr>
+              <td><strong>{{ b.examination.name }}</strong></td>
+              <td>{{ b.slot.start_at|localdt }}</td>
+              <td><span class="badge text-bg-secondary">{{ b.status|capitalize }}</span></td>
+              <td class="small">{{ b.booked_at|localdt }}</td>
+              <td class="small">{{ b.cancelled_at|localdt if b.cancelled_at else '-' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 {% else %}
   <p class="text-muted mb-4">No booking history recorded.</p>
 {% endif %}
 
-<h4 class="h5 mb-3">Examination History</h4>
+<h2 class="h5 fw-bold text-primary mb-3">Examination History</h2>
 {% if data.examination_history %}
-  <div class="table-responsive">
-    <table class="table table-bordered">
-      <thead>
-        <tr>
-          <th>Examination</th>
-          <th>Final Status</th>
-          <th>Result Published</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for h in data.examination_history %}
+  <div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
           <tr>
-            <td>{{ h.examination.name }}</td>
-            <td><span class="badge bg-info text-dark">{{ h.final_status|capitalize }}</span></td>
-            <td>
-              {% if h.result_published %}
-                <span class="badge bg-success">Yes</span>
-              {% else %}
-                <span class="badge bg-warning text-dark">No</span>
-              {% endif %}
-            </td>
+            <th scope="col">Examination</th>
+            <th scope="col">Final Status</th>
+            <th scope="col">Result Published</th>
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {% for h in data.examination_history %}
+            <tr>
+              <td><strong>{{ h.examination.name }}</strong></td>
+              <td><span class="badge text-bg-info">{{ h.final_status|capitalize }}</span></td>
+              <td>
+                {% if h.result_published %}
+                  <span class="badge text-bg-success">Yes</span>
+                {% else %}
+                  <span class="badge text-bg-warning">No</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 {% else %}
   <p class="text-muted">No examination history recorded.</p>

@@ -8,8 +8,14 @@
 {% block content %}
 <div class="card border-0 shadow-sm p-4 mb-4">
   <form method="GET" action="{{ url_for('admin.search') }}" class="row g-2">
-    <div class="col-sm-4">{{ form.kind(class="form-select") }}</div>
-    <div class="col-sm-6">{{ form.q(class="form-control", placeholder="Search by name, email, roll number, or numeric ID...", autofocus=True) }}</div>
+    <div class="col-sm-4">
+      <label for="search-kind" class="visually-hidden">Search Category</label>
+      {{ form.kind(class="form-select", id="search-kind", aria_label="Search Category") }}
+    </div>
+    <div class="col-sm-6">
+      <label for="search-q" class="visually-hidden">Search Query</label>
+      {{ form.q(class="form-control", id="search-q", placeholder="Search by name, email, roll number, or numeric ID...", autofocus=True, aria_label="Search Query") }}
+    </div>
     <div class="col-sm-2"><button type="submit" class="btn btn-primary w-100">Search</button></div>
   </form>
   <div class="form-text text-muted small mt-2">Tip: enter a number to search by ID.</div>
@@ -19,17 +25,17 @@
   {% if page and page.items %}
     <div class="card border-0 shadow-sm">
       <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
+        <table class="table table-hover align-middle mb-0" aria-label="Search results">
           <thead class="table-light">
             <tr>
               {% if kind == 'student' %}
-                <th>ID</th><th>Name</th><th>Email</th><th>Roll number</th><th>Program</th>
+                <th scope="col">ID</th><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Roll number</th><th scope="col">Program</th>
               {% elif kind == 'examiner' %}
-                <th>ID</th><th>Name</th><th>Email</th><th>Department</th><th>Status</th>
+                <th scope="col">ID</th><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Department</th><th scope="col">Status</th>
               {% elif kind == 'examination' %}
-                <th>ID</th><th>Name</th><th>Course</th><th>Status</th>
+                <th scope="col">ID</th><th scope="col">Name</th><th scope="col">Course</th><th scope="col">Status</th>
               {% elif kind == 'booking' %}
-                <th>ID</th><th>Student</th><th>Examination</th><th>Slot Time</th><th>Status</th>
+                <th scope="col">ID</th><th scope="col">Student</th><th scope="col">Examination</th><th scope="col">Slot Time</th><th scope="col">Status</th>
               {% endif %}
             </tr>
           </thead>

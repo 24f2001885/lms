@@ -1,9 +1,10 @@
 {% extends "admin/base_admin.html" %}
+{% import "macros/pagination.html" as p %}
 {% block page_title %}Evaluations{% endblock %}
 
 {% block content %}
 <!-- DEBUG: evaluation tracking {{ page.total }} state {{ state }} -->
-<div class="card mb-4">
+<div class="card border-0 shadow-sm mb-4">
   <div class="card-body py-2">
     <strong>Pending by Examiner:</strong>
     {% if pending_strip %}
@@ -17,7 +18,7 @@
 </div>
 
 <div class="mb-3">
-  <div class="btn-group" role="group">
+  <div class="btn-group" role="group" aria-label="Evaluation states">
     <a href="{{ url_for('admin.evaluations_list') }}" class="btn btn-outline-secondary btn-sm {% if not state %}active{% endif %}">All</a>
     <a href="{{ url_for('admin.evaluations_list', state='not_started') }}" class="btn btn-outline-secondary btn-sm {% if state == 'not_started' %}active{% endif %}">Not started</a>
     <a href="{{ url_for('admin.evaluations_list', state='draft') }}" class="btn btn-outline-secondary btn-sm {% if state == 'draft' %}active{% endif %}">Draft</a>
@@ -26,78 +27,86 @@
   </div>
 </div>
 
-<form method="GET" action="{{ url_for('admin.evaluations_list') }}" class="row g-2 mb-4">
-  <input type="hidden" name="state" value="{{ state }}"/>
-  <div class="col-md-3">
-    <select name="examination_id" class="form-select form-select-sm">
-      <option value="">All Examinations</option>
-      {% for ex in examinations %}
-        <option value="{{ ex.id }}" {% if examination_id == ex.id %}selected{% endif %}>{{ ex.name }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <div class="col-md-3">
-    <select name="examiner_id" class="form-select form-select-sm">
-      <option value="">All Examiners</option>
-      {% for exm in examiners %}
-        <option value="{{ exm.id }}" {% if examiner_id == exm.id %}selected{% endif %}>{{ exm.full_name }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <div class="col-md-4">
-    <input type="text" name="q" class="form-control form-control-sm" placeholder="Student name..." value="{{ q }}"/>
-  </div>
-  <div class="col-md-2">
-    <button type="submit" class="btn btn-primary btn-sm w-100">Filter</button>
-  </div>
-</form>
+<div class="card border-0 shadow-sm p-3 mb-3">
+  <form method="GET" action="{{ url_for('admin.evaluations_list') }}" class="row g-2">
+    <input type="hidden" name="state" value="{{ state }}"/>
+    <div class="col-md-3">
+      <label for="eval-exam-filter" class="visually-hidden">Filter by Examination</label>
+      <select id="eval-exam-filter" name="examination_id" class="form-select form-select-sm" aria-label="Filter by examination">
+        <option value="">All Examinations</option>
+        {% for ex in examinations %}
+          <option value="{{ ex.id }}" {% if examination_id == ex.id %}selected{% endif %}>{{ ex.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label for="eval-examiner-filter" class="visually-hidden">Filter by Examiner</label>
+      <select id="eval-examiner-filter" name="examiner_id" class="form-select form-select-sm" aria-label="Filter by examiner">
+        <option value="">All Examiners</option>
+        {% for exm in examiners %}
+          <option value="{{ exm.id }}" {% if examiner_id == exm.id %}selected{% endif %}>{{ exm.full_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-4">
+      <label for="eval-student-search" class="visually-hidden">Search student name</label>
+      <input type="text" id="eval-student-search" name="q" class="form-control form-control-sm" placeholder="Student name..." value="{{ q }}" aria-label="Search student name"/>
+    </div>
+    <div class="col-md-2">
+      <button type="submit" class="btn btn-primary btn-sm w-100">Filter</button>
+    </div>
+  </form>
+</div>
 
 {% if page.items %}
-  <div class="table-responsive">
-    <table class="table table-hover align-middle">
-      <thead>
-        <tr>
-          <th>Student</th>
-          <th>Examination</th>
-          <th>Slot Time</th>
-          <th>Examiner</th>
-          <th>Status</th>
-          <th>Total</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in page.items %}
+  <div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0" aria-label="Evaluations list">
+        <thead class="table-light">
           <tr>
-            <td>{{ row.booking.student.full_name }}</td>
-            <td>{{ row.booking.examination.name }}</td>
-            <td>{{ row.booking.slot.start_at|localdt }}</td>
-            <td>{{ row.booking.slot.examiner.full_name }}</td>
-            <td>
-              {% if row.tracking_state == 'published' %}
-                <span class="badge text-bg-success">Published</span>
-              {% elif row.tracking_state == 'submitted' %}
-                <span class="badge text-bg-primary">Submitted</span>
-              {% else %}
-                <span class="badge text-bg-secondary">{{ row.tracking_state|replace('_', ' ')|capitalize }}</span>
-              {% endif %}
-            </td>
-            <td>{{ row.evaluation.total_marks if row.evaluation else '-' }}</td>
-            <td>
-              <a href="{{ url_for('admin.booking_detail', booking_id=row.booking.id) }}" class="btn btn-sm btn-outline-secondary">View</a>
-              {% if row.tracking_state == 'submitted' and row.evaluation %}
-                <form method="POST" action="{{ url_for('admin.admin_publish_evaluation', evaluation_id=row.evaluation.id) }}" class="d-inline">
-                  {{ confirm_form.hidden_tag() }}
-                  <button type="submit" class="btn btn-sm btn-success">Publish</button>
-                </form>
-              {% endif %}
-            </td>
+            <th scope="col">Student</th>
+            <th scope="col">Examination</th>
+            <th scope="col">Slot Time</th>
+            <th scope="col">Examiner</th>
+            <th scope="col">Status</th>
+            <th scope="col">Total</th>
+            <th scope="col">Actions</th>
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {% for row in page.items %}
+            <tr>
+              <td>{{ row.booking.student.full_name }}</td>
+              <td>{{ row.booking.examination.name }}</td>
+              <td>{{ row.booking.slot.start_at|localdt }}</td>
+              <td>{{ row.booking.slot.examiner.full_name }}</td>
+              <td>
+                {% if row.tracking_state == 'published' %}
+                  <span class="badge text-bg-success">Published</span>
+                {% elif row.tracking_state == 'submitted' %}
+                  <span class="badge text-bg-primary">Submitted</span>
+                {% else %}
+                  <span class="badge text-bg-secondary">{{ row.tracking_state|replace('_', ' ')|capitalize }}</span>
+                {% endif %}
+              </td>
+              <td>{{ row.evaluation.total_marks if row.evaluation else '-' }}</td>
+              <td>
+                <a href="{{ url_for('admin.booking_detail', booking_id=row.booking.id) }}" class="btn btn-sm btn-outline-secondary">View</a>
+                {% if row.tracking_state == 'submitted' and row.evaluation %}
+                  <form method="POST" action="{{ url_for('admin.admin_publish_evaluation', evaluation_id=row.evaluation.id) }}" class="d-inline">
+                    {{ confirm_form.hidden_tag() }}
+                    <button type="submit" class="btn btn-sm btn-success">Publish</button>
+                  </form>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
+  {{ p.pager(page, 'admin.evaluations_list') }}
 {% else %}
-  <div class="alert alert-info">No evaluation records match the selected filters.</div>
+  <div class="alert alert-info" role="alert">No evaluation records match the selected filters.</div>
 {% endif %}
 {% endblock %}

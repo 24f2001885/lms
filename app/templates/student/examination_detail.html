@@ -14,67 +14,69 @@ OFFLINE DOCKER TEST CASES:
 {% block page_title %}{{ examination.name }}{% endblock %}
 
 {% block student_content %}
-<div class="card mb-4">
+<div class="card border-0 shadow-sm mb-4">
   <div class="card-body">
-    <h5 class="card-title">{{ examination.code }} - {{ examination.name }}</h5>
-    <p class="card-text text-muted">
+    <h2 class="h5 fw-bold mb-1">{{ examination.code }} &mdash; {{ examination.name }}</h2>
+    <p class="card-text text-muted small mb-3">
       Course: {{ examination.course.name if examination.course else '' }} | Type: {{ examination.examination_type|capitalize }} | Duration: {{ examination.duration_minutes }} mins
     </p>
-    <div class="alert alert-secondary mb-0">
+    <div class="alert alert-secondary mb-0 small" role="alert">
       <strong>Booking Window:</strong> {{ win_state.booking.reason }}<br/>
-      <small class="text-muted">Cancellation deadline: {{ examination.booking_end|localdt }}</small>
+      <span class="text-muted">Cancellation deadline: {{ examination.booking_end|localdt }}</span>
     </div>
   </div>
 </div>
 
 {% if own_booking %}
-  <div class="alert alert-success">
+  <div class="alert alert-success" role="alert">
     You already have an active booking for this examination. 
     <a href="{{ url_for('student.booking_detail', booking_id=own_booking.id) }}" class="alert-link">View your booking</a>.
   </div>
 {% endif %}
 
-<h4 class="h5 mb-3">Available Slots</h4>
+<h3 class="h6 fw-bold text-primary mb-3">Available Slots</h3>
 {% if slots %}
-  <div class="table-responsive">
-    <table class="table table-hover align-middle">
-      <thead>
-        <tr>
-          <th>Date & Time</th>
-          <th>Examiner</th>
-          <th>Seats Left</th>
-          <th>Status</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for s in slots %}
-          <tr class="{% if s.status == 'full' %}slot-row-full text-muted{% endif %}">
-            <td>{{ s.start_at|localdt }} - {{ s.end_at|localdt }}</td>
-            <td>{{ s.examiner.name if s.examiner else 'Assigned Examiner' }}</td>
-            <td>{{ s.seats_left }} / {{ s.max_capacity }}</td>
-            <td>
-              {% if s.status == 'full' %}
-                <span class="badge bg-danger">Full</span>
-              {% else %}
-                <span class="badge bg-success">Available</span>
-              {% endif %}
-            </td>
-            <td>
-              {% if own_booking %}
-                {{ bm.book_button(s, false, "You already booked this examination") }}
-              {% elif not win_state.booking.is_open %}
-                {{ bm.book_button(s, false, win_state.booking.reason) }}
-              {% elif s.status == 'full' %}
-                {{ bm.book_button(s, false, "This slot is full") }}
-              {% else %}
-                {{ bm.book_button(s, true, "") }}
-              {% endif %}
-            </td>
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0" aria-label="Available slots">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">Date & Time</th>
+            <th scope="col">Examiner</th>
+            <th scope="col">Seats Left</th>
+            <th scope="col">Status</th>
+            <th scope="col">Action</th>
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {% for s in slots %}
+            <tr class="{% if s.status == 'full' %}slot-row-full text-muted{% endif %}">
+              <td>{{ s.start_at|localdt }} &rarr; {{ s.end_at|localdt }}</td>
+              <td>{{ s.examiner.name if s.examiner else 'Assigned Examiner' }}</td>
+              <td>{{ s.seats_left }} / {{ s.max_capacity }}</td>
+              <td>
+                {% if s.status == 'full' %}
+                  <span class="badge bg-danger">Full</span>
+                {% else %}
+                  <span class="badge bg-success">Available</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if own_booking %}
+                  {{ bm.book_button(s, false, "You already booked this examination") }}
+                {% elif not win_state.booking.is_open %}
+                  {{ bm.book_button(s, false, win_state.booking.reason) }}
+                {% elif s.status == 'full' %}
+                  {{ bm.book_button(s, false, "This slot is full") }}
+                {% else %}
+                  {{ bm.book_button(s, true, "") }}
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 
   {% for s in slots %}
@@ -83,6 +85,6 @@ OFFLINE DOCKER TEST CASES:
     {% endif %}
   {% endfor %}
 {% else %}
-  <p class="text-muted">No upcoming slots found for this examination.</p>
+  <p class="text-muted small">No upcoming slots found for this examination.</p>
 {% endif %}
 {% endblock %}

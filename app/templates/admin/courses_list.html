@@ -13,8 +13,10 @@
 <!-- Filter Bar -->
 <div class="card border-0 shadow-sm p-3 mb-3">
   <form method="GET" action="{{ url_for('admin.courses') }}" class="table-filter-bar">
-    <input type="text" name="q" class="form-control form-control-sm" style="max-width: 240px;" placeholder="Search code or name..." value="{{ q }}">
-    <select name="status" class="form-select form-select-sm" style="max-width: 140px;">
+    <label for="course-search-q" class="visually-hidden">Search courses</label>
+    <input type="text" id="course-search-q" name="q" class="form-control form-control-sm" style="max-width: 240px;" placeholder="Search code or name..." value="{{ q }}" aria-label="Search code or name">
+    <label for="course-status-filter" class="visually-hidden">Filter by status</label>
+    <select id="course-status-filter" name="status" class="form-select form-select-sm" style="max-width: 140px;" aria-label="Filter by status">
       <option value="">All Statuses</option>
       <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
       <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
@@ -26,7 +28,7 @@
 <!-- Table -->
 <div class="card border-0 shadow-sm">
   <div class="table-responsive">
-    <table class="table table-hover align-middle mb-0">
+    <table class="table table-hover align-middle mb-0" aria-label="Courses list">
       <thead class="table-light">
         <tr>
           <th scope="col">Code</th>

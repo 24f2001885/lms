@@ -3,36 +3,44 @@
 
 {% block content %}
 <!-- DEBUG: reschedule booking {{ booking.id }} targets {{ form.new_slot_id.choices|length }} -->
-<div class="card mb-4">
-  <div class="card-body">
-    <h5 class="card-title mb-3">Current Booking Summary</h5>
-    <p class="mb-1"><strong>Student:</strong> {{ booking.student.full_name }} ({{ booking.student.email }})</p>
-    <p class="mb-1"><strong>Examination:</strong> {{ booking.examination.name }}</p>
-    <p class="mb-1"><strong>Current Slot:</strong> {{ booking.slot.start_at|localdt }} - {{ booking.slot.end_at|localdt }}</p>
-    <p class="mb-1"><strong>Examiner:</strong> {{ booking.slot.examiner.full_name }}</p>
-    <p class="mb-0"><strong>Status:</strong> <span class="badge text-bg-success">{{ booking.status|capitalize }}</span></p>
+<div class="row">
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-sm p-4 mb-4">
+      <h2 class="h6 fw-bold text-primary mb-3">Current Booking Summary</h2>
+      <dl class="row mb-0 small">
+        <dt class="col-sm-4 text-muted">Student</dt>
+        <dd class="col-sm-8">{{ booking.student.full_name }} ({{ booking.student.email }})</dd>
+        <dt class="col-sm-4 text-muted">Examination</dt>
+        <dd class="col-sm-8">{{ booking.examination.name }}</dd>
+        <dt class="col-sm-4 text-muted">Current Slot</dt>
+        <dd class="col-sm-8">{{ booking.slot.start_at|localdt }} &rarr; {{ booking.slot.end_at|localdt }}</dd>
+        <dt class="col-sm-4 text-muted">Examiner</dt>
+        <dd class="col-sm-8">{{ booking.slot.examiner.full_name }}</dd>
+        <dt class="col-sm-4 text-muted">Status</dt>
+        <dd class="col-sm-8"><span class="badge text-bg-success">{{ booking.status|capitalize }}</span></dd>
+      </dl>
+    </div>
+
+    {% if form.new_slot_id.choices %}
+      <div class="card border-0 shadow-sm p-4">
+        <h2 class="h6 fw-bold text-primary mb-2">Select Target Slot</h2>
+        <p class="small text-muted mb-3">The student keeps the same booking. Seats are updated on both slots.</p>
+        <form method="POST" action="{{ url_for('admin.reschedule_booking', booking_id=booking.id) }}">
+          {{ form.hidden_tag() }}
+          <div class="mb-3">
+            {{ form.new_slot_id.label(class="form-label small fw-semibold") }}
+            {{ form.new_slot_id(class="form-select") }}
+          </div>
+          <div class="form-actions mt-3">
+            <button type="submit" class="btn btn-primary">Move booking</button>
+            <a href="{{ url_for('admin.booking_detail', booking_id=booking.id) }}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    {% else %}
+      <div class="alert alert-secondary small" role="alert">No other available future slots exist for this examination.</div>
+      <a href="{{ url_for('admin.booking_detail', booking_id=booking.id) }}" class="btn btn-outline-secondary btn-sm">Back to booking</a>
+    {% endif %}
   </div>
 </div>
-
-{% if form.new_slot_id.choices %}
-  <div class="card">
-    <div class="card-body">
-      <p class="text-muted">The student keeps the same booking. Seats are updated on both slots.</p>
-      <form method="POST" action="{{ url_for('admin.reschedule_booking', booking_id=booking.id) }}">
-        {{ form.hidden_tag() }}
-        <div class="mb-3">
-          {{ form.new_slot_id.label(class="form-label") }}
-          {{ form.new_slot_id(class="form-select") }}
-        </div>
-        <div class="d-flex gap-2">
-          <button type="submit" class="btn btn-primary">Move booking</button>
-          <a href="{{ url_for('admin.booking_detail', booking_id=booking.id) }}" class="btn btn-outline-secondary">Cancel</a>
-        </div>
-      </form>
-    </div>
-  </div>
-{% else %}
-  <div class="alert alert-secondary">No other available future slots exist for this examination.</div>
-  <a href="{{ url_for('admin.booking_detail', booking_id=booking.id) }}" class="btn btn-outline-secondary">Back to booking</a>
-{% endif %}
 {% endblock %}
