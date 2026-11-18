@@ -24,15 +24,19 @@ from app.extensions import db
 from app.models import User
 
 
-def test_init_db_creates_exactly_12_tables(app, runner):
-    """Verify flask init-db creates all 12 expected Tier 1 tables."""
+def test_init_db_creates_12_tier1_and_1_tier2_tables(app, runner):
+    """Verify flask init-db creates all 12 expected Tier 1 tables and 1 Tier 2 table (13 total)."""
     result = runner.invoke(args=["init-db"])
     assert result.exit_code == 0
-    assert "Created 12 tables" in result.output
+    assert "Tier 1 tables: 12, Tier 2 tables: 1" in result.output
+    assert "Created 13 tables" in result.output
 
     inspector = db.inspect(db.engine)
     tables = [t for t in inspector.get_table_names() if not t.startswith("sqlite_")]
-    assert sorted(tables) == sorted(EXPECTED_TIER1_TABLES)
+    expected = list(EXPECTED_TIER1_TABLES) + ["email_logs"]
+    assert sorted(tables) == sorted(expected)
+    tier3_tables = {"payments", "test_sessions", "questions", "answers", "proctoring_logs"}
+    assert not set(tables).intersection(tier3_tables)
 
 
 def test_init_db_is_idempotent(app, runner):

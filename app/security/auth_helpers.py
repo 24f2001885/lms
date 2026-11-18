@@ -31,7 +31,7 @@ import logging
 from urllib.parse import urlparse
 
 import flask_login
-from flask import current_app, flash, g, redirect, request, session, url_for
+from flask import current_app, flash, g, has_request_context, redirect, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.config import BaseConfig
@@ -170,7 +170,11 @@ def refresh_session_after_password_change(user: User) -> None:
 
 def get_current_user() -> User | None:
     """Return the currently authenticated User or None."""
-    if flask_login.current_user.is_authenticated:
+    if (
+        has_request_context()
+        and flask_login.current_user
+        and getattr(flask_login.current_user, "is_authenticated", False)
+    ):
         return flask_login.current_user._get_current_object()
     return getattr(g, "user", None)
 

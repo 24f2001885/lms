@@ -1,0 +1,17 @@
+Hello {{ student_name }},
+
+{% if by == "student" %}
+You cancelled your booking. Your seat has been released.
+{% elif by == "admin" %}
+Your booking was cancelled by the administration.
+{% else %}
+The slot you booked was cancelled.
+{% endif %}
+
+Examination: {{ examination_name }} ({{ course_code }})
+Original date and time: {{ slot_start }} to {{ slot_end }} {{ tz }}
+Booking number: {{ booking_id }}
+
+{% if by != "student" %}
+You can book another slot while booking is open: {{ link }}
+{% endif %}

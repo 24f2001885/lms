@@ -16,7 +16,7 @@ from app.models import (
     ExaminationSlot,
     User,
 )
-from app.services import audit_service, windows
+from app.services import audit_service, hooks, windows
 
 
 def get_owned_booking(examiner_id, booking_id):
@@ -222,6 +222,13 @@ def save_evaluation(
         },
     )
     db.session.commit()
+    if action == "publish":
+        hooks.emit(
+            hooks.EVENT_EVALUATION_PUBLISHED,
+            evaluation_id=evaluation.id,
+            booking_id=booking.id,
+            student_id=booking.student_id,
+        )
     return evaluation
 
 
@@ -257,6 +264,12 @@ def publish_evaluation(examiner_id: int, evaluation_id: int) -> Evaluation:
         },
     )
     db.session.commit()
+    hooks.emit(
+        hooks.EVENT_EVALUATION_PUBLISHED,
+        evaluation_id=evaluation.id,
+        booking_id=evaluation.booking_id,
+        student_id=evaluation.booking.student_id,
+    )
     return evaluation
 
 
@@ -286,6 +299,12 @@ def admin_publish(actor_id: int, evaluation_id: int) -> Evaluation:
         details={"booking_id": evaluation.booking_id},
     )
     db.session.commit()
+    hooks.emit(
+        hooks.EVENT_EVALUATION_PUBLISHED,
+        evaluation_id=evaluation.id,
+        booking_id=evaluation.booking_id,
+        student_id=evaluation.booking.student_id,
+    )
     return evaluation
 
 

@@ -59,15 +59,20 @@ OFFLINE DOCKER TEST CASES:
       </div>
     {% endif %}
 
-    <div class="d-flex justify-content-between">
+    <div class="d-flex justify-content-between align-items-center">
       <a href="{{ url_for('student.my_bookings_list') }}" class="btn btn-secondary">Back to My Bookings</a>
-      {% if booking.status == 'booked' %}
-        <form action="{{ url_for('student.cancel_booking_action', booking_id=booking.id) }}" method="POST" class="d-inline">
-          {{ confirm_form.hidden_tag() if confirm_form else '' }}
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-          <button type="submit" class="btn btn-danger">Cancel Booking</button>
-        </form>
-      {% endif %}
+      <div>
+        {% if result_pub %}
+          <a href="{{ url_for('student.download_scorecard', id=booking.id) }}" class="btn btn-primary me-2">Download scorecard (PDF)</a>
+        {% endif %}
+        {% if booking.status == 'booked' %}
+          <form action="{{ url_for('student.cancel_booking_action', booking_id=booking.id) }}" method="POST" class="d-inline">
+            {{ confirm_form.hidden_tag() if confirm_form else '' }}
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit" class="btn btn-danger">Cancel Booking</button>
+          </form>
+        {% endif %}
+      </div>
     </div>
   </div>
 </div>

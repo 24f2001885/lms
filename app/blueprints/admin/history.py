@@ -23,6 +23,7 @@ from app.blueprints.admin import admin_bp
 from app.forms.common import parse_page
 from app.models.audit_log import AuditLog
 from app.models.booking import Booking
+from app.models.email_log import EmailLog
 from app.models.evaluation import Evaluation
 from app.models.examination import Examination
 from app.security.decorators import admin_required
@@ -33,7 +34,7 @@ from app.security.decorators import admin_required
 def history():
     """Browse historical examinations, bookings, evaluations, and audit logs."""
     tab = request.args.get("tab", "examinations").strip().lower()
-    if tab not in ("examinations", "bookings", "evaluations", "audit"):
+    if tab not in ("examinations", "bookings", "evaluations", "audit", "emails"):
         tab = "examinations"
 
     page, per_page = parse_page(request.args)
@@ -63,6 +64,19 @@ def history():
             )
             .order_by(Evaluation.id.desc())
             .paginate(page=page, per_page=per_page, error_out=False)
+        )
+    elif tab == "emails":
+        status_filter = request.args.get("status", "").strip().lower()
+        template_filter = request.args.get("template", "").strip()
+
+        query = EmailLog.query
+        if status_filter:
+            query = query.filter(EmailLog.status == status_filter)
+        if template_filter:
+            query = query.filter(EmailLog.template == template_filter)
+
+        page_data = query.order_by(EmailLog.id.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
         )
     else:  # tab == 'audit'
         page_data = AuditLog.query.order_by(AuditLog.id.desc()).paginate(

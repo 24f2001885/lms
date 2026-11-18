@@ -20,6 +20,9 @@
   <li class="nav-item">
     <a class="nav-link {% if tab == 'audit' %}active{% endif %}" {% if tab == 'audit' %}aria-current="page"{% endif %} href="{{ url_for('admin.history', tab='audit') }}">Audit</a>
   </li>
+  <li class="nav-item">
+    <a class="nav-link {% if tab == 'emails' %}active{% endif %}" {% if tab == 'emails' %}aria-current="page"{% endif %} href="{{ url_for('admin.history', tab='emails') }}">Emails</a>
+  </li>
 </ul>
 
 <div class="card border-0 shadow-sm">
@@ -101,6 +104,42 @@
             </tr>
           {% else %}
             <tr><td colspan="6" class="text-center text-muted py-3">No evaluations recorded.</td></tr>
+          {% endfor %}
+        </tbody>
+
+      {% elif tab == 'emails' %}
+        <thead class="table-light">
+          <tr>
+            <th>Time</th>
+            <th>Recipient</th>
+            <th>Template</th>
+            <th>Status</th>
+            <th>Attempts</th>
+            <th>Error Message</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for em in page.items %}
+            <tr>
+              <td>{{ em.created_at|localdt }}</td>
+              <td>{{ em.to_email }}</td>
+              <td><code>{{ em.template }}</code></td>
+              <td>
+                {% if em.status == 'sent' %}
+                  <span class="badge bg-success">Sent</span>
+                {% elif em.status == 'failed' %}
+                  <span class="badge bg-danger">Failed</span>
+                {% elif em.status == 'queued' %}
+                  <span class="badge bg-warning text-dark">Queued</span>
+                {% else %}
+                  <span class="badge bg-secondary">{{ em.status }}</span>
+                {% endif %}
+              </td>
+              <td>{{ em.attempts }}</td>
+              <td><span class="text-muted">{{ em.error_message[:100] if em.error_message else '-' }}</span></td>
+            </tr>
+          {% else %}
+            <tr><td colspan="6" class="text-center text-muted py-3">No email records logged.</td></tr>
           {% endfor %}
         </tbody>
 

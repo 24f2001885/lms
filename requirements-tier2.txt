@@ -5,3 +5,6 @@
 # P10: None
 # P11: Flask-Login
 Flask-Login==0.6.3
+# P12: Flask-Mail and ReportLab
+Flask-Mail==0.10.0
+reportlab==4.1.0

@@ -24,6 +24,7 @@ EXPECTED_TIER1_TABLES = (
     "student_profiles",
     "users",
 )
+EXPECTED_TIER2_TABLES = ("email_logs",)
 
 
 def create_database() -> list[str]:
@@ -84,11 +85,17 @@ def init_db_command():
     click.echo("Initializing LMS database schema...")
     tables = create_database()
     click.echo(f"Database ready at: {current_app.config['SQLALCHEMY_DATABASE_URI']}")
+    tier1_found = [t for t in EXPECTED_TIER1_TABLES if t in tables]
+    tier2_found = [t for t in EXPECTED_TIER2_TABLES if t in tables]
+    click.echo(f"Tier 1 tables: {len(tier1_found)}, Tier 2 tables: {len(tier2_found)}")
     click.echo(f"Created {len(tables)} tables: {', '.join(tables)}")
 
-    missing = set(EXPECTED_TIER1_TABLES) - set(tables)
-    if missing:
-        click.echo(f"WARNING: Expected tables missing: {', '.join(sorted(missing))}")
+    missing_tier1 = set(EXPECTED_TIER1_TABLES) - set(tables)
+    if missing_tier1:
+        click.echo(f"WARNING: Expected Tier 1 tables missing: {', '.join(sorted(missing_tier1))}")
+    missing_tier2 = set(EXPECTED_TIER2_TABLES) - set(tables)
+    if missing_tier2:
+        click.echo(f"WARNING: Expected Tier 2 tables missing: {', '.join(sorted(missing_tier2))}")
 
     admin_status = seed_admin(current_app)
     admin_email = current_app.config["ADMIN_EMAIL"]
@@ -134,6 +141,49 @@ def purge_soft_deleted_command(days):
         click.echo(f"Purged {count} soft-deleted examinations older than {days} days.")
     except Exception as exc:
         click.echo(f"ERROR: purge-soft-deleted failed: {exc}", err=True)
+        sys.exit(1)
+
+
+@jobs_group.command("retry-failed-emails")
+@click.option(
+    "--max-attempts", default=None, type=int, help="Maximum attempts before terminal failure."
+)
+def retry_failed_emails_command(max_attempts):
+    import sys
+
+    from flask import current_app
+
+    from app.services import mailer
+
+    try:
+        if max_attempts is None:
+            max_attempts = current_app.config.get("MAIL_MAX_ATTEMPTS", 3)
+        summary = mailer.retry_failed(max_attempts=max_attempts)
+        click.echo(
+            f"Retry summary: {summary['considered']} considered, "
+            f"{summary['sent']} sent, {summary['still_failed']} still failed."
+        )
+    except Exception as exc:
+        click.echo(f"ERROR: retry-failed-emails failed: {exc}", err=True)
+        sys.exit(1)
+
+
+@jobs_group.command("purge-email-logs")
+@click.option("--days", default=None, type=int, help="Retention period in days.")
+def purge_email_logs_command(days):
+    import sys
+
+    from flask import current_app
+
+    from app.services import mailer
+
+    try:
+        if days is None:
+            days = current_app.config.get("EMAIL_LOG_RETENTION_DAYS", 90)
+        count = mailer.purge_old(days=days)
+        click.echo(f"Purged {count} email logs older than {days} days.")
+    except Exception as exc:
+        click.echo(f"ERROR: purge-email-logs failed: {exc}", err=True)
         sys.exit(1)
 
 

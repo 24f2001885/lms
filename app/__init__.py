@@ -30,6 +30,9 @@ def create_app(config_name: str | None = None, test_config: dict | None = None) 
 
     # 3. Database extensions and SQLite pragmas
     init_extensions(flask_app)
+    from app.services import mailer
+
+    mailer.register_event_handlers()
 
     # 4. Global CSRF protection
     csrf.init_app(flask_app)

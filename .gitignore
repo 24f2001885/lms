@@ -64,6 +64,7 @@ logs/*
 playwright-report/
 test-results/
 .playwright/
+submission_core.zip
 
 # Editors and OS
 .vscode/

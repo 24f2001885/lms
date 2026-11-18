@@ -133,4 +133,43 @@ EMP implements Flask-Login session management and defense-in-depth security hard
 - **Security Headers & CSP:** Enforces strict local Content-Security-Policy (`default-src 'self'`), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: same-origin`, and `Cache-Control: no-store` on authenticated pages.
 - **Security Audit:** Run the automated security verification suite with `make security` or `make test-security`.
 
+---
+
+## 7. Email Notifications (Milestone P12)
+
+EMP features decoupled, event-driven transactional email dispatch:
+
+- **Domain Events (`app/services/hooks.py`):** Tier 1 services never directly invoke the mailer. Instead, events are emitted after database commits: `booking.created`, `booking.cancelled`, `booking.rescheduled`, `examiner.approved`, and `evaluation.published`.
+- **Templates (`app/templates/emails/`):** 5 plain-text templates (`booking_confirmed.txt`, `booking_cancelled.txt`, `booking_rescheduled.txt`, `examiner_approved.txt`, `result_published.txt`) sharing a common `_footer.txt`. No marks, passwords, or admin cancellation reasons are ever sent.
+- **Email Log (`email_logs` table):** Tracks attempts, status (`queued`, `sent`, `failed`), and redacted errors.
+- **Fault Tolerance:** Email failures never block a booking transaction. If SMTP fails, the email is logged as `failed`.
+- **Background Retry Job:** `flask --app app jobs retry-failed-emails --max-attempts 3` retries transient delivery failures.
+- **Retention & Purge:** `flask --app app jobs purge-email-logs --days 90` purges old completed or terminal logs.
+- **Local Mail Sink:** Run `make mail-sink` (or `python -m aiosmtpd -n -l localhost:1025`) to inspect transactional emails in local development.
+
+---
+
+## 8. Scorecard PDF (Milestone P12)
+
+Students can download an official PDF scorecard for published evaluation results:
+
+- **Route:** `GET /student/bookings/<id>/scorecard.pdf` (restricted to owning student with a published evaluation).
+- **Generation (`app/services/scorecard.py`):** Generated on the fly using ReportLab with exact decimal grade computations and audit logging (`scorecard.download`).
+- **Font Support:** Safe offline fallback to built-in Helvetica if DejaVu TrueType fonts are absent.
+- **Deterministic Output:** Set `SCORECARD_DETERMINISTIC=True` in test environments to ensure reproducible byte-for-byte PDF output.
+
+---
+
+## 9. Gate B and Submission (Milestone P12)
+
+- **Gate B Verification:** Run `bash scripts/verify_gate_b.sh` (or `make gate-b`) to verify all 10 gate conditions before tagging `tier2-complete`.
+- **Submission Packaging:** Run `bash scripts/build_submission.sh` (or `make submission`) to generate `submission_core.zip` from Git HEAD with full integrity checks.
+
+---
+
+## 10. Known Issues and Limitations
+
+- **Scorecard Fonts & Non-Latin Scripts:** The PDF scorecard generator utilizes standard built-in Helvetica or DejaVu fonts. Devanagari and other complex non-Latin scripts are not currently rendered in PDF exports and fall back to replacement characters.
+- **In-Memory Rate Limiter:** The brute-force login limiter runs in-process memory and resets on server restart. In multi-process production deployments, an external cache store (e.g., Redis) should back the sliding-window state.
+
 

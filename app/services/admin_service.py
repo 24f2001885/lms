@@ -13,7 +13,7 @@ from app.models.examination import Examination
 from app.models.slot import ExaminationSlot
 from app.models.user import User
 from app.security.auth_helpers import validate_password_strength
-from app.services import audit_service
+from app.services import audit_service, hooks
 
 
 def dashboard_totals() -> dict[str, Any]:
@@ -55,6 +55,7 @@ def approve_examiner(actor_id: int, user_id: int) -> User:
         actor_id, audit_service.USER_APPROVE, "user", user.id, {"email": user.email}
     )
     db.session.commit()
+    hooks.emit(hooks.EVENT_EXAMINER_APPROVED, examiner_id=user.id)
     return user
 
 

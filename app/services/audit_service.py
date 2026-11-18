@@ -60,6 +60,10 @@ SYSTEM_PURGE = "system.purge"
 AUTH_LOCKOUT = "auth.lockout"
 AUTH_PASSWORD_CHANGE = "auth.password_change"  # noqa: S105
 
+SCORECARD_DOWNLOAD = "scorecard.download"
+SYSTEM_EMAIL_RETRY = "system.email_retry"
+SYSTEM_EMAIL_PURGE = "system.email_purge"
+
 # (Retaining existing audit service implementation methods from P1-P3)
 
 

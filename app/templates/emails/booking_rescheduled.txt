@@ -1,0 +1,11 @@
+Hello {{ student_name }},
+
+Your booking was moved to a different slot by the administration.
+
+Examination: {{ examination_name }} ({{ course_code }})
+Previous time: {{ old_start }} {{ tz }}
+New time: {{ new_start }} to {{ new_end }} {{ tz }}
+New examiner: {{ examiner_name }}
+Booking number: {{ booking_id }}
+
+View your bookings: {{ link }}

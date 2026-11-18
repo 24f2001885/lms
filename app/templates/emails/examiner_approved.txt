@@ -1,0 +1,5 @@
+Hello {{ examiner_name }},
+
+Your examiner account has been approved. You can now sign in and manage your slots and evaluations.
+
+Sign in: {{ link }}
