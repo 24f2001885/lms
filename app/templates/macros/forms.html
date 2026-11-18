@@ -20,7 +20,10 @@
     {% else %}
       {% set _ = extra.update({'aria-describedby': describedby}) %}
     {% endif %}
-    {{ field(id=field_id, class=cls, required=is_req, **extra) }}
+    {% if is_req %}
+      {% set _ = extra.update({'required': True}) %}
+    {% endif %}
+    {{ field(id=field_id, class=cls, **extra) }}
     {% if help_text %}
       <div id="{{ help_id }}" class="form-text">{{ help_text }}</div>
     {% endif %}
@@ -44,7 +47,11 @@
     </legend>
     {% for subfield in field %}
       <div class="form-check">
-        {{ subfield(class='form-check-input' ~ (' is-invalid' if has_errors else ''), required=field.flags.required) }}
+        {% if field.flags.required %}
+          {{ subfield(class='form-check-input' ~ (' is-invalid' if has_errors else ''), required=True) }}
+        {% else %}
+          {{ subfield(class='form-check-input' ~ (' is-invalid' if has_errors else '')) }}
+        {% endif %}
         <label class="form-check-label" for="{{ subfield.id }}">{{ subfield.label.text }}</label>
       </div>
     {% endfor %}
