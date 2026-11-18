@@ -66,9 +66,8 @@
   </main>
   {% endblock %}
 
-  <footer class="container page-container py-3 border-top text-muted small d-flex justify-content-between">
+  <footer class="container page-container py-3 border-top text-muted small">
     <span>Examination Management Portal (EMP)</span>
-    <a href="{{ url_for('api_v1.docs') }}">API reference</a>
   </footer>
 
   <script id="validation-config" type="application/json">{{ validation_config|tojson }}</script>
