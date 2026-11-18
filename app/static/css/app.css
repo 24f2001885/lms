@@ -209,6 +209,11 @@ form .text-danger {
   border-top: 1px solid #DEE2E6;
 }
 
+/* Modals: strictly hidden until triggered */
+.modal:not(.show) {
+  display: none !important;
+}
+
 .timeline-switch {
   display: flex;
   align-items: center;
