@@ -67,7 +67,7 @@ OFFLINE DOCKER TEST CASES:
               <td>
                 {% if own_booking %}
                   {{ bm.book_button(s, false, "You already booked this examination") }}
-                {% elif not win_state.booking.is_open %}
+                {% elif not (win_state.booking.open or win_state.booking.is_open) %}
                   {{ bm.book_button(s, false, win_state.booking.reason) }}
                 {% elif s.status == 'full' %}
                   {{ bm.book_button(s, false, "This slot is full") }}
@@ -83,7 +83,7 @@ OFFLINE DOCKER TEST CASES:
   </div>
 
   {% for s in slots %}
-    {% if not own_booking and win_state.booking.is_open and s.status != 'full' %}
+    {% if not own_booking and (win_state.booking.open or win_state.booking.is_open) and s.status != 'full' %}
       {{ bm.book_modal(s, examination, confirm_form) }}
     {% endif %}
   {% endfor %}

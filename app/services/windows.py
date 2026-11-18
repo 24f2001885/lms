@@ -167,11 +167,13 @@ def window_state(exam: Examination, now: datetime | None = None) -> dict:
     return {
         "slot_creation": {
             "open": sc_open,
+            "is_open": sc_open,
             "label": "Open" if sc_open else "Closed",
             "reason": sc_reason,
         },
         "booking": {
             "open": bk_open,
+            "is_open": bk_open,
             "label": "Open" if bk_open else "Closed",
             "reason": bk_reason,
         },
