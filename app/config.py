@@ -79,7 +79,7 @@ class BaseConfig:
 class DevConfig(BaseConfig):
     DEBUG = True
     TESTING = False
-    MAIL_SUPPRESS_SEND = True
+    MAIL_SUPPRESS_SEND = os.environ.get("MAIL_SUPPRESS_SEND", "true").lower() == "true"
 
 
 class TestConfig(BaseConfig):
