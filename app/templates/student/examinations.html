@@ -67,7 +67,17 @@ OFFLINE DOCKER TEST CASES:
             {% endif %}
           </div>
           <div class="card-footer bg-white border-top d-flex justify-content-between align-items-center">
-            <span class="small text-muted fw-medium">{{ exam.available_slots_count }} slots available</span>
+            {% if exam.own_booking %}
+              <span class="small text-success fw-medium">Already booked &bull; 0 slots to book</span>
+            {% elif not exam.window_info.booking.open %}
+              <span class="small text-muted fw-medium">Booking closed &bull; 0 slots available</span>
+            {% elif exam.available_slots_count == 0 %}
+              <span class="small text-danger fw-medium">0 slots available</span>
+            {% elif exam.available_slots_count == 1 %}
+              <span class="small text-muted fw-medium">1 slot available ({{ exam.total_seats_left }} seats free)</span>
+            {% else %}
+              <span class="small text-muted fw-medium">{{ exam.available_slots_count }} slots available ({{ exam.total_seats_left }} seats free)</span>
+            {% endif %}
             <a href="{{ url_for('student.examination_detail', exam_id=exam.id) }}" class="btn btn-outline-primary btn-sm">View slots</a>
           </div>
         </div>

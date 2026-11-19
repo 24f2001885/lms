@@ -65,11 +65,18 @@ def list_examinations(student_id, q=None, course_id=None, exam_type=None, page=1
             Booking.examination_id == exam.id,
             Booking.status.in_(["booked", "completed"]),
         ).first()
-        exam.available_slots_count = ExaminationSlot.query.filter(
+        
+        future_slots = ExaminationSlot.query.filter(
             ExaminationSlot.examination_id == exam.id,
             ExaminationSlot.status == "available",
             ExaminationSlot.start_at > now,
-        ).count()
+        ).all()
+        exam.total_seats_left = sum(s.seats_left for s in future_slots)
+        
+        if exam.own_booking or not exam.window_info["booking"]["open"]:
+            exam.available_slots_count = 0
+        else:
+            exam.available_slots_count = len([s for s in future_slots if s.seats_left > 0])
 
     total = len(visible_items)
     start = (page - 1) * per_page
