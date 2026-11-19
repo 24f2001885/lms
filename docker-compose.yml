@@ -12,6 +12,7 @@ services:
     volumes:
       - ./instance:/app/instance
       - ./logs:/app/logs
+      - ./app:/app/app
 
   test:
     profiles:
