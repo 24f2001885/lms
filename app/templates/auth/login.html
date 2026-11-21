@@ -83,7 +83,7 @@ OFFLINE DOCKER TEST CASES:
 </div>
 
 <!-- Recruiter Demo Credentials & Architecture Guide Modal -->
-<div class="modal fade" id="demoInfoModal" tabindex="-1" aria-labelledby="demoInfoModalLabel" aria-hidden="true">
+<div class="modal fade" id="demoInfoModal" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="demoInfoModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content shadow">
       <div class="modal-header bg-primary text-white">
@@ -97,7 +97,8 @@ OFFLINE DOCKER TEST CASES:
         </p>
 
         <div class="table-responsive mb-4">
-          <table class="table table-bordered align-middle">
+          <table class="table table-bordered align-middle" aria-label="Recruiter Demo Credentials">
+            <caption class="visually-hidden">Recruiter Demo Credentials</caption>
             <thead class="table-light">
               <tr>
                 <th scope="col">Role</th>
@@ -147,7 +148,7 @@ OFFLINE DOCKER TEST CASES:
           </table>
         </div>
 
-        <div class="alert alert-info py-2 small mb-0">
+        <div class="alert alert-info py-2 small mb-0" role="alert" aria-live="polite">
           <strong>Tip:</strong> You can click any quick-fill pill on the login page to immediately fill the login form without typing.
         </div>
       </div>
@@ -160,25 +161,5 @@ OFFLINE DOCKER TEST CASES:
 {% endblock %}
 
 {% block scripts %}
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-  const emailField = document.getElementById("email") || document.querySelector("input[name='email']");
-  const passwordField = document.getElementById("password") || document.querySelector("input[name='password']");
-  const fillButtons = document.querySelectorAll(".demo-fill-btn");
-
-  fillButtons.forEach(function (button) {
-    button.addEventListener("click", function () {
-      const email = this.getAttribute("data-email");
-      const password = this.getAttribute("data-password");
-      if (emailField && passwordField) {
-        emailField.value = email;
-        passwordField.value = password;
-        emailField.dispatchEvent(new Event("input", { bubbles: true }));
-        passwordField.dispatchEvent(new Event("input", { bubbles: true }));
-        passwordField.focus();
-      }
-    });
-  });
-});
-</script>
+<script src="{{ url_for('static', filename='js/recruiter_demo.js') }}" defer></script>
 {% endblock %}
