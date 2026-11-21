@@ -62,7 +62,8 @@ class BaseConfig:
     MAIL_ASYNC = os.environ.get("MAIL_ASYNC", "true").lower() == "true"
     MAIL_MAX_ATTEMPTS = int(os.environ.get("MAIL_MAX_ATTEMPTS", "3"))
     EMAIL_LOG_RETENTION_DAYS = int(os.environ.get("EMAIL_LOG_RETENTION_DAYS", "90"))
-    APP_BASE_URL = os.environ.get("APP_BASE_URL", "http://127.0.0.1:5000")
+    APP_BASE_URL = os.environ.get("APP_BASE_URL", "http://127.0.0.1:5002")
+    PREFERRED_URL_SCHEME = os.environ.get("PREFERRED_URL_SCHEME", "http")
     INSTITUTION_NAME = os.environ.get("INSTITUTION_NAME", "Examination Management Portal")
     SCORECARD_DETERMINISTIC = os.environ.get("SCORECARD_DETERMINISTIC", "false").lower() == "true"
 
@@ -118,8 +119,10 @@ class TestConfig(BaseConfig):
 class ProdConfig(BaseConfig):
     DEBUG = False
     TESTING = False
-    SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE", "true").lower() == "true"
     SESSION_COOKIE_NAME = "__Host-emp-session"
+    SESSION_COOKIE_DOMAIN = None
+    PREFERRED_URL_SCHEME = os.environ.get("PREFERRED_URL_SCHEME", "https")
     MAIL_SUPPRESS_SEND = os.environ.get("MAIL_SUPPRESS_SEND", "false").lower() == "true"
 
     def __init__(self):

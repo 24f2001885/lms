@@ -98,6 +98,18 @@ def create_app(config_name: str | None = None, test_config: dict | None = None) 
     # 12. Register security headers (P11)
     register_security_headers(flask_app)
 
+    # 13. Reverse proxy support (Honor X-Forwarded-For, Proto, Host behind Nginx)
+    if os.environ.get("USE_PROXY_FIX", "false").lower() == "true":
+        from werkzeug.middleware.proxy_fix import ProxyFix
+
+        flask_app.wsgi_app = ProxyFix(
+            flask_app.wsgi_app,
+            x_for=1,
+            x_proto=1,
+            x_host=1,
+            x_prefix=1,
+        )
+
     flask_app.json.sort_keys = False
 
     return flask_app
