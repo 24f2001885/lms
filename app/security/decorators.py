@@ -24,9 +24,7 @@ def login_required(f):
         user = getattr(g, "user", None)
         if user is None:
             if _is_api():
-                return error_response(
-                    "unauthenticated", "Authentication is required.", status=401
-                )
+                return error_response("unauthenticated", "Authentication is required.", status=401)
             flash("Please log in to continue.", "warning")
             return redirect(url_for("auth.login"))
 
