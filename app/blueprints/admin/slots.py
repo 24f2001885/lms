@@ -47,10 +47,16 @@ def slots():
     if status_filter:
         query = query.filter(ExaminationSlot.status == status_filter)
 
-    slots_page = query.order_by(ExaminationSlot.start_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    slots_page = query.order_by(ExaminationSlot.start_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
 
-    exams_list = Examination.query.filter_by(is_deleted=False).order_by(Examination.name.asc()).all()
-    examiners_list = User.query.filter_by(role="examiner", approval_status="approved", is_active=True).all()
+    exams_list = (
+        Examination.query.filter_by(is_deleted=False).order_by(Examination.name.asc()).all()
+    )
+    examiners_list = User.query.filter_by(
+        role="examiner", approval_status="approved", is_active=True
+    ).all()
 
     return render_template(
         "admin/slots_list.html",
@@ -100,7 +106,9 @@ def change_slot_examiner(slot_id: int):
 
     if form.validate_on_submit():
         try:
-            admin_service.change_slot_examiner(actor_id=g.user.id, slot_id=slot.id, new_examiner_id=form.examiner_id.data)
+            admin_service.change_slot_examiner(
+                actor_id=g.user.id, slot_id=slot.id, new_examiner_id=form.examiner_id.data
+            )
             flash("Examiner changed.", "success")
             return redirect(url_for("admin.slot_detail", slot_id=slot.id))
         except AppError as e:

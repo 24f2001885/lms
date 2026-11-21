@@ -1,6 +1,7 @@
 """
 FILE PURPOSE: Fill a fresh database with realistic demo data using ONLY the service layer.
 """
+
 import os
 import sys
 from contextlib import contextmanager
@@ -166,20 +167,72 @@ def main(app=None):
             db.session.flush()
             db.session.add_all(
                 [
-                    ExaminationRubric(examination_id=exam_a.id, criterion_name="Concept", weightage=Decimal("40"), max_score=Decimal("40"), position=1),
-                    ExaminationRubric(examination_id=exam_a.id, criterion_name="Implementation", weightage=Decimal("40"), max_score=Decimal("40"), position=2),
-                    ExaminationRubric(examination_id=exam_a.id, criterion_name="Communication", weightage=Decimal("20"), max_score=Decimal("20"), position=3),
-                    ExaminationExaminer(examination_id=exam_a.id, examiner_id=examiners[0].id, assigned_by=admin.id, assigned_at=base_now - timedelta(days=10)),
-                    ExaminationExaminer(examination_id=exam_a.id, examiner_id=examiners[1].id, assigned_by=admin.id, assigned_at=base_now - timedelta(days=10)),
+                    ExaminationRubric(
+                        examination_id=exam_a.id,
+                        criterion_name="Concept",
+                        weightage=Decimal("40"),
+                        max_score=Decimal("40"),
+                        position=1,
+                    ),
+                    ExaminationRubric(
+                        examination_id=exam_a.id,
+                        criterion_name="Implementation",
+                        weightage=Decimal("40"),
+                        max_score=Decimal("40"),
+                        position=2,
+                    ),
+                    ExaminationRubric(
+                        examination_id=exam_a.id,
+                        criterion_name="Communication",
+                        weightage=Decimal("20"),
+                        max_score=Decimal("20"),
+                        position=3,
+                    ),
+                    ExaminationExaminer(
+                        examination_id=exam_a.id,
+                        examiner_id=examiners[0].id,
+                        assigned_by=admin.id,
+                        assigned_at=base_now - timedelta(days=10),
+                    ),
+                    ExaminationExaminer(
+                        examination_id=exam_a.id,
+                        examiner_id=examiners[1].id,
+                        assigned_by=admin.id,
+                        assigned_at=base_now - timedelta(days=10),
+                    ),
                 ]
             )
             db.session.commit()
 
             with fake_clock(base_now - timedelta(days=7)):
-                s_a1 = slot_service.create_slot(examiners[0].id, exam_a.id, base_now + timedelta(days=2), base_now + timedelta(days=2, hours=2), 3)
-                s_a2 = slot_service.create_slot(examiners[0].id, exam_a.id, base_now + timedelta(days=3), base_now + timedelta(days=3, hours=2), 3)
-                s_a3 = slot_service.create_slot(examiners[1].id, exam_a.id, base_now + timedelta(days=4), base_now + timedelta(days=4, hours=2), 2)
-                s_a4 = slot_service.create_slot(examiners[1].id, exam_a.id, base_now + timedelta(days=5), base_now + timedelta(days=5, hours=1), 1)
+                s_a1 = slot_service.create_slot(
+                    examiners[0].id,
+                    exam_a.id,
+                    base_now + timedelta(days=2),
+                    base_now + timedelta(days=2, hours=2),
+                    3,
+                )
+                s_a2 = slot_service.create_slot(
+                    examiners[0].id,
+                    exam_a.id,
+                    base_now + timedelta(days=3),
+                    base_now + timedelta(days=3, hours=2),
+                    3,
+                )
+                s_a3 = slot_service.create_slot(
+                    examiners[1].id,
+                    exam_a.id,
+                    base_now + timedelta(days=4),
+                    base_now + timedelta(days=4, hours=2),
+                    2,
+                )
+                s_a4 = slot_service.create_slot(
+                    examiners[1].id,
+                    exam_a.id,
+                    base_now + timedelta(days=5),
+                    base_now + timedelta(days=5, hours=1),
+                    1,
+                )
 
             exam_a.slot_creation_open = False
             exam_a.booking_open = True
@@ -219,10 +272,32 @@ def main(app=None):
             db.session.flush()
             db.session.add_all(
                 [
-                    ExaminationRubric(examination_id=exam_b.id, criterion_name="Queries", weightage=Decimal("60"), max_score=Decimal("60"), position=1),
-                    ExaminationRubric(examination_id=exam_b.id, criterion_name="Schema", weightage=Decimal("40"), max_score=Decimal("40"), position=2),
-                    ExaminationExaminer(examination_id=exam_b.id, examiner_id=examiners[0].id, assigned_by=admin.id, assigned_at=base_now),
-                    ExaminationExaminer(examination_id=exam_b.id, examiner_id=examiners[2].id, assigned_by=admin.id, assigned_at=base_now),
+                    ExaminationRubric(
+                        examination_id=exam_b.id,
+                        criterion_name="Queries",
+                        weightage=Decimal("60"),
+                        max_score=Decimal("60"),
+                        position=1,
+                    ),
+                    ExaminationRubric(
+                        examination_id=exam_b.id,
+                        criterion_name="Schema",
+                        weightage=Decimal("40"),
+                        max_score=Decimal("40"),
+                        position=2,
+                    ),
+                    ExaminationExaminer(
+                        examination_id=exam_b.id,
+                        examiner_id=examiners[0].id,
+                        assigned_by=admin.id,
+                        assigned_at=base_now,
+                    ),
+                    ExaminationExaminer(
+                        examination_id=exam_b.id,
+                        examiner_id=examiners[2].id,
+                        assigned_by=admin.id,
+                        assigned_at=base_now,
+                    ),
                 ]
             )
             db.session.commit()
@@ -245,13 +320,30 @@ def main(app=None):
             )
             db.session.add(exam_c)
             db.session.flush()
-            r_c1 = ExaminationRubric(examination_id=exam_c.id, criterion_name="Architecture", weightage=Decimal("50"), max_score=Decimal("50"), position=1)
-            r_c2 = ExaminationRubric(examination_id=exam_c.id, criterion_name="Delivery", weightage=Decimal("50"), max_score=Decimal("50"), position=2)
+            r_c1 = ExaminationRubric(
+                examination_id=exam_c.id,
+                criterion_name="Architecture",
+                weightage=Decimal("50"),
+                max_score=Decimal("50"),
+                position=1,
+            )
+            r_c2 = ExaminationRubric(
+                examination_id=exam_c.id,
+                criterion_name="Delivery",
+                weightage=Decimal("50"),
+                max_score=Decimal("50"),
+                position=2,
+            )
             db.session.add_all(
                 [
                     r_c1,
                     r_c2,
-                    ExaminationExaminer(examination_id=exam_c.id, examiner_id=examiners[2].id, assigned_by=admin.id, assigned_at=base_now - timedelta(days=20)),
+                    ExaminationExaminer(
+                        examination_id=exam_c.id,
+                        examiner_id=examiners[2].id,
+                        assigned_by=admin.id,
+                        assigned_at=base_now - timedelta(days=20),
+                    ),
                 ]
             )
             db.session.commit()

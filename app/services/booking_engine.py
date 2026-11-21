@@ -6,6 +6,7 @@ CONCURRENCY DESIGN:
 2. Public methods refresh loaded slot rows immediately inside the transaction so stale identity-map values are never trusted.
 3. Capacity claims and releases use conditional guarded SQL UPDATE statements (checking status and bounds in the WHERE clause), backed by DB CHECK constraints and partial unique index uq_bookings_active_student_exam.
 """
+
 from datetime import datetime
 
 from sqlalchemy.exc import IntegrityError
@@ -169,7 +170,9 @@ def book_slot(student_id: int, slot_id: int, now: datetime | None = None) -> Boo
         msg = str(exc.orig).lower() if exc.orig else ""
         if "booked_count" in msg or "check" in msg:
             raise BookingError(SLOT_FULL, "This slot is full. Please choose another slot.") from exc
-        raise BookingError(DUPLICATE_BOOKING, "You already have a booking for this examination.") from exc
+        raise BookingError(
+            DUPLICATE_BOOKING, "You already have a booking for this examination."
+        ) from exc
     except Exception:
         db.session.rollback()
         raise
@@ -227,7 +230,9 @@ def reschedule_booking(
 
     existing_eval = Evaluation.query.filter_by(booking_id=booking.id).first()
     if existing_eval:
-        raise BookingError(BOOKING_HAS_EVALUATION, "Cannot reschedule a booking that already has an evaluation.")
+        raise BookingError(
+            BOOKING_HAS_EVALUATION, "Cannot reschedule a booking that already has an evaluation."
+        )
 
     target_slot = _load_slot_locked(new_slot_id)
     old_slot = _load_slot_locked(booking.slot_id)
@@ -235,7 +240,9 @@ def reschedule_booking(
     if target_slot.id == old_slot.id:
         raise BookingError(SAME_SLOT, "Please choose a different slot.")
     if target_slot.examination_id != booking.examination_id:
-        raise BookingError(DIFFERENT_EXAMINATION, "Target slot must belong to the same examination.")
+        raise BookingError(
+            DIFFERENT_EXAMINATION, "Target slot must belong to the same examination."
+        )
     if target_slot.status == "full":
         raise BookingError(SLOT_FULL, "This slot is full. Please choose another slot.")
     if target_slot.status in ("cancelled", "completed") or target_slot.start_at <= now_time:
@@ -324,9 +331,7 @@ def admin_cancel_booking(
     return booking
 
 
-def cancel_slot(
-    slot_id: int, actor_id: int, reason: str, now: datetime | None = None
-) -> int:
+def cancel_slot(slot_id: int, actor_id: int, reason: str, now: datetime | None = None) -> int:
     now_time = now if now is not None else windows.now_utc()
     actor = db.session.get(User, actor_id)
     slot = _load_slot_locked(slot_id)
@@ -405,7 +410,9 @@ def change_examiner(slot_id: int, new_examiner_id: int, actor_id: int) -> Examin
     slot = _load_slot_locked(slot_id)
 
     if slot.status not in ("available", "full"):
-        raise BookingError(SLOT_NOT_AVAILABLE, "Cannot reassign examiner on a closed or cancelled slot.")
+        raise BookingError(
+            SLOT_NOT_AVAILABLE, "Cannot reassign examiner on a closed or cancelled slot."
+        )
 
     if slot.examiner_id == new_examiner_id:
         raise BookingError("same_examiner", "This examiner is already assigned to the slot.")

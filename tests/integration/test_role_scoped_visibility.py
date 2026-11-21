@@ -1,6 +1,7 @@
 """
 FILE PURPOSE: Proves strict role-scoped data isolation and secret hygiene across pages.
 """
+
 from datetime import timedelta
 
 from app.services import booking_engine
@@ -17,7 +18,13 @@ def test_student_pages_do_not_leak_other_students_or_secrets(
     other_students[0].email = "distinctive.other@secret.local"
     booking_engine.book_slot(other_students[0].id, slot.id)
 
-    for url in ["/student/dashboard", "/student/bookings", "/student/history", "/student/schedule", "/student/results"]:
+    for url in [
+        "/student/dashboard",
+        "/student/bookings",
+        "/student/history",
+        "/student/schedule",
+        "/student/results",
+    ]:
         resp = client.get(url)
         assert resp.status_code == 200
         body = resp.get_data(as_text=True)

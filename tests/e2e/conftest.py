@@ -1,6 +1,7 @@
 """
 FILE PURPOSE: Fixtures for browser E2E tests using Werkzeug server + Playwright (offline-enforced).
 """
+
 import threading
 
 import pytest
@@ -44,4 +45,6 @@ def offline_page(live_server):
             context.close()
             browser.close()
     except Exception as exc:
-        pytest.skip(f"Playwright chromium browser unavailable ({exc}); run: playwright install chromium")
+        pytest.skip(
+            f"Playwright chromium browser unavailable ({exc}); run: playwright install chromium"
+        )

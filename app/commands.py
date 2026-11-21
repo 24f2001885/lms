@@ -140,4 +140,4 @@ def purge_soft_deleted_command(days):
 def register_cli(flask_app: Flask) -> None:
     """Register custom CLI commands with the Flask application instance."""
     flask_app.cli.add_command(init_db_command)
-    flask_app.cli.add_command(jobs_group)  
+    flask_app.cli.add_command(jobs_group)

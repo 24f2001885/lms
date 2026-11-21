@@ -1,5 +1,3 @@
-
-
 from app.models.audit_log import AuditLog
 from app.models.booking import Booking
 from app.models.course import Course

@@ -1,6 +1,7 @@
 """
 FILE PURPOSE: Concurrency acceptance tests for booking_engine (Gate A, TDR 10).
 """
+
 from datetime import timedelta
 
 import pytest
@@ -42,7 +43,9 @@ def test_write_lock_listener_attached(app):
 
 @pytest.mark.concurrency
 @pytest.mark.parametrize("round_num", [1, 2, 3])
-def test_twenty_students_five_seats(app, db_session, make_open_booking_setup, freeze_now, round_num):
+def test_twenty_students_five_seats(
+    app, db_session, make_open_booking_setup, freeze_now, round_num
+):
     exam, slot, examiner, students = make_open_booking_setup(student_count=20, capacity=5)
     freeze_now(exam.booking_start + timedelta(hours=1))
 
@@ -53,11 +56,12 @@ def test_twenty_students_five_seats(app, db_session, make_open_booking_setup, fr
     results = run_in_threads(app, tasks, barrier=True)
 
     successes = [r for r in results if isinstance(r, Booking)]
-    slot_full_errors = [
-        r for r in results if isinstance(r, BookingError) and r.code == "slot_full"
-    ]
+    slot_full_errors = [r for r in results if isinstance(r, BookingError) and r.code == "slot_full"]
     other_errors = [
-        r for r in results if not isinstance(r, Booking) and not (isinstance(r, BookingError) and r.code == "slot_full")
+        r
+        for r in results
+        if not isinstance(r, Booking)
+        and not (isinstance(r, BookingError) and r.code == "slot_full")
     ]
 
     assert len(other_errors) == 0
@@ -105,12 +109,13 @@ def test_cancel_and_book_race(app, db_session, make_open_booking_setup, freeze_n
 
     slot_id = slot.id
     cancel_tasks = [
-        lambda sid=students[idx].id, bid=initial_bookings[idx].id: booking_engine.cancel_booking(sid, bid)
+        lambda sid=students[idx].id, bid=initial_bookings[idx].id: booking_engine.cancel_booking(
+            sid, bid
+        )
         for idx in range(5)
     ]
     book_tasks = [
-        lambda sid=students[idx].id: booking_engine.book_slot(sid, slot_id)
-        for idx in range(5, 15)
+        lambda sid=students[idx].id: booking_engine.book_slot(sid, slot_id) for idx in range(5, 15)
     ]
 
     results = run_in_threads(app, cancel_tasks + book_tasks, barrier=True)
@@ -133,6 +138,8 @@ def test_booking_close_boundary_race(app, db_session, make_open_booking_setup, f
     tasks = [lambda sid=s.id, sl_id=slot_id: booking_engine.book_slot(sid, sl_id) for s in students]
     results = run_in_threads(app, tasks, barrier=True)
 
-    assert all(isinstance(r, BookingError | WindowError) and r.code == "booking_closed" for r in results)
+    assert all(
+        isinstance(r, BookingError | WindowError) and r.code == "booking_closed" for r in results
+    )
     db_session.expire_all()
     assert db.session.get(ExaminationSlot, slot_id).booked_count == 0

@@ -51,7 +51,9 @@ def approve_examiner(actor_id: int, user_id: int) -> User:
     if user.examiner_profile:
         user.examiner_profile.status = "active"
 
-    audit_service.log_action(actor_id, audit_service.USER_APPROVE, "user", user.id, {"email": user.email})
+    audit_service.log_action(
+        actor_id, audit_service.USER_APPROVE, "user", user.id, {"email": user.email}
+    )
     db.session.commit()
     return user
 
@@ -64,14 +66,18 @@ def reject_examiner(actor_id: int, user_id: int) -> User:
         raise AppError("not_an_examiner", "Only examiner accounts can be rejected.")
 
     user.approval_status = "rejected"
-    audit_service.log_action(actor_id, audit_service.USER_REJECT, "user", user.id, {"email": user.email})
+    audit_service.log_action(
+        actor_id, audit_service.USER_REJECT, "user", user.id, {"email": user.email}
+    )
     db.session.commit()
     return user
 
 
 def deactivate_user(actor_id: int, user_id: int) -> User:
     if actor_id == user_id:
-        raise AppError("cannot_deactivate_self", "Administrators cannot deactivate their own account.")
+        raise AppError(
+            "cannot_deactivate_self", "Administrators cannot deactivate their own account."
+        )
 
     user = db.session.get(User, user_id)
     if not user:
@@ -81,7 +87,9 @@ def deactivate_user(actor_id: int, user_id: int) -> User:
     if user.examiner_profile:
         user.examiner_profile.status = "inactive"
 
-    audit_service.log_action(actor_id, audit_service.USER_DEACTIVATE, "user", user.id, {"email": user.email})
+    audit_service.log_action(
+        actor_id, audit_service.USER_DEACTIVATE, "user", user.id, {"email": user.email}
+    )
     db.session.commit()
     return user
 
@@ -95,7 +103,9 @@ def activate_user(actor_id: int, user_id: int) -> User:
     if user.examiner_profile:
         user.examiner_profile.status = "active"
 
-    audit_service.log_action(actor_id, audit_service.USER_ACTIVATE, "user", user.id, {"email": user.email})
+    audit_service.log_action(
+        actor_id, audit_service.USER_ACTIVATE, "user", user.id, {"email": user.email}
+    )
     db.session.commit()
     return user
 
@@ -105,7 +115,9 @@ def set_temporary_password(actor_id: int, user_id: int, new_password: str | None
     if not user:
         raise AppError("user_not_found", "User not found.")
     if user.role == "admin":
-        raise AppError("cannot_reset_admin", "Admin temporary passwords cannot be set via this route.")
+        raise AppError(
+            "cannot_reset_admin", "Admin temporary passwords cannot be set via this route."
+        )
 
     plain_pass = (
         new_password.strip()
@@ -119,7 +131,9 @@ def set_temporary_password(actor_id: int, user_id: int, new_password: str | None
     user.set_password(plain_pass)
     user.must_change_password = True
 
-    audit_service.log_action(actor_id, audit_service.USER_TEMP_PASSWORD, "user", user.id, {"email": user.email})
+    audit_service.log_action(
+        actor_id, audit_service.USER_TEMP_PASSWORD, "user", user.id, {"email": user.email}
+    )
     db.session.commit()
     return plain_pass
 

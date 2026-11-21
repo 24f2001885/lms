@@ -62,7 +62,9 @@ def test_rubric_over_100_rejected(app, make_admin, make_examination, make_rubric
     make_rubric(exam, name="Part 1", weightage=80.0)
 
     with pytest.raises(AppError) as exc:
-        catalog_service.add_rubric(admin.id, exam.id, "Part 2", None, Decimal("30.00"), Decimal("30.00"))
+        catalog_service.add_rubric(
+            admin.id, exam.id, "Part 2", None, Decimal("30.00"), Decimal("30.00")
+        )
     assert exc.value.code == "weightage_over_100"
 
 

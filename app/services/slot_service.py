@@ -1,6 +1,7 @@
 """
 FILE PURPOSE: Examiner-side slot rules: create, update, remove, list, booked students and dashboard counts. All window and ownership rules for slots live here (PDR 5.3, TDR 3.5).
 """
+
 from sqlalchemy import func
 
 from app.errors import AppError
@@ -64,7 +65,7 @@ def create_slot(examiner_id, examination_id, start_at, end_at, max_capacity):
         end_at=end_at,
         max_capacity=max_capacity,
         booked_count=0,
-        status="available"
+        status="available",
     )
     db.session.add(slot)
     db.session.flush()
@@ -74,7 +75,12 @@ def create_slot(examiner_id, examination_id, start_at, end_at, max_capacity):
         action=audit_service.SLOT_CREATE,
         entity_type="examination_slot",
         entity_id=slot.id,
-        details={"examination_id": examination_id, "start": str(start_at), "end": str(end_at), "capacity": max_capacity}
+        details={
+            "examination_id": examination_id,
+            "start": str(start_at),
+            "end": str(end_at),
+            "capacity": max_capacity,
+        },
     )
     db.session.commit()
     return slot
@@ -88,8 +94,7 @@ def update_slot(examiner_id, slot_id, start_at, end_at, max_capacity):
     windows.assert_slots_editable(slot.examination)
 
     active_bookings = Booking.query.filter(
-        Booking.slot_id == slot_id,
-        Booking.status.in_(["booked", "completed"])
+        Booking.slot_id == slot_id, Booking.status.in_(["booked", "completed"])
     ).count()
     if active_bookings > 0:
         raise AppError("slot_has_bookings", "Cannot update slot with active bookings.")
@@ -109,8 +114,12 @@ def update_slot(examiner_id, slot_id, start_at, end_at, max_capacity):
     if slot_rules.has_overlap(examiner_id, start_at, end_at, exclude_slot_id=slot_id):
         raise AppError("examiner_overlap", "Slot overlaps with an existing time slot.")
 
-    before_vals = {"start": str(slot.start_at), "end": str(slot.end_at), "capacity": slot.max_capacity}
-    
+    before_vals = {
+        "start": str(slot.start_at),
+        "end": str(slot.end_at),
+        "capacity": slot.max_capacity,
+    }
+
     slot.start_at = start_at
     slot.end_at = end_at
     slot.max_capacity = max_capacity
@@ -120,7 +129,10 @@ def update_slot(examiner_id, slot_id, start_at, end_at, max_capacity):
         action=audit_service.SLOT_UPDATE,
         entity_type="examination_slot",
         entity_id=slot.id,
-        details={"before": before_vals, "after": {"start": str(start_at), "end": str(end_at), "capacity": max_capacity}}
+        details={
+            "before": before_vals,
+            "after": {"start": str(start_at), "end": str(end_at), "capacity": max_capacity},
+        },
     )
     db.session.commit()
     return slot
@@ -134,8 +146,7 @@ def delete_slot(examiner_id, slot_id):
     windows.assert_slots_editable(slot.examination)
 
     active_bookings = Booking.query.filter(
-        Booking.slot_id == slot_id,
-        Booking.status.in_(["booked", "completed"])
+        Booking.slot_id == slot_id, Booking.status.in_(["booked", "completed"])
     ).count()
     if active_bookings > 0:
         raise AppError("slot_has_bookings", "Cannot delete slot with active bookings.")
@@ -154,7 +165,7 @@ def delete_slot(examiner_id, slot_id):
         action=audit_service.SLOT_DELETE,
         entity_type="examination_slot",
         entity_id=slot_id,
-        details={"mode": mode}
+        details={"mode": mode},
     )
     db.session.commit()
 
@@ -176,47 +187,54 @@ def booked_students(examiner_id, slot_id):
     slot = get_owned_slot(examiner_id, slot_id)
     if not slot:
         return []
-    return Booking.query.join(User, Booking.student_id == User.id).filter(
-        Booking.slot_id == slot_id,
-        Booking.status.in_(["booked", "completed"])
-    ).order_by(User.full_name.asc()).all()
+    return (
+        Booking.query.join(User, Booking.student_id == User.id)
+        .filter(Booking.slot_id == slot_id, Booking.status.in_(["booked", "completed"]))
+        .order_by(User.full_name.asc())
+        .all()
+    )
 
 
 def examiner_dashboard_counts(examiner_id):
     assigned_exams_count = ExaminationExaminer.query.filter_by(examiner_id=examiner_id).count()
-    
+
     created_slots_count = ExaminationSlot.query.filter(
-        ExaminationSlot.examiner_id == examiner_id,
-        ExaminationSlot.status != "cancelled"
+        ExaminationSlot.examiner_id == examiner_id, ExaminationSlot.status != "cancelled"
     ).count()
 
-    students_booked_count = db.session.query(func.count(Booking.id)).join(
-        ExaminationSlot, Booking.slot_id == ExaminationSlot.id
-    ).filter(
-        ExaminationSlot.examiner_id == examiner_id,
-        ExaminationSlot.status != "cancelled",
-        Booking.status.in_(["booked", "completed"])
-    ).scalar() or 0
+    students_booked_count = (
+        db.session.query(func.count(Booking.id))
+        .join(ExaminationSlot, Booking.slot_id == ExaminationSlot.id)
+        .filter(
+            ExaminationSlot.examiner_id == examiner_id,
+            ExaminationSlot.status != "cancelled",
+            Booking.status.in_(["booked", "completed"]),
+        )
+        .scalar()
+        or 0
+    )
 
     now = windows.now_utc()
-    upcoming_slots = ExaminationSlot.query.filter(
-        ExaminationSlot.examiner_id == examiner_id,
-        ExaminationSlot.status != "cancelled",
-        ExaminationSlot.start_at >= now
-    ).order_by(ExaminationSlot.start_at.asc()).limit(5).all()
+    upcoming_slots = (
+        ExaminationSlot.query.filter(
+            ExaminationSlot.examiner_id == examiner_id,
+            ExaminationSlot.status != "cancelled",
+            ExaminationSlot.start_at >= now,
+        )
+        .order_by(ExaminationSlot.start_at.asc())
+        .limit(5)
+        .all()
+    )
 
     return {
         "assigned_examinations": assigned_exams_count,
         "created_slots": created_slots_count,
         "students_booked": students_booked_count,
-        "upcoming_slots": upcoming_slots
+        "upcoming_slots": upcoming_slots,
     }
 
 
 def slot_creation_state(examination):
     state = windows.window_state(examination)
     slot_win = state["slot_creation"]
-    return {
-        **slot_win,
-        "can_create": slot_win["open"]
-    }
+    return {**slot_win, "can_create": slot_win["open"]}

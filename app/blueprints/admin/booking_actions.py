@@ -1,6 +1,7 @@
 """
 FILE PURPOSE: ADM-16 reschedule booking, admin cancel with reason, and admin publish evaluation.
 """
+
 from flask import abort, flash, g, redirect, render_template, request, url_for
 
 from app.blueprints.admin import admin_bp

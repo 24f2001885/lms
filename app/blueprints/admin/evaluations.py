@@ -1,6 +1,7 @@
 """
 FILE PURPOSE: Admin evaluation tracking list (oversight of pending, draft, submitted and published evaluations).
 """
+
 from flask import render_template, request
 
 from app.blueprints.admin import admin_bp
@@ -27,7 +28,9 @@ def evaluations_list():
         page=page,
     )
     pending_strip = evaluation_service.pending_by_examiner()
-    examinations = Examination.query.filter_by(is_deleted=False).order_by(Examination.name.asc()).all()
+    examinations = (
+        Examination.query.filter_by(is_deleted=False).order_by(Examination.name.asc()).all()
+    )
     examiners = User.query.filter_by(role="examiner").order_by(User.full_name.asc()).all()
 
     return render_template(

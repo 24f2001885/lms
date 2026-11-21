@@ -1,6 +1,7 @@
 """
 FILE PURPOSE: Tests for exam_status.sync_all, maintenance.purge_soft_deleted, and CLI jobs.
 """
+
 from datetime import timedelta
 
 import pytest
@@ -10,7 +11,9 @@ from app.models import AuditLog, Examination
 from app.services import audit_service, booking_engine, exam_status, maintenance
 
 
-def test_sync_all_completes_past_slots_and_is_idempotent(app, db_session, make_open_booking_setup, freeze_now):
+def test_sync_all_completes_past_slots_and_is_idempotent(
+    app, db_session, make_open_booking_setup, freeze_now
+):
     exam, slot, examiner, students = make_open_booking_setup(student_count=1, capacity=2)
     freeze_now(exam.booking_start + timedelta(hours=1))
     booking = booking_engine.book_slot(students[0].id, slot.id)

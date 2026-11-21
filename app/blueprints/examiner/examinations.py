@@ -1,6 +1,7 @@
 """
 FILE PURPOSE: EXM-02 assigned examinations list and EXM-03 examination detail.
 """
+
 from flask import abort, g, render_template, request
 
 from app.blueprints.examiner import examiner_bp
@@ -33,10 +34,7 @@ def examinations_list():
         filtered.append(exam)
 
     return render_template(
-        "examiner/examinations_list.html",
-        examinations=filtered,
-        q=q,
-        status=status_filter
+        "examiner/examinations_list.html", examinations=filtered, q=q, status=status_filter
     )
 
 
@@ -48,7 +46,11 @@ def examination_detail(exam_id):
     if not exam:
         abort(404)
 
-    rubrics = ExaminationRubric.query.filter_by(examination_id=exam.id).order_by(ExaminationRubric.position.asc()).all()
+    rubrics = (
+        ExaminationRubric.query.filter_by(examination_id=exam.id)
+        .order_by(ExaminationRubric.position.asc())
+        .all()
+    )
     slots = (
         ExaminationSlot.query.filter_by(examination_id=exam.id, examiner_id=examiner_id)
         .order_by(ExaminationSlot.start_at.asc())
@@ -61,5 +63,5 @@ def examination_detail(exam_id):
         examination=exam,
         rubrics=rubrics,
         slots=slots,
-        slot_state=slot_state
+        slot_state=slot_state,
     )

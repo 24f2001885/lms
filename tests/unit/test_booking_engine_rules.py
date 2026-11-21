@@ -1,6 +1,7 @@
 """
 FILE PURPOSE: Rule tests for book_slot and cancel_booking (sequential; the concurrency suite is P6).
 """
+
 from datetime import timedelta
 
 import pytest
@@ -24,15 +25,19 @@ def test_book_success_updates_count_and_audit(app, db_session, make_open_booking
     booking = booking_engine.book_slot(students[0].id, slot.id)
     assert booking.status == "booked"
     assert booking.examination_id == exam.id
-    
+
     db_session.refresh(slot)
     assert slot.booked_count == 1
 
-    log = AuditLog.query.filter_by(action=booking_engine.audit_service.BOOKING_CREATE, entity_id=booking.id).first()
+    log = AuditLog.query.filter_by(
+        action=booking_engine.audit_service.BOOKING_CREATE, entity_id=booking.id
+    ).first()
     assert log is not None
 
 
-def test_booking_copies_examination_id_from_slot(app, db_session, make_open_booking_setup, freeze_now):
+def test_booking_copies_examination_id_from_slot(
+    app, db_session, make_open_booking_setup, freeze_now
+):
     exam, slot, examiner, students = make_open_booking_setup(student_count=1, capacity=5)
     freeze_now(exam.booking_start + timedelta(hours=1))
 
@@ -60,10 +65,12 @@ def test_full_slot_raises_slot_full(app, db_session, make_open_booking_setup, fr
     assert exc.value.code == "slot_full"
 
 
-def test_cancelled_slot_not_available(app, db_session, make_open_booking_setup, freeze_now, student):
+def test_cancelled_slot_not_available(
+    app, db_session, make_open_booking_setup, freeze_now, student
+):
     exam, slot, examiner, students = make_open_booking_setup(student_count=1, capacity=5)
     freeze_now(exam.booking_start + timedelta(hours=1))
-    
+
     slot.status = "cancelled"
     db_session.commit()
 
@@ -72,10 +79,12 @@ def test_cancelled_slot_not_available(app, db_session, make_open_booking_setup, 
     assert exc.value.code == "slot_not_available"
 
 
-def test_completed_slot_not_available(app, db_session, make_open_booking_setup, freeze_now, student):
+def test_completed_slot_not_available(
+    app, db_session, make_open_booking_setup, freeze_now, student
+):
     exam, slot, examiner, students = make_open_booking_setup(student_count=1, capacity=5)
     freeze_now(exam.booking_start + timedelta(hours=1))
-    
+
     slot.status = "completed"
     db_session.commit()
 
@@ -86,7 +95,7 @@ def test_completed_slot_not_available(app, db_session, make_open_booking_setup, 
 
 def test_started_slot_not_available(app, db_session, make_open_booking_setup, freeze_now, student):
     exam, slot, examiner, students = make_open_booking_setup(student_count=1, capacity=5)
-    freeze_now(slot.start_at) # slot start time reached
+    freeze_now(slot.start_at)  # slot start time reached
 
     with pytest.raises(BookingError) as exc:
         booking_engine.book_slot(student.id, slot.id)
@@ -112,7 +121,7 @@ def test_closed_window_variants(app, db_session, make_open_booking_setup, freeze
 def test_deleted_examination_closed(app, db_session, make_open_booking_setup, freeze_now, student):
     exam, slot, examiner, students = make_open_booking_setup(student_count=1, capacity=5)
     freeze_now(exam.booking_start + timedelta(hours=1))
-    
+
     exam.is_deleted = True
     db_session.commit()
 
@@ -124,7 +133,7 @@ def test_deleted_examination_closed(app, db_session, make_open_booking_setup, fr
 def test_inactive_course_closed(app, db_session, make_open_booking_setup, freeze_now, student):
     exam, slot, examiner, students = make_open_booking_setup(student_count=1, capacity=5)
     freeze_now(exam.booking_start + timedelta(hours=1))
-    
+
     exam.course.is_active = False
     db_session.commit()
 
@@ -136,7 +145,7 @@ def test_inactive_course_closed(app, db_session, make_open_booking_setup, freeze
 def test_inactive_student_refused(app, db_session, make_open_booking_setup, freeze_now):
     exam, slot, examiner, students = make_open_booking_setup(student_count=1, capacity=5)
     freeze_now(exam.booking_start + timedelta(hours=1))
-    
+
     students[0].is_active = False
     db_session.commit()
 
@@ -157,7 +166,7 @@ def test_duplicate_other_slot_refused(app, db_session, make_open_booking_setup, 
         start_at=slot.start_at + timedelta(hours=2),
         end_at=slot.end_at + timedelta(hours=2),
         max_capacity=5,
-        status="available"
+        status="available",
     )
     db_session.add(s2)
     db_session.commit()
@@ -178,7 +187,9 @@ def test_duplicate_after_cancel_allowed(app, db_session, make_open_booking_setup
     assert b2.status == "booked"
 
 
-def test_duplicate_with_completed_booking_refused(app, db_session, make_open_booking_setup, freeze_now):
+def test_duplicate_with_completed_booking_refused(
+    app, db_session, make_open_booking_setup, freeze_now
+):
     exam, slot, examiner, students = make_open_booking_setup(student_count=1, capacity=5)
     freeze_now(exam.booking_start + timedelta(hours=1))
 
@@ -192,7 +203,7 @@ def test_duplicate_with_completed_booking_refused(app, db_session, make_open_boo
         start_at=slot.start_at + timedelta(hours=2),
         end_at=slot.end_at + timedelta(hours=2),
         max_capacity=5,
-        status="available"
+        status="available",
     )
     db_session.add(s2)
     db_session.commit()
@@ -213,7 +224,9 @@ def test_two_students_independent(app, db_session, make_open_booking_setup, free
     assert slot.booked_count == 2
 
 
-def test_cancel_frees_seat_and_reopens_full_slot(app, db_session, make_open_booking_setup, freeze_now):
+def test_cancel_frees_seat_and_reopens_full_slot(
+    app, db_session, make_open_booking_setup, freeze_now
+):
     exam, slot, examiner, students = make_open_booking_setup(student_count=1, capacity=1)
     freeze_now(exam.booking_start + timedelta(hours=1))
 
@@ -227,7 +240,9 @@ def test_cancel_frees_seat_and_reopens_full_slot(app, db_session, make_open_book
     assert slot.booked_count == 0
 
 
-def test_cancel_does_not_reopen_cancelled_or_completed_slot(app, db_session, make_open_booking_setup, freeze_now):
+def test_cancel_does_not_reopen_cancelled_or_completed_slot(
+    app, db_session, make_open_booking_setup, freeze_now
+):
     exam, slot, examiner, students = make_open_booking_setup(student_count=1, capacity=1)
     freeze_now(exam.booking_start + timedelta(hours=1))
 
@@ -264,7 +279,9 @@ def test_cancel_at_deadline_inclusive_ok(app, db_session, make_open_booking_setu
     assert booking.status == "cancelled"
 
 
-def test_cancel_foreign_booking_not_found(app, db_session, make_open_booking_setup, freeze_now, student):
+def test_cancel_foreign_booking_not_found(
+    app, db_session, make_open_booking_setup, freeze_now, student
+):
     exam, slot, examiner, students = make_open_booking_setup(student_count=1, capacity=5)
     freeze_now(exam.booking_start + timedelta(hours=1))
 
@@ -275,7 +292,9 @@ def test_cancel_foreign_booking_not_found(app, db_session, make_open_booking_set
     assert exc.value.code == "booking_not_found"
 
 
-def test_cancel_completed_or_cancelled_not_cancellable(app, db_session, make_open_booking_setup, freeze_now):
+def test_cancel_completed_or_cancelled_not_cancellable(
+    app, db_session, make_open_booking_setup, freeze_now
+):
     exam, slot, examiner, students = make_open_booking_setup(student_count=1, capacity=5)
     freeze_now(exam.booking_start + timedelta(hours=1))
 
@@ -306,6 +325,7 @@ def test_post_cancel_hook_runs_after_commit(app, db_session, make_open_booking_s
     booking = booking_engine.book_slot(students[0].id, slot.id)
 
     hook_called = []
+
     def my_post_hook(ctx):
         hook_called.append(ctx.booking_id)
 
@@ -315,7 +335,9 @@ def test_post_cancel_hook_runs_after_commit(app, db_session, make_open_booking_s
     assert hook_called == [booking.id]
 
 
-def test_failure_paths_leave_database_unchanged(app, db_session, make_open_booking_setup, freeze_now, student):
+def test_failure_paths_leave_database_unchanged(
+    app, db_session, make_open_booking_setup, freeze_now, student
+):
     exam, slot, examiner, students = make_open_booking_setup(student_count=1, capacity=1)
     freeze_now(exam.booking_start + timedelta(hours=1))
 
@@ -329,7 +351,9 @@ def test_failure_paths_leave_database_unchanged(app, db_session, make_open_booki
     assert slot.booked_count == count_before
 
 
-def test_guarded_update_blocks_overbooking_on_stale_read(app, db_session, make_open_booking_setup, freeze_now, student):
+def test_guarded_update_blocks_overbooking_on_stale_read(
+    app, db_session, make_open_booking_setup, freeze_now, student
+):
     exam, slot, examiner, students = make_open_booking_setup(student_count=1, capacity=1)
     freeze_now(exam.booking_start + timedelta(hours=1))
 
@@ -343,7 +367,9 @@ def test_guarded_update_blocks_overbooking_on_stale_read(app, db_session, make_o
     assert exc.value.code in ["slot_full", "slot_not_available"]
 
 
-def test_integrity_error_mapped_to_duplicate_booking(app, db_session, make_open_booking_setup, freeze_now):
+def test_integrity_error_mapped_to_duplicate_booking(
+    app, db_session, make_open_booking_setup, freeze_now
+):
     exam, slot, examiner, students = make_open_booking_setup(student_count=1, capacity=5)
     freeze_now(exam.booking_start + timedelta(hours=1))
 

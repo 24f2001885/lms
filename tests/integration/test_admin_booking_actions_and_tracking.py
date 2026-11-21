@@ -1,6 +1,7 @@
 """
 FILE PURPOSE: HTTP integration tests for reschedule, admin cancel, admin publish, slot cancel, and tracking.
 """
+
 from datetime import timedelta
 
 from app.extensions import db
@@ -14,7 +15,9 @@ def test_admin_evaluations_tracking_and_publish(admin_client, make_open_booking_
     freeze_now(exam.booking_start + timedelta(hours=1))
 
     booking = booking_engine.book_slot(students[0].id, slot.id)
-    ev = Evaluation(booking_id=booking.id, examiner_id=examiner.id, total_marks=88, status="submitted")
+    ev = Evaluation(
+        booking_id=booking.id, examiner_id=examiner.id, total_marks=88, status="submitted"
+    )
     db.session.add(ev)
     db.session.commit()
 

@@ -1,6 +1,7 @@
 """
 FILE PURPOSE: WTForms for Admin booking reschedule and reason-required cancellations.
 """
+
 from flask_wtf import FlaskForm
 from wtforms import SelectField, TextAreaField
 from wtforms.validators import DataRequired, Length

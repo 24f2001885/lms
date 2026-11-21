@@ -14,13 +14,14 @@ OFFLINE DOCKER TEST CASES:
 
 FILE PURPOSE: Integration tests for student browse, book, and cancel flow.
 """
+
 from datetime import timedelta
 
 
 def test_student_browse_and_book_flow(student_client, make_open_booking_setup, freeze_now):
     client, student = student_client
     exam, slot, examiner, students = make_open_booking_setup(student_count=1, capacity=5)
-    
+
     # Associate current logged in student with exam booking test
     freeze_now(exam.booking_start + timedelta(hours=1))
 

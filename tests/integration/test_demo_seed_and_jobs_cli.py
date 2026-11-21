@@ -1,6 +1,7 @@
 """
 FILE PURPOSE: Integration tests for scripts/seed_demo_data.py and Flask CLI jobs commands.
 """
+
 import importlib.util
 from pathlib import Path
 
@@ -8,7 +9,9 @@ from app.models import Course, Examination, ExaminationSlot, User
 
 
 def _load_seed_module():
-    spec = importlib.util.spec_from_file_location("seed_demo_data", Path("scripts/seed_demo_data.py"))
+    spec = importlib.util.spec_from_file_location(
+        "seed_demo_data", Path("scripts/seed_demo_data.py")
+    )
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod

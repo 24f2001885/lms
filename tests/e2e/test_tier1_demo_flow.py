@@ -1,6 +1,7 @@
 """
 FILE PURPOSE: End-to-end browser verification of Tier 1 demo flow.
 """
+
 import pytest
 
 
