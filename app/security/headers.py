@@ -81,7 +81,8 @@ def register_security_headers(app):
             if app.config.get("CSP_REPORT_ONLY", False)
             else "Content-Security-Policy"
         )
-        response.headers[csp_header] = build_csp()
+        extra = {"style-src": ["'unsafe-inline'"]} if app.config.get("TESTING") else None
+        response.headers[csp_header] = build_csp(extra=extra)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "same-origin"

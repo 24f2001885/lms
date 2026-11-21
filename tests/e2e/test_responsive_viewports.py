@@ -35,13 +35,15 @@ def test_touch_targets_and_text_spacing_at_375px(page, live_server):
     submit_box = page.locator("button[type='submit']").bounding_box()
     assert submit_box is not None and submit_box["height"] >= 44
 
-    page.add_style_tag(content="""
+    page.add_style_tag(
+        content="""
         * {
             line-height: 1.5 !important;
             letter-spacing: 0.12em !important;
             word-spacing: 0.16em !important;
         }
         p { margin-bottom: 2em !important; }
-        """)
+        """
+    )
     overflow = page.evaluate("() => document.documentElement.scrollWidth > window.innerWidth")
     assert not overflow
