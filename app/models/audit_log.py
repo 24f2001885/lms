@@ -18,7 +18,6 @@ class AuditLog(db.Model):
 
     __tablename__ = "audit_logs"
     __table_args__ = (
-        
         Index("ix_audit_logs_entity", "entity_type", "entity_id"),
         {"sqlite_autoincrement": True},
     )

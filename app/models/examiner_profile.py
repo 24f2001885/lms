@@ -1,4 +1,3 @@
-
 from typing import TYPE_CHECKING
 
 from sqlalchemy import CheckConstraint, ForeignKey, Integer, String
@@ -19,11 +18,9 @@ class ExaminerProfile(db.Model, TimestampMixin):
 
     __tablename__ = "examiner_profiles"
     __table_args__ = (
-        
         CheckConstraint(
             f"status IN {PROFILE_STATUSES}",
             name="ck_examiner_profiles_status_valid",
-            
         ),
         {"sqlite_autoincrement": True},
     )

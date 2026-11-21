@@ -100,4 +100,4 @@ def init_db_command():
 
 def register_cli(flask_app: Flask) -> None:
     """Register custom CLI commands with the Flask application instance."""
-    flask_app.cli.add_command(init_db_command)  
+    flask_app.cli.add_command(init_db_command)

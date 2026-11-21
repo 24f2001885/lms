@@ -19,7 +19,6 @@ class Course(db.Model, TimestampMixin):
 
     __tablename__ = "courses"
     __table_args__ = (
-        
         CheckConstraint(
             f"status IN {COURSE_STATUSES}",
             name="ck_courses_status_valid",

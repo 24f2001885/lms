@@ -154,7 +154,9 @@ def make_student(make_user):
 
 @pytest.fixture
 def make_course(make_admin):
-    def _make(code: str | None = None, name: str | None = None, created_by: int | None = None) -> Course:
+    def _make(
+        code: str | None = None, name: str | None = None, created_by: int | None = None
+    ) -> Course:
         global _user_seq
         _user_seq += 1
         created_by = created_by or make_admin().id

@@ -13,7 +13,6 @@ tests/integration/test_error_pages.py - Custom error page tests (PUB-07).
 """
 
 
-
 def test_404_custom_page(client):
     """Verify custom 404 page contains friendly text and base layout."""
     res = client.get("/non-existent-page-url")

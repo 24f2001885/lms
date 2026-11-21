@@ -126,7 +126,9 @@ def test_logout_requires_post(client, make_student, login):
 
 def test_seeded_admin_must_change_password_flow(client, make_admin, login):
     """Verify seeded admin is forced to change password before dashboard access."""
-    make_admin(email="seed_admin@test.local", password="SeedPassword123!", must_change_password=True)
+    make_admin(
+        email="seed_admin@test.local", password="SeedPassword123!", must_change_password=True
+    )
     res = login("seed_admin@test.local", "SeedPassword123!")
     assert res.status_code == 302
     assert res.headers["Location"].endswith("/change-password")
