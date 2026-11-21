@@ -70,7 +70,9 @@ def role_required(*roles: str):
                 return _redirect_to_login()
 
             if not user.is_active:
-                logger.warning("Access denied: inactive account user_id=%s path=%s", user.id, request.path)
+                logger.warning(
+                    "Access denied: inactive account user_id=%s path=%s", user.id, request.path
+                )
                 return redirect(url_for("auth.account_inactive"))
 
             if user.must_change_password and request.endpoint != "auth.change_password":

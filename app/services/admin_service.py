@@ -52,7 +52,9 @@ def approve_examiner(actor_id: int, user_id: int) -> User:
     if user.examiner_profile:
         user.examiner_profile.status = "active"
 
-    audit_service.log_action(actor_id, audit_service.USER_APPROVE, "user", user.id, {"email": user.email})
+    audit_service.log_action(
+        actor_id, audit_service.USER_APPROVE, "user", user.id, {"email": user.email}
+    )
     db.session.commit()
     return user
 
@@ -65,14 +67,18 @@ def reject_examiner(actor_id: int, user_id: int) -> User:
         raise AppError("not_an_examiner", "Only examiner accounts can be rejected.")
 
     user.approval_status = "rejected"
-    audit_service.log_action(actor_id, audit_service.USER_REJECT, "user", user.id, {"email": user.email})
+    audit_service.log_action(
+        actor_id, audit_service.USER_REJECT, "user", user.id, {"email": user.email}
+    )
     db.session.commit()
     return user
 
 
 def deactivate_user(actor_id: int, user_id: int) -> User:
     if actor_id == user_id:
-        raise AppError("cannot_deactivate_self", "Administrators cannot deactivate their own account.")
+        raise AppError(
+            "cannot_deactivate_self", "Administrators cannot deactivate their own account."
+        )
 
     user = db.session.get(User, user_id)
     if not user:
@@ -82,7 +88,9 @@ def deactivate_user(actor_id: int, user_id: int) -> User:
     if user.examiner_profile:
         user.examiner_profile.status = "inactive"
 
-    audit_service.log_action(actor_id, audit_service.USER_DEACTIVATE, "user", user.id, {"email": user.email})
+    audit_service.log_action(
+        actor_id, audit_service.USER_DEACTIVATE, "user", user.id, {"email": user.email}
+    )
     db.session.commit()
     return user
 
@@ -96,7 +104,9 @@ def activate_user(actor_id: int, user_id: int) -> User:
     if user.examiner_profile:
         user.examiner_profile.status = "active"
 
-    audit_service.log_action(actor_id, audit_service.USER_ACTIVATE, "user", user.id, {"email": user.email})
+    audit_service.log_action(
+        actor_id, audit_service.USER_ACTIVATE, "user", user.id, {"email": user.email}
+    )
     db.session.commit()
     return user
 
@@ -106,9 +116,13 @@ def set_temporary_password(actor_id: int, user_id: int, new_password: str | None
     if not user:
         raise AppError("user_not_found", "User not found.")
     if user.role == "admin":
-        raise AppError("cannot_reset_admin", "Admin temporary passwords cannot be set via this route.")
+        raise AppError(
+            "cannot_reset_admin", "Admin temporary passwords cannot be set via this route."
+        )
 
-    plain_pass = new_password.strip() if new_password and new_password.strip() else secrets.token_urlsafe(9)
+    plain_pass = (
+        new_password.strip() if new_password and new_password.strip() else secrets.token_urlsafe(9)
+    )
     problems = validate_password_strength(plain_pass)
     if problems:
         raise AppError("weak_password", problems[0])
@@ -116,7 +130,9 @@ def set_temporary_password(actor_id: int, user_id: int, new_password: str | None
     user.set_password(plain_pass)
     user.must_change_password = True
 
-    audit_service.log_action(actor_id, audit_service.USER_TEMP_PASSWORD, "user", user.id, {"email": user.email})
+    audit_service.log_action(
+        actor_id, audit_service.USER_TEMP_PASSWORD, "user", user.id, {"email": user.email}
+    )
     db.session.commit()
     return plain_pass
 
@@ -133,20 +149,39 @@ def change_slot_examiner(actor_id: int, slot_id: int, new_examiner_id: int) -> E
 
     is_assigned = (
         ExaminationExaminer.query.join(User, ExaminationExaminer.examiner_id == User.id)
-        .filter(ExaminationExaminer.examination_id == slot.examination_id, User.id == new_examiner_id, User.approval_status == "approved", User.is_active.is_(True))
+        .filter(
+            ExaminationExaminer.examination_id == slot.examination_id,
+            User.id == new_examiner_id,
+            User.approval_status == "approved",
+            User.is_active.is_(True),
+        )
         .count()
         > 0
     )
     if not is_assigned:
-        raise AppError("examiner_not_eligible", "Examiner is not assigned or not approved for this examination.")
+        raise AppError(
+            "examiner_not_eligible",
+            "Examiner is not assigned or not approved for this examination.",
+        )
 
-    conflict = slot_rules.find_overlapping(new_examiner_id, slot.start_at, slot.end_at, exclude_slot_id=slot.id)
+    conflict = slot_rules.find_overlapping(
+        new_examiner_id, slot.start_at, slot.end_at, exclude_slot_id=slot.id
+    )
     if conflict:
-        raise AppError("examiner_overlap", f"Examiner has an overlapping slot ({conflict.start_at.strftime('%H:%M')} - {conflict.end_at.strftime('%H:%M')}).")
+        raise AppError(
+            "examiner_overlap",
+            f"Examiner has an overlapping slot ({conflict.start_at.strftime('%H:%M')} - {conflict.end_at.strftime('%H:%M')}).",
+        )
 
     old_examiner_id = slot.examiner_id
     slot.examiner_id = new_examiner_id
 
-    audit_service.log_action(actor_id, audit_service.SLOT_EXAMINER_CHANGE, "examination_slot", slot.id, {"from": old_examiner_id, "to": new_examiner_id})
+    audit_service.log_action(
+        actor_id,
+        audit_service.SLOT_EXAMINER_CHANGE,
+        "examination_slot",
+        slot.id,
+        {"from": old_examiner_id, "to": new_examiner_id},
+    )
     db.session.commit()
     return slot

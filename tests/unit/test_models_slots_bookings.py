@@ -43,14 +43,18 @@ def test_slot_seats_left_property(app, make_examination, make_examiner):
     assert slot.seats_left == 3
 
 
-def test_active_booking_unique_per_student_exam(app, make_examination, make_examiner, make_student, make_slot):
+def test_active_booking_unique_per_student_exam(
+    app, make_examination, make_examiner, make_student, make_slot
+):
     """Verify partial unique index blocks 2 active bookings for the same student on the same exam."""
     exam = make_examination()
     examiner = make_examiner()
     student = make_student()
 
     slot1 = make_slot(exam, examiner)
-    slot2 = make_slot(exam, examiner, start_at=datetime(2030, 1, 16, 10, 0), end_at=datetime(2030, 1, 16, 12, 0))
+    slot2 = make_slot(
+        exam, examiner, start_at=datetime(2030, 1, 16, 10, 0), end_at=datetime(2030, 1, 16, 12, 0)
+    )
 
     b1 = Booking(
         student_id=student.id,
@@ -83,7 +87,9 @@ def test_rebook_after_cancel_allowed(app, make_examination, make_examiner, make_
     student = make_student()
 
     slot1 = make_slot(exam, examiner)
-    slot2 = make_slot(exam, examiner, start_at=datetime(2030, 1, 16, 10, 0), end_at=datetime(2030, 1, 16, 12, 0))
+    slot2 = make_slot(
+        exam, examiner, start_at=datetime(2030, 1, 16, 10, 0), end_at=datetime(2030, 1, 16, 12, 0)
+    )
 
     # Cancelled first booking
     b1 = Booking(
@@ -112,7 +118,9 @@ def test_rebook_after_cancel_allowed(app, make_examination, make_examiner, make_
 
 def test_partial_unique_index_sql_present(app):
     """Verify that uq_bookings_active_student_exam exists in sqlite_master with WHERE clause."""
-    query = text("SELECT sql FROM sqlite_master WHERE type='index' AND name='uq_bookings_active_student_exam';")
+    query = text(
+        "SELECT sql FROM sqlite_master WHERE type='index' AND name='uq_bookings_active_student_exam';"
+    )
     result = db.session.execute(query).scalar()
     assert result is not None
     assert "WHERE status IN ('booked', 'completed')" in result

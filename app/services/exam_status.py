@@ -36,12 +36,10 @@ def compute_status(exam: Examination, now: datetime | None = None) -> str:
     if current > exam.booking_end:
         active_slots = [s for s in exam.slots if s.status != "cancelled"]
         if active_slots and all(s.end_at < current for s in active_slots):
-            active_bookings = (
-                Booking.query.filter(
-                    Booking.examination_id == exam.id,
-                    Booking.status.in_(("booked", "completed")),
-                ).all()
-            )
+            active_bookings = Booking.query.filter(
+                Booking.examination_id == exam.id,
+                Booking.status.in_(("booked", "completed")),
+            ).all()
             if active_bookings:
                 all_evaluated = all(
                     b.evaluation is not None and b.evaluation.status in ("submitted", "published")
@@ -54,7 +52,9 @@ def compute_status(exam: Examination, now: datetime | None = None) -> str:
     return "draft"
 
 
-def refresh_status(exam: Examination, actor_id: int | None = None, now: datetime | None = None) -> bool:
+def refresh_status(
+    exam: Examination, actor_id: int | None = None, now: datetime | None = None
+) -> bool:
     """
     Recalculate status and stage an audit log if it changed. Returns True if changed.
     """

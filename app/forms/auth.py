@@ -123,7 +123,9 @@ class RegisterForm(FlaskForm):
         validators=[
             Optional(),
             Length(max=20),
-            Regexp(r"^[0-9+\- ]*$", message="Phone number may only contain digits, +, -, and spaces."),
+            Regexp(
+                r"^[0-9+\- ]*$", message="Phone number may only contain digits, +, -, and spaces."
+            ),
         ],
         filters=[lambda x: x.strip() if x else ""],
     )
