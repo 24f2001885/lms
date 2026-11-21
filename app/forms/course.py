@@ -17,7 +17,10 @@ class CourseForm(FlaskForm):
         validators=[
             DataRequired(message="Course code is required."),
             Length(min=2, max=20, message="Course code must be between 2 and 20 characters."),
-            Regexp(r"^[A-Za-z0-9\-_]+$", message="Course code may only contain letters, numbers, hyphens, and underscores."),
+            Regexp(
+                r"^[A-Za-z0-9\-_]+$",
+                message="Course code may only contain letters, numbers, hyphens, and underscores.",
+            ),
         ],
         filters=[lambda x: x.strip().upper() if x else ""],
     )

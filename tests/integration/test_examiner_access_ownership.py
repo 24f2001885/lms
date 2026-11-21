@@ -20,4 +20,5 @@ def test_ownership_scoping_slots(examiner_client, make_ready_examination, make_e
     # Try to access examiner A's examination detail as B (should be 404)
     # Need client logged in as B to test B's view, or test service level
     from app.services import slot_service
+
     assert slot_service.get_assigned_examination(examiner_b.id, exam.id) is None

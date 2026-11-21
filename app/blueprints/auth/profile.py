@@ -45,17 +45,27 @@ def profile():
         user.full_name = form.full_name.data.strip()
 
         if user.role == "examiner" and user.examiner_profile:
-            user.examiner_profile.contact_phone = form.contact_phone.data.strip() if form.contact_phone.data else None
-            user.examiner_profile.department = form.department.data.strip() if form.department.data else None
-            user.examiner_profile.designation = form.designation.data.strip() if form.designation.data else None
+            user.examiner_profile.contact_phone = (
+                form.contact_phone.data.strip() if form.contact_phone.data else None
+            )
+            user.examiner_profile.department = (
+                form.department.data.strip() if form.department.data else None
+            )
+            user.examiner_profile.designation = (
+                form.designation.data.strip() if form.designation.data else None
+            )
 
         elif user.role == "student":
             if not user.student_profile:
                 user.student_profile = StudentProfile(user_id=user.id)
                 db.session.add(user.student_profile)
 
-            user.student_profile.contact_phone = form.contact_phone.data.strip() if form.contact_phone.data else None
-            user.student_profile.roll_number = form.roll_number.data.strip().upper() if form.roll_number.data else None
+            user.student_profile.contact_phone = (
+                form.contact_phone.data.strip() if form.contact_phone.data else None
+            )
+            user.student_profile.roll_number = (
+                form.roll_number.data.strip().upper() if form.roll_number.data else None
+            )
             user.student_profile.program = form.program.data.strip() if form.program.data else None
 
         db.session.commit()

@@ -104,7 +104,10 @@ def assert_slot_creation_open(exam: Examination, now: datetime | None = None) ->
     if exam.is_deleted or not exam.slot_creation_open:
         raise WindowError(SLOT_CREATION_CLOSED, f"Slot creation is closed for '{exam.name}'.")
     if current < exam.slot_creation_start:
-        raise WindowError(SLOT_CREATION_CLOSED, f"Slot creation opens on {format_local(exam.slot_creation_start)}.")
+        raise WindowError(
+            SLOT_CREATION_CLOSED,
+            f"Slot creation opens on {format_local(exam.slot_creation_start)}.",
+        )
     if current > exam.slot_creation_end:
         raise WindowError(SLOT_CREATION_CLOSED, "Slot creation period has ended.")
 

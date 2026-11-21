@@ -44,7 +44,6 @@ class ExaminationSlot(db.Model, TimestampMixin):
 
     __tablename__ = "examination_slots"
     __table_args__ = (
-        
         CheckConstraint(
             f"status IN {SLOT_STATUSES}",
             name="ck_examination_slots_status_valid",

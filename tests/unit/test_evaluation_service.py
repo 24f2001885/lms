@@ -13,6 +13,7 @@ OFFLINE DOCKER TEST CASES:
 
 FILE PURPOSE: Rule tests for evaluation_service.
 """
+
 from datetime import timedelta
 from decimal import Decimal
 
@@ -22,7 +23,9 @@ from app.errors import AppError
 from app.services import evaluation_service
 
 
-def test_owned_booking_only(app, db_session, examiner, make_ready_examination, make_booking_with_slot, admin):
+def test_owned_booking_only(
+    app, db_session, examiner, make_ready_examination, make_booking_with_slot, admin
+):
     exam, _ = make_ready_examination(examiner=examiner)
     booking, slot = make_booking_with_slot(exam, examiner)
 
@@ -30,7 +33,9 @@ def test_owned_booking_only(app, db_session, examiner, make_ready_examination, m
     assert evaluation_service.get_owned_booking(admin.id, booking.id) is None
 
 
-def test_score_range_per_criterion(app, db_session, examiner, make_ready_examination, make_booking_with_slot):
+def test_score_range_per_criterion(
+    app, db_session, examiner, make_ready_examination, make_booking_with_slot
+):
     exam, _ = make_ready_examination(examiner=examiner)
     booking, slot = make_booking_with_slot(exam, examiner)
     rubric = exam.rubrics[0]
@@ -43,7 +48,9 @@ def test_score_range_per_criterion(app, db_session, examiner, make_ready_examina
     assert exc.value.code == "score_out_of_range"
 
 
-def test_total_cannot_exceed_max_marks(app, db_session, examiner, make_ready_examination, make_booking_with_slot):
+def test_total_cannot_exceed_max_marks(
+    app, db_session, examiner, make_ready_examination, make_booking_with_slot
+):
     exam, _ = make_ready_examination(examiner=examiner)
     booking, slot = make_booking_with_slot(exam, examiner)
     r1, r2 = exam.rubrics[0], exam.rubrics[1]
@@ -56,7 +63,9 @@ def test_total_cannot_exceed_max_marks(app, db_session, examiner, make_ready_exa
     assert exc.value.code == "total_exceeds_max"
 
 
-def test_submit_requires_all_criteria(app, db_session, examiner, make_ready_examination, make_booking_with_slot):
+def test_submit_requires_all_criteria(
+    app, db_session, examiner, make_ready_examination, make_booking_with_slot
+):
     exam, _ = make_ready_examination(examiner=examiner)
     booking, slot = make_booking_with_slot(exam, examiner)
     r1, r2 = exam.rubrics[0], exam.rubrics[1]
@@ -68,18 +77,24 @@ def test_submit_requires_all_criteria(app, db_session, examiner, make_ready_exam
     assert exc.value.code == "scores_incomplete"
 
 
-def test_draft_may_be_partial(app, db_session, examiner, make_ready_examination, make_booking_with_slot):
+def test_draft_may_be_partial(
+    app, db_session, examiner, make_ready_examination, make_booking_with_slot
+):
     exam, _ = make_ready_examination(examiner=examiner)
     booking, slot = make_booking_with_slot(exam, examiner)
     r1, r2 = exam.rubrics[0], exam.rubrics[1]
 
     scores = {r1.id: Decimal("50.00"), r2.id: None}
-    eval_obj = evaluation_service.save_evaluation(examiner.id, booking.id, scores, {}, "Draft remarks", "save_draft")
+    eval_obj = evaluation_service.save_evaluation(
+        examiner.id, booking.id, scores, {}, "Draft remarks", "save_draft"
+    )
     assert eval_obj.status == "draft"
     assert eval_obj.total_marks == Decimal("50.00")
 
 
-def test_draft_submit_publish_timestamps(app, db_session, examiner, make_ready_examination, make_booking_with_slot, freeze_now):
+def test_draft_submit_publish_timestamps(
+    app, db_session, examiner, make_ready_examination, make_booking_with_slot, freeze_now
+):
     exam, _ = make_ready_examination(examiner=examiner)
     booking, slot = make_booking_with_slot(exam, examiner)
     r1, r2 = exam.rubrics[0], exam.rubrics[1]
@@ -91,13 +106,17 @@ def test_draft_submit_publish_timestamps(app, db_session, examiner, make_ready_e
     assert eval_obj.submitted_at is not None
 
     freeze_now(eval_obj.submitted_at + timedelta(hours=1))
-    
-    eval_obj = evaluation_service.save_evaluation(examiner.id, booking.id, scores, {}, "", "publish")
+
+    eval_obj = evaluation_service.save_evaluation(
+        examiner.id, booking.id, scores, {}, "", "publish"
+    )
     assert eval_obj.status == "published"
     assert eval_obj.published_at is not None
 
 
-def test_published_is_immutable(app, db_session, examiner, make_ready_examination, make_booking_with_slot):
+def test_published_is_immutable(
+    app, db_session, examiner, make_ready_examination, make_booking_with_slot
+):
     exam, _ = make_ready_examination(examiner=examiner)
     booking, slot = make_booking_with_slot(exam, examiner)
     r1, r2 = exam.rubrics[0], exam.rubrics[1]
@@ -106,5 +125,7 @@ def test_published_is_immutable(app, db_session, examiner, make_ready_examinatio
     evaluation_service.save_evaluation(examiner.id, booking.id, scores, {}, "", "publish")
 
     with pytest.raises(AppError) as exc:
-        evaluation_service.save_evaluation(examiner.id, booking.id, scores, {}, "new remarks", "save_draft")
+        evaluation_service.save_evaluation(
+            examiner.id, booking.id, scores, {}, "new remarks", "save_draft"
+        )
     assert exc.value.code == "evaluation_locked"

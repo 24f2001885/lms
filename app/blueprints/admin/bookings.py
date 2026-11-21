@@ -46,7 +46,9 @@ def bookings():
     if exam_id:
         query = query.filter_by(examination_id=exam_id)
 
-    bookings_page = query.order_by(Booking.id.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    bookings_page = query.order_by(Booking.id.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
     exams_list = Examination.query.filter_by(is_deleted=False).all()
 
     return render_template(

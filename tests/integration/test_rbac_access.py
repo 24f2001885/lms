@@ -92,7 +92,9 @@ def test_post_without_csrf_token_is_rejected(tmp_path):
         client = app.test_client()
 
         # POST without CSRF token
-        res = client.post("/login", data={"email": "any@test.local", "password": "pass"}, follow_redirects=False)
+        res = client.post(
+            "/login", data={"email": "any@test.local", "password": "pass"}, follow_redirects=False
+        )
         # Custom CSRF handler redirects back with a warning flash
         assert res.status_code == 302
         db.drop_all()

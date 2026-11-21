@@ -47,7 +47,9 @@ def search(kind: str, q: str, page: int = 1, per_page: int = 20):
             User.query.filter(User.role == "student")
             .outerjoin(StudentProfile)
             .filter(or_(*conds))
-            .order_by((User.id == num_id).desc() if is_digit else User.id.asc(), User.full_name.asc())
+            .order_by(
+                (User.id == num_id).desc() if is_digit else User.id.asc(), User.full_name.asc()
+            )
         )
 
     elif kind == "examiner":
@@ -62,7 +64,9 @@ def search(kind: str, q: str, page: int = 1, per_page: int = 20):
             User.query.filter(User.role == "examiner")
             .outerjoin(ExaminerProfile)
             .filter(or_(*conds))
-            .order_by((User.id == num_id).desc() if is_digit else User.id.asc(), User.full_name.asc())
+            .order_by(
+                (User.id == num_id).desc() if is_digit else User.id.asc(), User.full_name.asc()
+            )
         )
 
     elif kind == "examination":
@@ -77,7 +81,10 @@ def search(kind: str, q: str, page: int = 1, per_page: int = 20):
         query = (
             Examination.query.join(Course)
             .filter(or_(*conds))
-            .order_by((Examination.id == num_id).desc() if is_digit else Examination.id.asc(), Examination.name.asc())
+            .order_by(
+                (Examination.id == num_id).desc() if is_digit else Examination.id.asc(),
+                Examination.name.asc(),
+            )
         )
 
     elif kind == "booking":
@@ -92,7 +99,10 @@ def search(kind: str, q: str, page: int = 1, per_page: int = 20):
             Booking.query.join(User, Booking.student_id == User.id)
             .join(Examination, Booking.examination_id == Examination.id)
             .filter(or_(*conds))
-            .order_by((Booking.id == num_id).desc() if is_digit else Booking.id.asc(), Booking.booked_at.desc())
+            .order_by(
+                (Booking.id == num_id).desc() if is_digit else Booking.id.asc(),
+                Booking.booked_at.desc(),
+            )
         )
 
     return db.paginate(query, page=page, per_page=min(per_page, 100), error_out=False)

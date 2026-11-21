@@ -27,7 +27,12 @@ def test_admin_setup_flow_end_to_end(admin_client, freeze_now):
     # 1. Create Course
     admin_client.post(
         "/admin/courses",
-        data={"code": "MAD101", "name": "Web Applications", "description": "Flask LMS", "status": "active"},
+        data={
+            "code": "MAD101",
+            "name": "Web Applications",
+            "description": "Flask LMS",
+            "status": "active",
+        },
         follow_redirects=True,
     )
     course = Course.query.filter_by(code="MAD101").first()
@@ -91,17 +96,29 @@ def test_admin_setup_flow_end_to_end(admin_client, freeze_now):
     assert len(exam.examiner_links) == 1
 
     # 6. Open Slot Creation Switch -> Verify status -> Close it
-    admin_client.post(f"/admin/examinations/{exam.id}/slot-creation/toggle", data={"open": "1"}, follow_redirects=True)
+    admin_client.post(
+        f"/admin/examinations/{exam.id}/slot-creation/toggle",
+        data={"open": "1"},
+        follow_redirects=True,
+    )
     assert exam.slot_creation_open is True
 
-    admin_client.post(f"/admin/examinations/{exam.id}/slot-creation/toggle", data={"open": "0"}, follow_redirects=True)
+    admin_client.post(
+        f"/admin/examinations/{exam.id}/slot-creation/toggle",
+        data={"open": "0"},
+        follow_redirects=True,
+    )
     assert exam.slot_creation_open is False
 
     # 7. Open Booking Switch (rubric is 100%, so succeeds) -> Close it
-    admin_client.post(f"/admin/examinations/{exam.id}/booking/toggle", data={"open": "1"}, follow_redirects=True)
+    admin_client.post(
+        f"/admin/examinations/{exam.id}/booking/toggle", data={"open": "1"}, follow_redirects=True
+    )
     assert exam.booking_open is True
 
-    admin_client.post(f"/admin/examinations/{exam.id}/booking/toggle", data={"open": "0"}, follow_redirects=True)
+    admin_client.post(
+        f"/admin/examinations/{exam.id}/booking/toggle", data={"open": "0"}, follow_redirects=True
+    )
     assert exam.booking_open is False
 
     # 8. Verify Audit Log contains all actions

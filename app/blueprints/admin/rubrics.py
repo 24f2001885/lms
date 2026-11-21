@@ -43,7 +43,10 @@ def rubrics(exam_id: int):
 
     total_weight = catalog_service.rubric_weightage_total(exam.id)
     total_max_score = sum(r.max_score for r in exam.rubrics)
-    has_evaluations = db.session.query(Evaluation).join(Booking).filter(Booking.examination_id == exam.id).count() > 0
+    has_evaluations = (
+        db.session.query(Evaluation).join(Booking).filter(Booking.examination_id == exam.id).count()
+        > 0
+    )
 
     form = RubricForm()
     confirm_form = ConfirmForm()
@@ -86,18 +89,24 @@ def add_rubric(exam_id: int):
 
     total_weight = catalog_service.rubric_weightage_total(exam.id)
     total_max_score = sum(r.max_score for r in exam.rubrics)
-    has_evaluations = db.session.query(Evaluation).join(Booking).filter(Booking.examination_id == exam.id).count() > 0
+    has_evaluations = (
+        db.session.query(Evaluation).join(Booking).filter(Booking.examination_id == exam.id).count()
+        > 0
+    )
 
-    return render_template(
-        "admin/rubrics.html",
-        exam=exam,
-        rubrics=exam.rubrics,
-        total=total_weight,
-        total_max_score=total_max_score,
-        locked=has_evaluations,
-        form=form,
-        confirm_form=ConfirmForm(),
-    ), 200
+    return (
+        render_template(
+            "admin/rubrics.html",
+            exam=exam,
+            rubrics=exam.rubrics,
+            total=total_weight,
+            total_max_score=total_max_score,
+            locked=has_evaluations,
+            form=form,
+            confirm_form=ConfirmForm(),
+        ),
+        200,
+    )
 
 
 @admin_bp.route("/examinations/<int:exam_id>/rubrics/<int:rubric_id>/delete", methods=["POST"])
