@@ -22,6 +22,9 @@ Werkzeug==3.0.4
 #server- side validator
 WTForms==3.2.1
 
+#production wsgi server
+gunicorn==22.0.0
+
 
 #======TESTING  CONFLIECTS REQUIREMENTS =====
 #pip install -r requirements.txt

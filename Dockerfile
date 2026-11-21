@@ -31,19 +31,20 @@ FROM base AS runtime
 #copy source 
 COPY --chown=lms:lms . .
 
-#ensure logs are not writable 
+#ensure instance and logs directories exist and are writable
 RUN mkdir -p instance logs && \
-    chown -R lms:lms instance logs
+    chown -R lms:lms instance logs && \
+    chmod -R 775 instance logs
     
 USER lms
 
-EXPOSE 5000
+EXPOSE 5002
 
 #health check , uses internal py urllib not winget or curl 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-    CMD python3 -c "import urllib.request as u; u.urlopen('http://127.0.0.1:5000/', timeout=2)" || exit 1
-#run dev server 
-CMD ["flask", "--app", "app", "run", "--host", "0.0.0.0", "--port", "5000"]
+    CMD python3 -c "import urllib.request as u; u.urlopen('http://127.0.0.1:5002/', timeout=2)" || exit 1
+#run production WSGI server tuned for 1 GB RAM VPS
+CMD ["gunicorn", "-w", "1", "--threads", "2", "-b", "0.0.0.0:5002", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-", "app:create_app()"]
 
 #==test target ====
 #used to automate offline test suite 
