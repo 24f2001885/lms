@@ -24,7 +24,7 @@ OFFLINE DOCKER TEST CASES:
         <h1 class="h3 fw-bold text-center mb-1 text-primary">Create an Account</h1>
         <p class="text-muted text-center small mb-4">Register as a Student or Faculty Examiner</p>
 
-        <form method="POST" action="{{ url_for('auth.register') }}">
+        <form method="POST" action="{{ url_for('auth.register') }}" data-validate="true">
           {{ form.hidden_tag() }}
 
           {{ f.render_radio_group(form.role) }}
