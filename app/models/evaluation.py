@@ -30,7 +30,6 @@ class Evaluation(db.Model, TimestampMixin):
 
     __tablename__ = "evaluations"
     __table_args__ = (
-        
         CheckConstraint(
             f"status IN {EVALUATION_STATUSES}",
             name="ck_evaluations_status_valid",
@@ -101,7 +100,6 @@ class EvaluationScore(db.Model):
 
     __tablename__ = "evaluation_scores"
     __table_args__ = (
-        
         CheckConstraint("score >= 0", name="ck_evaluation_scores_score_non_negative"),
         UniqueConstraint("evaluation_id", "rubric_id", name="uq_evaluation_rubric_score"),
         {"sqlite_autoincrement": True},

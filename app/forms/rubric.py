@@ -30,7 +30,11 @@ class RubricForm(FlaskForm):
         places=2,
         validators=[
             DataRequired(message="Weightage is required."),
-            NumberRange(min=Decimal("0.00"), max=Decimal("100.00"), message="Weightage must be between 0 and 100%."),
+            NumberRange(
+                min=Decimal("0.00"),
+                max=Decimal("100.00"),
+                message="Weightage must be between 0 and 100%.",
+            ),
         ],
     )
     max_score = DecimalField(

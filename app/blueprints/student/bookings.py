@@ -18,6 +18,7 @@ OFFLINE DOCKER TEST CASES:
 
 FILE PURPOSE: Booking actions (book, cancel) and list views (my bookings, detail, schedule, history).
 """
+
 from flask import abort, flash, g, redirect, render_template, request, url_for
 
 from app.blueprints.student import student_bp
@@ -84,7 +85,7 @@ def my_bookings_list():
         pagination=pagination,
         page=pagination,
         selected_status=status,
-        confirm_form=confirm_form
+        confirm_form=confirm_form,
     )
 
 
@@ -102,7 +103,7 @@ def booking_detail(booking_id):
         "student/booking_detail.html",
         booking=booking,
         result_pub=result_pub,
-        confirm_form=confirm_form
+        confirm_form=confirm_form,
     )
 
 

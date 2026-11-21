@@ -25,6 +25,7 @@ OFFLINE DOCKER TEST CASES:
 
 FILE PURPOSE: Flagship engine for booking and cancelling slots with capacity, duplicate, and window rules (TDR 3.3).
 """
+
 from sqlalchemy.exc import IntegrityError
 
 from app.errors import BookingError
@@ -82,13 +83,15 @@ def book_slot(student_id, slot_id, now=None):
 
     windows.assert_booking_open(exam, now_time)
 
-    ctx = HookContext(student_id=student_id, slot_id=slot_id, examination_id=exam.id, actor_id=student_id)
+    ctx = HookContext(
+        student_id=student_id, slot_id=slot_id, examination_id=exam.id, actor_id=student_id
+    )
     hooks.run_pre_booking(ctx)
 
     existing = Booking.query.filter(
         Booking.student_id == student_id,
         Booking.examination_id == exam.id,
-        Booking.status.in_(["booked", "completed"])
+        Booking.status.in_(["booked", "completed"]),
     ).first()
     if existing:
         raise BookingError("duplicate_booking", "You already have a booking for this examination.")
@@ -112,7 +115,7 @@ def book_slot(student_id, slot_id, now=None):
         slot_id=slot_id,
         examination_id=exam.id,
         status="booked",
-        booked_at=now_time
+        booked_at=now_time,
     )
     db.session.add(booking)
 
@@ -133,12 +136,14 @@ def book_slot(student_id, slot_id, now=None):
             action=audit_service.BOOKING_CREATE,
             entity_type="booking",
             entity_id=booking.id,
-            details={"slot_id": slot_id, "examination_id": exam.id}
+            details={"slot_id": slot_id, "examination_id": exam.id},
         )
         db.session.commit()
     except IntegrityError as err:
         db.session.rollback()
-        raise BookingError("duplicate_booking", "You already have a booking for this examination.") from err
+        raise BookingError(
+            "duplicate_booking", "You already have a booking for this examination."
+        ) from err
     except Exception:
         db.session.rollback()
         raise
@@ -168,11 +173,17 @@ def cancel_booking(student_id, booking_id, now=None):
         action=audit_service.BOOKING_CANCEL,
         entity_type="booking",
         entity_id=booking.id,
-        details={"by": "student", "slot_id": slot_id}
+        details={"by": "student", "slot_id": slot_id},
     )
     db.session.commit()
 
-    ctx = HookContext(student_id=student_id, slot_id=slot_id, examination_id=exam_id, booking_id=booking_id, actor_id=student_id)
+    ctx = HookContext(
+        student_id=student_id,
+        slot_id=slot_id,
+        examination_id=exam_id,
+        booking_id=booking_id,
+        actor_id=student_id,
+    )
     hooks.run_post_cancel(ctx)
 
     return booking

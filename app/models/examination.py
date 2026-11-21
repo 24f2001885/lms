@@ -23,7 +23,6 @@ class Examination(db.Model, TimestampMixin):
 
     __tablename__ = "examinations"
     __table_args__ = (
-        
         CheckConstraint(
             f"exam_type IN {EXAM_TYPES}",
             name="ck_examinations_exam_type_valid",

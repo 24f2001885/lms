@@ -1,6 +1,7 @@
 """
 FILE PURPOSE: EXM-04, EXM-05, EXM-06 slot list, create, edit, delete and booked students.
 """
+
 from flask import abort, flash, g, redirect, render_template, request, url_for
 
 from app.blueprints.examiner import examiner_bp
@@ -18,7 +19,9 @@ def slots_list():
     status = request.args.get("status", "").strip()
     page = request.args.get("page", 1, type=int)
 
-    pagination = slot_service.list_slots(examiner_id, examination_id=examination_id, status=status or None, page=page)
+    pagination = slot_service.list_slots(
+        examiner_id, examination_id=examination_id, status=status or None, page=page
+    )
     assigned_exams = slot_service.list_assigned_examinations(examiner_id)
 
     return render_template(
@@ -26,7 +29,7 @@ def slots_list():
         pagination=pagination,
         assigned_exams=assigned_exams,
         selected_exam=examination_id,
-        selected_status=status
+        selected_status=status,
     )
 
 
@@ -35,7 +38,7 @@ def slots_list():
 def slot_create():
     examiner_id = g.user.id
     assigned_exams = slot_service.list_assigned_examinations(examiner_id)
-    
+
     form = SlotForm()
     form.examination_id.choices = [(e.id, f"{e.course.code} - {e.name}") for e in assigned_exams]
 
@@ -124,11 +127,9 @@ def slot_students(slot_id):
 
     bookings = slot_service.booked_students(examiner_id, slot_id)
     from app.models import Booking
+
     cancelled_count = Booking.query.filter_by(slot_id=slot_id, status="cancelled").count()
 
     return render_template(
-        "examiner/slot_students.html",
-        slot=slot,
-        bookings=bookings,
-        cancelled_count=cancelled_count
+        "examiner/slot_students.html", slot=slot, bookings=bookings, cancelled_count=cancelled_count
     )

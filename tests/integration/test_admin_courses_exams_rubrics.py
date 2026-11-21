@@ -22,7 +22,12 @@ def test_course_create_edit_delete_flow(admin_client):
     # 1. Create
     res = admin_client.post(
         "/admin/courses",
-        data={"code": "CS7001", "name": "Software Engineering", "description": "Agile & DevOps", "status": "active"},
+        data={
+            "code": "CS7001",
+            "name": "Software Engineering",
+            "description": "Agile & DevOps",
+            "status": "active",
+        },
         follow_redirects=False,
     )
     assert res.status_code == 302
@@ -32,7 +37,12 @@ def test_course_create_edit_delete_flow(admin_client):
     # 2. Edit
     edit_res = admin_client.post(
         f"/admin/courses/{course.id}/update",
-        data={"code": "CS7001", "name": "Advanced Software Engineering", "description": "DevOps", "status": "active"},
+        data={
+            "code": "CS7001",
+            "name": "Advanced Software Engineering",
+            "description": "DevOps",
+            "status": "active",
+        },
         follow_redirects=False,
     )
     assert edit_res.status_code == 302

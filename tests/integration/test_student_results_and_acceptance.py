@@ -12,10 +12,13 @@ OFFLINE DOCKER TEST CASES:
 
 FILE PURPOSE: Integration acceptance test for full student lifecycle (browse -> book -> cancel -> rebook -> result).
 """
+
 from datetime import timedelta
 
 
-def test_student_acceptance_flow(student_client, make_open_booking_setup, make_published_evaluation, freeze_now):
+def test_student_acceptance_flow(
+    student_client, make_open_booking_setup, make_published_evaluation, freeze_now
+):
     client, student = student_client
     exam, slot, examiner, _ = make_open_booking_setup(student_count=1, capacity=5)
 
@@ -32,6 +35,7 @@ def test_student_acceptance_flow(student_client, make_open_booking_setup, make_p
 
     # 3. Publish evaluation and view result
     from app.models import Booking
+
     booking = Booking.query.filter_by(student_id=student.id, slot_id=slot.id).first()
     make_published_evaluation(booking, examiner, total=85)
 

@@ -15,6 +15,7 @@ OFFLINE DOCKER TEST CASES:
 
 FILE PURPOSE: STU-02 browse examinations and STU-03 examination details with slots.
 """
+
 from flask import abort, g, render_template, request
 
 from app.blueprints.student import student_bp
@@ -44,7 +45,7 @@ def examinations_list():
         courses=courses,
         selected_q=q,
         selected_course=course_id,
-        selected_type=exam_type
+        selected_type=exam_type,
     )
 
 
@@ -59,7 +60,7 @@ def examination_detail(exam_id):
     own_booking = Booking.query.filter(
         Booking.student_id == g.user.id,
         Booking.examination_id == exam.id,
-        Booking.status.in_(["booked", "completed"])
+        Booking.status.in_(["booked", "completed"]),
     ).first()
 
     win_state = windows.window_state(exam)
@@ -71,5 +72,5 @@ def examination_detail(exam_id):
         slots=slots,
         own_booking=own_booking,
         win_state=win_state,
-        confirm_form=confirm_form
+        confirm_form=confirm_form,
     )

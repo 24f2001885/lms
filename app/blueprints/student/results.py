@@ -14,6 +14,7 @@ OFFLINE DOCKER TEST CASES:
 
 FILE PURPOSE: STU-09 results list and STU-10 result detail with feedback.
 """
+
 from flask import abort, g, render_template, request
 
 from app.blueprints.student import student_bp

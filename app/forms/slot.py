@@ -1,6 +1,7 @@
 """
 FILE PURPOSE: WTForms for creating and editing a slot (EXM-05).
 """
+
 from flask_wtf import FlaskForm
 from wtforms import IntegerField, SelectField, StringField, ValidationError
 from wtforms.validators import DataRequired, NumberRange
@@ -12,7 +13,9 @@ class SlotForm(FlaskForm):
     examination_id = SelectField("Examination", coerce=int, validators=[DataRequired()])
     start_at = StringField("Start Time", validators=[DataRequired()])
     end_at = StringField("End Time", validators=[DataRequired()])
-    max_capacity = IntegerField("Max Capacity", validators=[DataRequired(), NumberRange(min=1, max=500)], default=1)
+    max_capacity = IntegerField(
+        "Max Capacity", validators=[DataRequired(), NumberRange(min=1, max=500)], default=1
+    )
 
     def to_service_data(self):
         try:

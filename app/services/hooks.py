@@ -18,6 +18,7 @@ OFFLINE DOCKER TEST CASES:
 
 FILE PURPOSE: Extension points for Tier 3 additive features (pre_booking_hooks and post_cancel_hooks).
 """
+
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -63,4 +64,8 @@ def run_post_cancel(ctx: HookContext) -> None:
         try:
             hook(ctx)
         except Exception:
-            logger.exception("Error executing post_cancel_hook for student_id=%s, booking_id=%s", ctx.student_id, ctx.booking_id)
+            logger.exception(
+                "Error executing post_cancel_hook for student_id=%s, booking_id=%s",
+                ctx.student_id,
+                ctx.booking_id,
+            )

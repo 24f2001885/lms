@@ -20,7 +20,9 @@ def test_log_action_not_committed_until_caller_commits(app):
 def test_details_json_roundtrip_with_datetime(app, make_admin):
     admin = make_admin()
     dt_val = datetime(2030, 1, 1, 12, 0)
-    audit_service.log_action(actor_id=admin.id, action="test.dt", entity_type="test", details={"time": dt_val})
+    audit_service.log_action(
+        actor_id=admin.id, action="test.dt", entity_type="test", details={"time": dt_val}
+    )
     db.session.commit()
 
     log = AuditLog.query.filter_by(action="test.dt").first()
@@ -66,24 +68,48 @@ def test_slot_overlap_detected(app, make_examination, make_examiner, make_slot):
     exam = make_examination()
     examiner = make_examiner()
 
-    make_slot(exam, examiner, start_at=datetime(2030, 1, 15, 10, 0), end_at=datetime(2030, 1, 15, 11, 0))
+    make_slot(
+        exam, examiner, start_at=datetime(2030, 1, 15, 10, 0), end_at=datetime(2030, 1, 15, 11, 0)
+    )
 
     # 10:30 - 11:30 overlaps
-    assert slot_rules.has_overlap(examiner.id, datetime(2030, 1, 15, 10, 30), datetime(2030, 1, 15, 11, 30)) is True
+    assert (
+        slot_rules.has_overlap(
+            examiner.id, datetime(2030, 1, 15, 10, 30), datetime(2030, 1, 15, 11, 30)
+        )
+        is True
+    )
 
     # 11:00 - 12:00 back-to-back does NOT overlap
-    assert slot_rules.has_overlap(examiner.id, datetime(2030, 1, 15, 11, 0), datetime(2030, 1, 15, 12, 0)) is False
+    assert (
+        slot_rules.has_overlap(
+            examiner.id, datetime(2030, 1, 15, 11, 0), datetime(2030, 1, 15, 12, 0)
+        )
+        is False
+    )
 
     # 09:00 - 10:00 does NOT overlap
-    assert slot_rules.has_overlap(examiner.id, datetime(2030, 1, 15, 9, 0), datetime(2030, 1, 15, 10, 0)) is False
+    assert (
+        slot_rules.has_overlap(
+            examiner.id, datetime(2030, 1, 15, 9, 0), datetime(2030, 1, 15, 10, 0)
+        )
+        is False
+    )
 
 
 def test_cancelled_slot_ignored(app, make_examination, make_examiner, make_slot):
     exam = make_examination()
     examiner = make_examiner()
 
-    slot = make_slot(exam, examiner, start_at=datetime(2030, 1, 15, 10, 0), end_at=datetime(2030, 1, 15, 11, 0))
+    slot = make_slot(
+        exam, examiner, start_at=datetime(2030, 1, 15, 10, 0), end_at=datetime(2030, 1, 15, 11, 0)
+    )
     slot.status = "cancelled"
     db.session.commit()
 
-    assert slot_rules.has_overlap(examiner.id, datetime(2030, 1, 15, 10, 0), datetime(2030, 1, 15, 11, 0)) is False
+    assert (
+        slot_rules.has_overlap(
+            examiner.id, datetime(2030, 1, 15, 10, 0), datetime(2030, 1, 15, 11, 0)
+        )
+        is False
+    )

@@ -22,7 +22,6 @@ class Booking(db.Model, TimestampMixin):
 
     __tablename__ = "bookings"
     __table_args__ = (
-        
         CheckConstraint(
             f"status IN {BOOKING_STATUSES}",
             name="ck_bookings_status_valid",
@@ -94,10 +93,14 @@ class Booking(db.Model, TimestampMixin):
     # Relationships
     # -----------------------------------------------------------------
     student: Mapped["User"] = relationship("User", foreign_keys=[student_id])
-    slot: Mapped["ExaminationSlot"] = relationship("ExaminationSlot", foreign_keys=[slot_id], back_populates="bookings")
+    slot: Mapped["ExaminationSlot"] = relationship(
+        "ExaminationSlot", foreign_keys=[slot_id], back_populates="bookings"
+    )
     examination: Mapped["Examination"] = relationship("Examination", foreign_keys=[examination_id])
     canceller: Mapped[Optional["User"]] = relationship("User", foreign_keys=[cancelled_by])
-    rescheduled_from: Mapped[Optional["ExaminationSlot"]] = relationship("ExaminationSlot", foreign_keys=[rescheduled_from_slot_id])
+    rescheduled_from: Mapped[Optional["ExaminationSlot"]] = relationship(
+        "ExaminationSlot", foreign_keys=[rescheduled_from_slot_id]
+    )
     evaluation: Mapped[Optional["Evaluation"]] = relationship(
         "Evaluation",
         back_populates="booking",

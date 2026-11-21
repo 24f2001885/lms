@@ -12,6 +12,7 @@ OFFLINE DOCKER TEST CASES:
 
 FILE PURPOSE: STU-01 student dashboard route.
 """
+
 from flask import g, render_template
 
 from app.blueprints.student import student_bp

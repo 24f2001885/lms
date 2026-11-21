@@ -44,7 +44,9 @@ def students():
             | StudentProfile.roll_number.ilike(f"%{q}%")
         )
 
-    students_page = query.order_by(User.id.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    students_page = query.order_by(User.id.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
     return render_template("admin/students_list.html", page=students_page, q=q)
 
 
