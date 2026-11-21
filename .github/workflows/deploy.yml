@@ -1,0 +1,87 @@
+name: LMS Deploy Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to Production VPS
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Remote Server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST || secrets.AWS_HOST }}
+          username: ${{ secrets.VPS_USER || secrets.AWS_USER || 'ubuntu' }}
+          key: ${{ secrets.VPS_SSH_KEY || secrets.AWS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || secrets.AWS_PORT || 22 }}
+          timeout: 180s
+          command_timeout: 30m
+          script: |
+            set -euo pipefail
+            echo "=========================================================="
+            echo "Starting LMS Automated Deployment on $(hostname)"
+            echo "=========================================================="
+
+            TARGET_DIR=""
+            for d in /home/ubuntu/lms /home/ubuntu/mad/src /home/ubuntu/mad /var/www/lms; do
+              if [ -d "$d/.git" ]; then
+                TARGET_DIR="$d"
+                break
+              fi
+            done
+
+            if [ -z "$TARGET_DIR" ]; then
+              echo "Cloning clean repository to /home/ubuntu/lms..."
+              TARGET_DIR="/home/ubuntu/lms"
+              mkdir -p /home/ubuntu
+              git clone https://github.com/24f2001885/lms-production.git "$TARGET_DIR"
+            fi
+
+            cd "$TARGET_DIR"
+            echo "Target working directory: $TARGET_DIR"
+
+            # Pull latest changes from main
+            git fetch origin main
+            git checkout -f main
+            git reset --hard origin/main
+
+            # Ensure .env is present on server
+            if [ ! -f .env ]; then
+              echo "Creating initial production .env..."
+              cp .env.example .env
+              RAND_SECRET=$(openssl rand -hex 32)
+              sed -i "s/SECRET_KEY=randomint/SECRET_KEY=${RAND_SECRET}/" .env
+              sed -i "s/USE_PROXY_FIX=false/USE_PROXY_FIX=true/" .env
+              sed -i "s/SESSION_COOKIE_SECURE=false/SESSION_COOKIE_SECURE=true/" .env
+              sed -i "s|APP_BASE_URL=.*|APP_BASE_URL=https://lms.abhishek4312.info|" .env
+              sed -i "s/PREFERRED_URL_SCHEME=http/PREFERRED_URL_SCHEME=https/" .env
+            fi
+
+            # Rebuild and start container with 250m memory constraint
+            echo "Rebuilding and restarting Docker containers..."
+            docker compose down || true
+            docker compose up -d --build
+
+            echo "Awaiting application readiness..."
+            sleep 6
+
+            # Database schema migration & idempotent demo seeding
+            echo "Initializing database schema..."
+            docker compose exec -T app flask init-db
+
+            echo "Seeding recruiter demo credentials..."
+            docker compose exec -T app flask seed-recruiter-demo
+
+            # Reload Nginx reverse proxy
+            if command -v nginx >/dev/null 2>&1; then
+              echo "Reloading Nginx..."
+              sudo nginx -t && (sudo systemctl reload nginx || sudo nginx -s reload)
+            fi
+
+            echo "=========================================================="
+            echo "LMS Deployment Succeeded! Live at https://lms.abhishek4312.info"
+            echo "=========================================================="

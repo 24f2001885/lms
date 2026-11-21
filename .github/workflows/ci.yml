@@ -21,7 +21,9 @@ jobs:
           fetch-tags: true
 
       - name: Execute gate audit script
-        run: bash scripts/check_gate.sh
+        run: |
+          sed -i 's/\r$//' scripts/check_gate.sh
+          bash scripts/check_gate.sh
 
   # -------------------------------------------------------------------
   #  Quality & Linting
@@ -75,6 +77,23 @@ jobs:
 
       - name: Execute Core Test Suite
         run: make test-core
+
+  # -------------------------------------------------------------------
+  # Docker Container Build Verification
+  # -------------------------------------------------------------------
+  docker-build:
+    name: Docker Container Build Verification
+    needs: [quality, core-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: actions/setup-buildx-action@v3
+
+      - name: Build Docker runtime image
+        run: docker compose build app
 
 
 
