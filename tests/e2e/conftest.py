@@ -24,6 +24,17 @@ def live_server(app):
     thread.join(timeout=5)
 
 
+@pytest.fixture(autouse=True)
+def _e2e_session_config(app):
+    """Ensure objects created in E2E tests do not expire on commit, avoiding SQLite lock deadlocks."""
+    with app.app_context():
+        db.session.remove()
+        db.session.configure(expire_on_commit=False)
+        yield
+        db.session.remove()
+        db.session.configure(expire_on_commit=True)
+
+
 @pytest.fixture
 def offline_page(live_server):
     playwright = pytest.importorskip("playwright.sync_api")
