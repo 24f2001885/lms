@@ -62,7 +62,7 @@ OFFLINE DOCKER TEST CASES:
         <form method="POST" action="{{ url_for('auth.login', next=request.args.get('next')) }}">
           {{ form.hidden_tag() }}
 
-          {{ f.render_field(form.email, placeholder="name@example.edu", autofocus=True) }}
+          {{ f.render_field(form.email, placeholder="name@example.edu") }}
           {{ f.render_field(form.password, placeholder="••••••••") }}
 
           <div class="d-grid mt-4">
