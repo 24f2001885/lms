@@ -45,8 +45,7 @@ def test_password_mismatch_and_strength_hint(page, live_server):
 def test_server_rejects_when_attributes_removed(page, live_server):
     """Removing HTML5 attributes and disabling client JS still triggers server rejection."""
     page.goto(f"{live_server}/register")
-    page.evaluate(
-        """() => {
+    page.evaluate("""() => {
             const form = document.querySelector('form');
             form.removeAttribute('data-validate');
             for (const el of form.querySelectorAll('input')) {
@@ -54,8 +53,7 @@ def test_server_rejects_when_attributes_removed(page, live_server):
                 el.removeAttribute('minlength');
                 el.removeAttribute('maxlength');
             }
-        }"""
-    )
+        }""")
     page.locator("input[name='role'][value='student']").check()
     page.locator("#full_name").fill("A")
     page.locator("#email").fill("valid@test.local")
