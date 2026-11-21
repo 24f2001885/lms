@@ -151,9 +151,9 @@ def test_zip_has_emp_prefix_and_only_tracked_files(temp_git_repo):
     unzip_res = subprocess.run(
         ["unzip", "-l", "submission_core.zip"], cwd=temp_git_repo, capture_output=True, text=True
     )
-    for line in unzip_res.stdout.splitlines()[3:-2]:
+    for line in unzip_res.stdout.splitlines():
         parts = line.split()
-        if len(parts) >= 4:
+        if len(parts) >= 4 and parts[0].isdigit() and not parts[3].startswith("-"):
             entry = parts[3]
             assert entry.startswith("emp/"), f"Entry {entry} does not start with emp/"
 
