@@ -1,7 +1,8 @@
-import logging 
+import logging
 from logging.handlers import RotatingFileHandler
-from pathlib import Path 
+from pathlib import Path
 from uuid import uuid4
+
 from flask import Flask, g, request
 
 
@@ -13,6 +14,7 @@ class RequestContextFilter(logging.Filter):
         user = getattr(g, "user", None)
         record.user_id = getattr(user, "id", "-") if user else "-"
         return True
+
 
 def setup_logging(app: Flask) -> None:
     """Configure structured console and rotating file logging."""
@@ -46,12 +48,13 @@ def setup_logging(app: Flask) -> None:
         file_handler = RotatingFileHandler(
             log_path,
             maxBytes=1_000_000,  # 1 MB per file
-            backupCount=5,       # Keep up to 5 archive files
+            backupCount=5,  # Keep up to 5 archive files
             encoding="utf-8",
         )
         file_handler.setFormatter(formatter)
         file_handler.addFilter(context_filter)
         logger.addHandler(file_handler)
+
 
 def register_request_logging(app: Flask) -> None:
     """Register before_request and after_request hooks for request tracing."""

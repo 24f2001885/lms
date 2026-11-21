@@ -1,11 +1,13 @@
-from datetime import datetime
 import pytest
 from sqlalchemy.exc import IntegrityError
+
 from app.extensions import db
 from app.models import AuditLog, Evaluation, EvaluationScore
 
 
-def test_one_evaluation_per_booking(app, make_examination, make_examiner, make_student, make_slot, make_booking):
+def test_one_evaluation_per_booking(
+    app, make_examination, make_examiner, make_student, make_slot, make_booking
+):
     """Verify unique constraint on booking_id (only 1 evaluation per booking)."""
     exam = make_examination()
     examiner = make_examiner()
@@ -24,7 +26,9 @@ def test_one_evaluation_per_booking(app, make_examination, make_examiner, make_s
     db.session.rollback()
 
 
-def test_scores_cascade_with_evaluation(app, make_examination, make_examiner, make_student, make_slot, make_booking, make_rubric):
+def test_scores_cascade_with_evaluation(
+    app, make_examination, make_examiner, make_student, make_slot, make_booking, make_rubric
+):
     """Verify evaluation deletion cascades and deletes child evaluation_scores."""
     exam = make_examination()
     examiner = make_examiner()

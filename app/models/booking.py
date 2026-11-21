@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
+
 from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Integer, String, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -21,7 +22,6 @@ class Booking(db.Model, TimestampMixin):
 
     __tablename__ = "bookings"
     __table_args__ = (
-        
         CheckConstraint(
             f"status IN {BOOKING_STATUSES}",
             name="ck_bookings_status_valid",
@@ -75,15 +75,15 @@ class Booking(db.Model, TimestampMixin):
     booked_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
     # Cancellation audit tracking
-    cancelled_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    cancelled_by: Mapped[Optional[int]] = mapped_column(
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    cancelled_by: Mapped[int | None] = mapped_column(
         Integer,
         ForeignKey("users.id", ondelete="RESTRICT"),
         nullable=True,
     )
 
     # Rescheduling audit tracking
-    rescheduled_from_slot_id: Mapped[Optional[int]] = mapped_column(
+    rescheduled_from_slot_id: Mapped[int | None] = mapped_column(
         Integer,
         ForeignKey("examination_slots.id", ondelete="RESTRICT"),
         nullable=True,
@@ -93,10 +93,14 @@ class Booking(db.Model, TimestampMixin):
     # Relationships
     # -----------------------------------------------------------------
     student: Mapped["User"] = relationship("User", foreign_keys=[student_id])
-    slot: Mapped["ExaminationSlot"] = relationship("ExaminationSlot", foreign_keys=[slot_id], back_populates="bookings")
+    slot: Mapped["ExaminationSlot"] = relationship(
+        "ExaminationSlot", foreign_keys=[slot_id], back_populates="bookings"
+    )
     examination: Mapped["Examination"] = relationship("Examination", foreign_keys=[examination_id])
     canceller: Mapped[Optional["User"]] = relationship("User", foreign_keys=[cancelled_by])
-    rescheduled_from: Mapped[Optional["ExaminationSlot"]] = relationship("ExaminationSlot", foreign_keys=[rescheduled_from_slot_id])
+    rescheduled_from: Mapped[Optional["ExaminationSlot"]] = relationship(
+        "ExaminationSlot", foreign_keys=[rescheduled_from_slot_id]
+    )
     evaluation: Mapped[Optional["Evaluation"]] = relationship(
         "Evaluation",
         back_populates="booking",

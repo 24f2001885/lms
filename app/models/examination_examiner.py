@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
+
 from sqlalchemy import DateTime, ForeignKey, Index, Integer, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -17,7 +18,6 @@ class ExaminationExaminer(db.Model):
 
     __tablename__ = "examination_examiners"
     __table_args__ = (
-        
         UniqueConstraint("examination_id", "examiner_id", name="uq_exam_examiner_assignment"),
         Index("ix_exam_examiner_exam", "examination_id"),
         Index("ix_exam_examiner_examiner", "examiner_id"),

@@ -1,7 +1,8 @@
 import pytest
 from sqlalchemy.exc import IntegrityError
+
 from app.extensions import db
-from app.models import ExaminerProfile, StudentProfile, User
+from app.models import ExaminerProfile, User
 
 
 def test_user_role_check(app, make_user):

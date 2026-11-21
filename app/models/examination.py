@@ -1,5 +1,6 @@
 from datetime import datetime
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
+
 from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
@@ -22,7 +23,6 @@ class Examination(db.Model, TimestampMixin):
 
     __tablename__ = "examinations"
     __table_args__ = (
-        
         CheckConstraint(
             f"exam_type IN {EXAM_TYPES}",
             name="ck_examinations_exam_type_valid",
@@ -59,7 +59,7 @@ class Examination(db.Model, TimestampMixin):
     )
 
     name: Mapped[str] = mapped_column(String(150), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    description: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     # Examination type: 'viva' | 'practical' | 'project_demo' | 'assessment'
     exam_type: Mapped[str] = mapped_column(String(30), nullable=False)
@@ -125,18 +125,18 @@ class Examination(db.Model, TimestampMixin):
     # Relationships
     # -----------------------------------------------------------------
     course: Mapped["Course"] = relationship("Course", back_populates="examinations")
-    rubrics: Mapped[List["ExaminationRubric"]] = relationship(
+    rubrics: Mapped[list["ExaminationRubric"]] = relationship(
         "ExaminationRubric",
         back_populates="examination",
         order_by="ExaminationRubric.position",
         passive_deletes=False,
     )
-    slots: Mapped[List["ExaminationSlot"]] = relationship(
+    slots: Mapped[list["ExaminationSlot"]] = relationship(
         "ExaminationSlot",
         back_populates="examination",
         passive_deletes=False,
     )
-    examiner_links: Mapped[List["ExaminationExaminer"]] = relationship(
+    examiner_links: Mapped[list["ExaminationExaminer"]] = relationship(
         "ExaminationExaminer",
         back_populates="examination",
         passive_deletes=False,

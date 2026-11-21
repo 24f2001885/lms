@@ -1,7 +1,9 @@
 from datetime import datetime
+
 import pytest
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import configure_mappers
+
 from app.extensions import db
 from app.models import Course, Examination, ExaminationExaminer, ExaminationRubric
 

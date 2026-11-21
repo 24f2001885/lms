@@ -20,7 +20,7 @@ exclude = '''
 #ruff linter and code quality check 
 
 [tool.ruff]
-ine-length = 100
+line-length = 100
 target-version = "py311"
 exclude = [
     ".git",
@@ -51,7 +51,7 @@ ignore = [
 #per-file rule customiszation
 [tool.ruff.lint.per-file-ignores]
 #test recent use assertion , slight long line , fixature
-"tests/*" = ["E501","b011"]
+"tests/*" = ["E501", "B011"]
 
 #pytest runner 
 [tool.pytest.ini_options]

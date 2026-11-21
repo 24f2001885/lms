@@ -1,24 +1,9 @@
 """
-FILE PURPOSE: End-to-end checks of programmatic database creation, Admin seeding and SQLite pragmas (course rule: DB created by code; Admin pre-exists).
-DEPENDS ON: app/cli.py, app/extensions.py, tests/conftest.py (uses its own empty temp DB, not the pre-created tables).
-PROMPT FOR LLM IMPLEMENTATION:
-1. Use app.test_cli_runner() and a temp DB path. Set ADMIN_EMAIL, ADMIN_FULL_NAME, ADMIN_INITIAL_PASSWORD in app.config for the test.
-2. Tests: test_init_db_creates_exactly_12_tables (compare with EXPECTED_TIER1_TABLES, ignore sqlite_sequence), test_init_db_creates_one_admin (role admin, approval approved, is_active, must_change_password True, check_password works), test_init_db_is_idempotent (run twice: 1 user, same password_hash, second output says already exists), test_init_db_never_overwrites_changed_admin_password, test_init_db_requires_password_setting (exit code != 0, 0 users), test_init_db_output_hides_password, test_email_normalised_lowercase, test_existing_non_admin_with_same_email_aborts.
-3. Pragma tests: test_foreign_keys_on (insert a booking with a missing slot_id -> IntegrityError), test_wal_mode_on_file_db, test_busy_timeout_5000.
-4. Config tests: test_relative_sqlite_path_resolves_to_project_root (no instance/instance folder created), test_prod_config_requires_secret_key.
-5. Logging test: test_request_id_header_present on GET "/".
-6. Also assert that no table named email_logs, tests, payments or any Tier 3 name exists (tier discipline).
-DEBUGGING:
-# print(f"[DEBUG] cli output: {result.output!r}; exit={result.exit_code}")
-OFFLINE DOCKER TEST CASES:
-- All tests pass with the network disabled (docker compose --profile test run --rm test).
-- After "docker compose up --build" and a first "init-db" inside the container, instance/emp.db exists on the host through the bind mount.
-"""
-"""
 tests/integration/test_init_db_and_pragmas.py - Integration tests for init-db and SQLite pragmas.
 """
 
 from sqlalchemy import text
+
 from app.commands import EXPECTED_TIER1_TABLES
 from app.extensions import db
 from app.models import User

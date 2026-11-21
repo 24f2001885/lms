@@ -1,5 +1,6 @@
-from datetime import datetime, timezone
-from typing import Generator
+from collections.abc import Generator
+from datetime import UTC, datetime
+
 import pytest
 from flask import Flask
 from flask.testing import FlaskClient, FlaskCliRunner
@@ -10,10 +11,7 @@ from app.extensions import db
 from app.models import (
     Booking,
     Course,
-    Evaluation,
-    EvaluationScore,
     Examination,
-    ExaminationExaminer,
     ExaminationRubric,
     ExaminationSlot,
     ExaminerProfile,
@@ -22,7 +20,7 @@ from app.models import (
 )
 
 # Fixed base anchor timestamp for repeatable window tests (UTC)
-BASE_DATETIME = datetime(2030, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+BASE_DATETIME = datetime(2030, 1, 1, 0, 0, 0, tzinfo=UTC)
 
 
 @pytest.fixture
@@ -149,7 +147,9 @@ def make_student(make_user):
 def make_course(make_admin):
     """Factory fixture generating Course instances."""
 
-    def _make(code: str | None = None, name: str | None = None, created_by: int | None = None) -> Course:
+    def _make(
+        code: str | None = None, name: str | None = None, created_by: int | None = None
+    ) -> Course:
         global _user_seq
         _user_seq += 1
         if created_by is None:

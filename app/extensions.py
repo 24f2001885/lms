@@ -1,4 +1,5 @@
 import sqlite3
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import CSRFProtect
@@ -6,7 +7,7 @@ from sqlalchemy import DateTime, MetaData, event, func
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-#  Explicit Constraint Naming Convention  
+#  Explicit Constraint Naming Convention
 # Guarantees deterministic constraint names for SQLite and migrations
 convention = {
     "ix": "ix_%(column_0_label)s",
@@ -43,6 +44,7 @@ class TimestampMixin:
         server_default=func.current_timestamp(),
         onupdate=func.current_timestamp(),
     )
+
 
 # SQLite Concurrency & Integrity Pragmas
 _pragmas_registered = False

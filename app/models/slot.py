@@ -1,29 +1,14 @@
 """
-FILE PURPOSE: Table "examination_slots": a bookable time slot created by an examiner, with capacity.
-DEPENDS ON: app/models/examination.py, app/models/user.py.
-PROMPT FOR LLM IMPLEMENTATION:
-1. Class ExaminationSlot(db.Model, TimestampMixin), __tablename__ = "examination_slots". Columns: id PK; examination_id FK examinations.id not null; examiner_id FK users.id not null; start_at DATETIME not null; end_at DATETIME not null; max_capacity INTEGER not null; booked_count INTEGER not null default 0; status TEXT not null default "available".
-2. Constant SLOT_STATUSES = ("available","full","cancelled","completed"). CheckConstraints: status_valid; time_order (end_at > start_at); capacity_positive (max_capacity > 0); booked_count_in_range (booked_count >= 0 AND booked_count <= max_capacity). This last constraint is the DATABASE-LEVEL guard against overbooking (invariant 1 in TDR 3.1).
-3. Indexes ix_slots_examination_id and ix_slots_examiner_id. Relationships: examination, examiner (User), bookings (one-to-many, no cascade).
-4. Read-only property seats_left = max_capacity - booked_count (never negative). No other logic; booking/cancel logic belongs to booking_engine in P5/P6.
-5. Comment: "no two slots of the same examiner may overlap" is a P4 service rule.
-DEBUGGING:
-# print(f"[DEBUG] Slot {self.id} {self.start_at}->{self.end_at} {self.booked_count}/{self.max_capacity} {self.status}")
-OFFLINE DOCKER TEST CASES:
-- booked_count 6 with max_capacity 5 raises IntegrityError; booked_count -1 raises IntegrityError.
-- end_at equal to start_at raises IntegrityError; max_capacity 0 raises IntegrityError.
-- status "open" raises IntegrityError.
-- seats_left is 3 for capacity 5 and booked_count 2.
-"""
-"""
 app/models/slot.py - Examination slot model for LMS.
 
+Table "examination_slots": a bookable time slot created by an examiner, with capacity.
 Defines the 'examination_slots' table representing bookable time windows
 created by faculty examiners with capacity limits and active booking tracking.
 """
 
 from datetime import datetime
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
+
 from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -44,7 +29,6 @@ class ExaminationSlot(db.Model, TimestampMixin):
 
     __tablename__ = "examination_slots"
     __table_args__ = (
-        
         CheckConstraint(
             f"status IN {SLOT_STATUSES}",
             name="ck_examination_slots_status_valid",
@@ -103,7 +87,7 @@ class ExaminationSlot(db.Model, TimestampMixin):
     # -----------------------------------------------------------------
     examination: Mapped["Examination"] = relationship("Examination", back_populates="slots")
     examiner: Mapped["User"] = relationship("User", foreign_keys=[examiner_id])
-    bookings: Mapped[List["Booking"]] = relationship(
+    bookings: Mapped[list["Booking"]] = relationship(
         "Booking",
         back_populates="slot",
         foreign_keys="Booking.slot_id",
