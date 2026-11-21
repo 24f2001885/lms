@@ -187,7 +187,25 @@ def purge_email_logs_command(days):
         sys.exit(1)
 
 
+@click.command("seed-recruiter-demo")
+def seed_recruiter_demo_command():
+    """Idempotently seed demonstration data for recruiters and evaluators."""
+    from app.services.recruiter_demo import seed_recruiter_demo_data
+
+    click.echo("Seeding recruiter demo credentials and realistic examination records...")
+    summary = seed_recruiter_demo_data()
+    click.echo("Recruiter demo seeding completed successfully:")
+    click.echo(f"  - Admin:    {summary['admin_email']} / Demo@123")
+    click.echo(f"  - Examiner: {summary['examiner_email']} / Demo@123")
+    click.echo(f"  - Student:  {summary['student_email']} / Demo@123")
+    click.echo(
+        f"  - Courses: {summary['courses_count']}, Exams: {summary['examinations_count']}, "
+        f"Slots: {summary['slots_count']}, Evaluations: {summary['evaluations_count']}"
+    )
+
+
 def register_cli(flask_app: Flask) -> None:
     """Register custom CLI commands with the Flask application instance."""
     flask_app.cli.add_command(init_db_command)
+    flask_app.cli.add_command(seed_recruiter_demo_command)
     flask_app.cli.add_command(jobs_group)

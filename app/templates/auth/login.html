@@ -18,6 +18,36 @@ OFFLINE DOCKER TEST CASES:
 {% block content %}
 <div class="row justify-content-center py-4">
   <div class="col-12 col-sm-10 col-md-8 col-lg-5">
+    <!-- Recruiter Demo Quick-Access Card -->
+    <div class="card border-primary border-opacity-25 shadow-sm mb-3 bg-light-subtle">
+      <div class="card-body p-3">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span class="badge text-bg-primary d-inline-flex align-items-center gap-1 px-2 py-1">
+            <span class="spinner-grow spinner-grow-sm" style="width: 0.5rem; height: 0.5rem;" aria-hidden="true"></span>
+            Recruiter Demo Access
+          </span>
+          <button type="button" class="btn btn-link btn-sm text-decoration-none p-0 fw-medium" data-bs-toggle="modal" data-bs-target="#demoInfoModal">
+            Demo Guide &raquo;
+          </button>
+        </div>
+        <p class="small text-muted mb-2">Click any role pill below to auto-fill credentials for instant one-click testing:</p>
+        <div class="d-flex flex-wrap gap-2" role="group" aria-label="Demo role quick-fill options">
+          <button type="button" class="btn btn-sm btn-outline-primary demo-fill-btn d-flex align-items-center gap-1" data-email="admin@lms.com" data-password="Demo@123" title="Click to fill Administrator credentials">
+            <span class="badge text-bg-primary">Admin</span>
+            <span>admin@lms.com</span>
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-success demo-fill-btn d-flex align-items-center gap-1" data-email="examiner@lms.com" data-password="Demo@123" title="Click to fill Examiner credentials">
+            <span class="badge text-bg-success">Examiner</span>
+            <span>examiner@lms.com</span>
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-info demo-fill-btn d-flex align-items-center gap-1" data-email="student@lms.com" data-password="Demo@123" title="Click to fill Student credentials">
+            <span class="badge text-bg-info text-dark">Student</span>
+            <span>student@lms.com</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div class="card shadow-sm border-0 auth-card">
       <div class="card-body p-4 p-md-5">
         <h1 class="h3 fw-bold text-center mb-1 text-primary">Log in</h1>
@@ -51,4 +81,104 @@ OFFLINE DOCKER TEST CASES:
     </div>
   </div>
 </div>
+
+<!-- Recruiter Demo Credentials & Architecture Guide Modal -->
+<div class="modal fade" id="demoInfoModal" tabindex="-1" aria-labelledby="demoInfoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content shadow">
+      <div class="modal-header bg-primary text-white">
+        <h2 class="modal-title fs-5 fw-bold" id="demoInfoModalLabel">Recruiter &amp; Reviewer Demo Credentials</h2>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <p class="text-muted">
+          The portal has been pre-seeded with realistic academic data to test all role-isolated workflows,
+          dynamic Chart.js dashboards, and the online proctored quiz engine.
+        </p>
+
+        <div class="table-responsive mb-4">
+          <table class="table table-bordered align-middle">
+            <thead class="table-light">
+              <tr>
+                <th scope="col">Role</th>
+                <th scope="col">Email</th>
+                <th scope="col">Password</th>
+                <th scope="col">Capabilities &amp; Showcase Highlights</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge text-bg-primary">Administrator</span></td>
+                <td><code>admin@lms.com</code></td>
+                <td><code>Demo@123</code></td>
+                <td>
+                  <ul class="mb-0 ps-3 small">
+                    <li>Course &amp; Examination lifecycle management</li>
+                    <li>Examiner approval workflows &amp; slot tracking</li>
+                    <li>Real-time Chart.js institutional analytics</li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td><span class="badge text-bg-success">Examiner</span></td>
+                <td><code>examiner@lms.com</code></td>
+                <td><code>Demo@123</code></td>
+                <td>
+                  <ul class="mb-0 ps-3 small">
+                    <li>Linked to <strong>Data Structures &amp; Algorithms</strong> and <strong>Database Systems</strong></li>
+                    <li>Bookable slot creation with strict capacity limits</li>
+                    <li>Multi-criteria rubric scoring &amp; published scorecards</li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td><span class="badge text-bg-info text-dark">Student</span></td>
+                <td><code>student@lms.com</code></td>
+                <td><code>Demo@123</code></td>
+                <td>
+                  <ul class="mb-0 ps-3 small">
+                    <li>Enrolled with completed viva bookings &amp; historical scorecard</li>
+                    <li>Live proctored MCQ quiz test instance</li>
+                    <li>Downloadable deterministic PDF scorecard</li>
+                  </ul>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="alert alert-info py-2 small mb-0">
+          <strong>Tip:</strong> You can click any quick-fill pill on the login page to immediately fill the login form without typing.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const emailField = document.getElementById("email") || document.querySelector("input[name='email']");
+  const passwordField = document.getElementById("password") || document.querySelector("input[name='password']");
+  const fillButtons = document.querySelectorAll(".demo-fill-btn");
+
+  fillButtons.forEach(function (button) {
+    button.addEventListener("click", function () {
+      const email = this.getAttribute("data-email");
+      const password = this.getAttribute("data-password");
+      if (emailField && passwordField) {
+        emailField.value = email;
+        passwordField.value = password;
+        emailField.dispatchEvent(new Event("input", { bubbles: true }));
+        passwordField.dispatchEvent(new Event("input", { bubbles: true }));
+        passwordField.focus();
+      }
+    });
+  });
+});
+</script>
 {% endblock %}
