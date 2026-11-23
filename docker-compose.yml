@@ -5,8 +5,8 @@ services:
       target: runtime
     container_name: lms-app
     restart: unless-stopped
-    mem_limit: 250m
-    mem_reservation: 100m
+    mem_limit: 512m
+    mem_reservation: 128m
     cpus: "0.8"
     ports:
       - "127.0.0.1:5002:5000"
