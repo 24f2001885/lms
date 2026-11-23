@@ -12,12 +12,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to Remote Server via SSH
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.0
         with:
-          host: ${{ secrets.VPS_HOST || secrets.AWS_HOST }}
-          username: ${{ secrets.VPS_USER || secrets.AWS_USER || 'ubuntu' }}
-          key: ${{ secrets.VPS_SSH_KEY || secrets.AWS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT || secrets.AWS_PORT || 22 }}
+          host: ${{ secrets.AWS_HOST || secrets.VPS_HOST }}
+          username: ${{ secrets.AWS_USER || secrets.VPS_USER || 'ubuntu' }}
+          key: ${{ secrets.AWS_SSH_KEY || secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.AWS_PORT || secrets.VPS_PORT || 22 }}
           timeout: 180s
           command_timeout: 30m
           script: |
@@ -35,31 +35,36 @@ jobs:
             done
 
             if [ -z "$TARGET_DIR" ]; then
-              echo "Cloning clean repository to /home/ubuntu/lms..."
+              echo "Cloning repository to /home/ubuntu/lms..."
               TARGET_DIR="/home/ubuntu/lms"
               mkdir -p /home/ubuntu
-              git clone https://github.com/24f2001885/lms-production.git "$TARGET_DIR"
+              git clone https://github.com/24f2001885/lms.git "$TARGET_DIR" 2>/dev/null || git clone https://github.com/24f2001885/lms-production.git "$TARGET_DIR"
             fi
 
             cd "$TARGET_DIR"
             echo "Target working directory: $TARGET_DIR"
 
             # Pull latest changes from main
-            git fetch origin main
+            git fetch origin main || git fetch origin
             git checkout -f main
             git reset --hard origin/main
 
-            # Ensure .env is present on server
+            # Prepare production .env
             if [ ! -f .env ]; then
               echo "Creating initial production .env..."
               cp .env.example .env
               RAND_SECRET=$(openssl rand -hex 32)
-              sed -i "s/SECRET_KEY=randomint/SECRET_KEY=${RAND_SECRET}/" .env
-              sed -i "s/USE_PROXY_FIX=false/USE_PROXY_FIX=true/" .env
-              sed -i "s/SESSION_COOKIE_SECURE=false/SESSION_COOKIE_SECURE=true/" .env
-              sed -i "s|APP_BASE_URL=.*|APP_BASE_URL=https://lms.abhishek4312.info|" .env
-              sed -i "s/PREFERRED_URL_SCHEME=http/PREFERRED_URL_SCHEME=https/" .env
+              sed -i "s/SECRET_KEY=.*/SECRET_KEY=${RAND_SECRET}/" .env
             fi
+
+            # Ensure production settings are strictly configured
+            sed -i "s/FLASK_ENV=.*/FLASK_ENV=production/" .env
+            sed -i "s|APP_BASE_URL=.*|APP_BASE_URL=https://lms.abhishekpathak.site|" .env
+            sed -i "s/USE_PROXY_FIX=.*/USE_PROXY_FIX=true/" .env
+            sed -i "s/SESSION_COOKIE_SECURE=.*/SESSION_COOKIE_SECURE=true/" .env
+            sed -i "s/PREFERRED_URL_SCHEME=.*/PREFERRED_URL_SCHEME=https/" .env
+            sed -i "s/ADMIN_EMAIL=.*/ADMIN_EMAIL=abhishekpathak4312@gmail.com/" .env
+            sed -i "s/ADMIN_INITIAL_PASSWORD=.*/ADMIN_INITIAL_PASSWORD=Demo@123/" .env
 
             # Rebuild and start container with 250m memory constraint
             echo "Rebuilding and restarting Docker containers..."
@@ -67,7 +72,26 @@ jobs:
             docker compose up -d --build
 
             echo "Awaiting application readiness..."
-            sleep 6
+            sleep 5
+
+            # Verify container health on internal port 5002
+            echo "Verifying container health on 127.0.0.1:5002..."
+            HEALTH_OK=false
+            for i in $(seq 1 15); do
+              if curl -sf -o /dev/null "http://127.0.0.1:5002/login"; then
+                echo "LMS application responded HTTP 200 on internal port 5002!"
+                HEALTH_OK=true
+                break
+              fi
+              echo "Waiting for app container to start (attempt $i/15)..."
+              sleep 2
+            done
+
+            if [ "$HEALTH_OK" != "true" ]; then
+              echo "Error: LMS container failed health check on http://127.0.0.1:5002/login"
+              docker compose logs --tail=50
+              exit 1
+            fi
 
             # Database schema migration & idempotent demo seeding
             echo "Initializing database schema..."
@@ -76,12 +100,12 @@ jobs:
             echo "Seeding recruiter demo credentials..."
             docker compose exec -T app flask seed-recruiter-demo
 
-            # Reload Nginx reverse proxy
+            # Reload Host Nginx reverse proxy if present
             if command -v nginx >/dev/null 2>&1; then
-              echo "Reloading Nginx..."
-              sudo nginx -t && (sudo systemctl reload nginx || sudo nginx -s reload)
+              echo "Validating and reloading Nginx..."
+              sudo nginx -t && (sudo systemctl reload nginx || sudo nginx -s reload || true)
             fi
 
             echo "=========================================================="
-            echo "LMS Deployment Succeeded! Live at https://lms.abhishek4312.info"
+            echo "LMS Deployment Succeeded! Live at https://lms.abhishekpathak.site"
             echo "=========================================================="

@@ -29,95 +29,78 @@ from app.services import windows
 DEMO_PASSWORD = "Demo@123"  # noqa: S105
 
 
+def _ensure_user(email: str, full_name: str, role: str) -> User:
+    u = User.query.filter_by(email=email).first()
+    if not u:
+        u = User(
+            email=email,
+            full_name=full_name,
+            role=role,
+            approval_status="approved",
+            is_active=True,
+            must_change_password=False,
+        )
+        u.set_password(DEMO_PASSWORD)
+        db.session.add(u)
+        db.session.flush()
+    else:
+        u.set_password(DEMO_PASSWORD)
+        u.is_active = True
+        u.approval_status = "approved"
+        u.must_change_password = False
+    return u
+
+
 def seed_recruiter_demo_data() -> dict:
     """Idempotently seed the full recruiter demo dataset."""
     now = windows.now_utc()
 
     # -------------------------------------------------------------------------
-    # 1. Administrator: admin@lms.com
+    # 1. Administrators: abhishekpathak4312@gmail.com & admin@lms.com
     # -------------------------------------------------------------------------
-    admin = User.query.filter_by(email="admin@lms.com").first()
-    if not admin:
-        admin = User(
-            email="admin@lms.com",
-            full_name="System Administrator",
-            role="admin",
-            approval_status="approved",
-            is_active=True,
-            must_change_password=False,
-        )
-        admin.set_password(DEMO_PASSWORD)
-        db.session.add(admin)
-        db.session.flush()
-    else:
-        admin.set_password(DEMO_PASSWORD)
-        admin.is_active = True
-        admin.approval_status = "approved"
+    admin = _ensure_user("abhishekpathak4312@gmail.com", "Abhishek Pathak", "admin")
+    _ensure_user("admin@lms.com", "System Administrator", "admin")
 
     # -------------------------------------------------------------------------
-    # 2. Examiner: examiner@lms.com
+    # 2. Examiners: examiner@demo.com & examiner@lms.com
     # -------------------------------------------------------------------------
-    examiner = User.query.filter_by(email="examiner@lms.com").first()
-    if not examiner:
-        examiner = User(
-            email="examiner@lms.com",
-            full_name="Prof. Sarah Jenkins",
-            role="examiner",
-            approval_status="approved",
-            is_active=True,
-            must_change_password=False,
-        )
-        examiner.set_password(DEMO_PASSWORD)
-        db.session.add(examiner)
-        db.session.flush()
-    else:
-        examiner.set_password(DEMO_PASSWORD)
-        examiner.is_active = True
-        examiner.approval_status = "approved"
+    examiner = _ensure_user("examiner@demo.com", "Prof. Sarah Jenkins", "examiner")
+    examiner_alt = _ensure_user("examiner@lms.com", "Prof. Sarah Jenkins", "examiner")
 
-    ex_profile = ExaminerProfile.query.filter_by(user_id=examiner.id).first()
-    if not ex_profile:
-        ex_profile = ExaminerProfile(
-            user_id=examiner.id,
-            department="Computer Science & Engineering",
-            designation="Associate Professor",
-            contact_phone="+91 9876543210",
-            status="active",
-        )
-        db.session.add(ex_profile)
-    else:
-        ex_profile.status = "active"
+    for ex in (examiner, examiner_alt):
+        ex_profile = ExaminerProfile.query.filter_by(user_id=ex.id).first()
+        if not ex_profile:
+            ex_profile = ExaminerProfile(
+                user_id=ex.id,
+                department="Computer Science & Engineering",
+                designation="Associate Professor",
+                contact_phone="+91 9876543210",
+                status="active",
+            )
+            db.session.add(ex_profile)
+        else:
+            ex_profile.status = "active"
 
     # -------------------------------------------------------------------------
-    # 3. Student: student@lms.com
+    # 3. Students: student@demo.com & student@lms.com
     # -------------------------------------------------------------------------
-    student = User.query.filter_by(email="student@lms.com").first()
-    if not student:
-        student = User(
-            email="student@lms.com",
-            full_name="Alex Mercer",
-            role="student",
-            approval_status="approved",
-            is_active=True,
-            must_change_password=False,
-        )
-        student.set_password(DEMO_PASSWORD)
-        db.session.add(student)
-        db.session.flush()
-    else:
-        student.set_password(DEMO_PASSWORD)
-        student.is_active = True
-        student.approval_status = "approved"
+    student = _ensure_user("student@demo.com", "Alex Mercer", "student")
+    student_alt = _ensure_user("student@lms.com", "Alex Mercer", "student")
 
-    stu_profile = StudentProfile.query.filter_by(user_id=student.id).first()
-    if not stu_profile:
-        stu_profile = StudentProfile(
-            user_id=student.id,
-            roll_number="CS2026-0042",
-            program="B.Tech Computer Science",
-            contact_phone="+91 9123456789",
-        )
-        db.session.add(stu_profile)
+    stu_profiles_data = [
+        (student, "CS2026-0042"),
+        (student_alt, "CS2026-0043"),
+    ]
+    for st, roll in stu_profiles_data:
+        stu_profile = StudentProfile.query.filter_by(user_id=st.id).first()
+        if not stu_profile:
+            stu_profile = StudentProfile(
+                user_id=st.id,
+                roll_number=roll,
+                program="B.Tech Computer Science",
+                contact_phone="+91 9123456789",
+            )
+            db.session.add(stu_profile)
 
     # -------------------------------------------------------------------------
     # 4. Courses: Data Structures & Algorithms & Database Systems
